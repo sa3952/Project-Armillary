@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 from pathlib import Path
 
 
@@ -12,7 +14,15 @@ COMMANDS = (
     [sys.executable, "scripts/verify_publication_candidate.py", "--root", "."],
     [sys.executable, "scripts/verify_privacy_dependencies.py", "--check"],
     [sys.executable, "-m", "compileall", "-q", "backend/app", "scripts"],
-    [sys.executable, "-m", "pytest", "backend/tests", "-q"],
+    [
+        sys.executable,
+        "-m",
+        "pytest",
+        "backend/tests",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+    ],
     [
         "node",
         "--test",
@@ -21,6 +31,7 @@ COMMANDS = (
             for path in sorted(Path("frontend/tests").glob("*.test.cjs"))
         ],
     ],
+    [sys.executable, "scripts/verify_publication_candidate.py", "--root", "."],
 )
 
 # Extended release gates:
@@ -30,14 +41,19 @@ COMMANDS = (
 
 
 def main() -> int:
-    for command in COMMANDS:
-        result = subprocess.run(
-            command,
-            check=False,
-            shell=False,
-        )
-        if result.returncode != 0:
-            return result.returncode
+    with TemporaryDirectory(prefix="public-source-pycache-") as pycache:
+        child_environment = os.environ.copy()
+        child_environment["PYTHONPYCACHEPREFIX"] = pycache
+        child_environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        for command in COMMANDS:
+            result = subprocess.run(
+                command,
+                check=False,
+                env=child_environment,
+                shell=False,
+            )
+            if result.returncode != 0:
+                return result.returncode
     return 0
 
 
