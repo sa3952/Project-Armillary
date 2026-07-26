@@ -73,6 +73,7 @@ def verify_candidate(root: Path) -> None:
         "LICENSE",
         "README.md",
         "SECURITY.md",
+        "SOURCE_EXPORT.json",
         "THIRD_PARTY_NOTICES.md",
         "backend/app/main.py",
         "backend/ephe/sepl_18.se1",
@@ -140,6 +141,15 @@ def verify_candidate(root: Path) -> None:
                 f"source archive hash mismatch for {package['name']}"
             )
 
+    export_receipt = _load_json(files["SOURCE_EXPORT.json"])
+    if export_receipt.get("export_mode") != "closed_allowlist":
+        raise CandidateFailure("source export was not closed-allowlist")
+    private_revision = export_receipt.get("private_source_revision")
+    if not isinstance(private_revision, str) or not re.fullmatch(
+        r"[0-9a-f]{40}", private_revision
+    ):
+        raise CandidateFailure("private source revision is missing or invalid")
+
     dockerfile = files["deploy/Dockerfile"].read_text(encoding="utf-8")
     if "ADD --checksum=" in dockerfile or "files.pythonhosted.org" in dockerfile:
         raise CandidateFailure(
@@ -158,11 +168,21 @@ def verify_candidate(root: Path) -> None:
         "backend/tests",
         "frontend/tests",
         "docs",
-        "third_party",
     }:
         if required_ignore not in dockerignore.splitlines():
             raise CandidateFailure(
                 f".dockerignore omits {required_ignore}"
+            )
+    for required_third_party_rule in {
+        "third_party/*",
+        "!third_party/pyswisseph",
+        "third_party/pyswisseph/*",
+        "!third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz",
+    }:
+        if required_third_party_rule not in dockerignore.splitlines():
+            raise CandidateFailure(
+                ".dockerignore does not isolate the bundled "
+                f"pyswisseph source: {required_third_party_rule}"
             )
 
 

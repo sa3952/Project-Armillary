@@ -17,7 +17,10 @@ frontend/tests
 docs
 docs/red_team
 docs/archive
-third_party
+third_party/*
+!third_party/pyswisseph
+third_party/pyswisseph/*
+!third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz
 release
 *.pem
 *.key
