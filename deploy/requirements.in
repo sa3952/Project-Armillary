@@ -1,6 +1,6 @@
 # Provider-neutral production runtime only. Regenerate requirements.lock with
 # Python 3.13 and pip-compile; do not add development, reload, websocket,
 # telemetry, database, cache, or outbound-client extras here.
-fastapi==0.139.2
+fastapi==0.140.0
 uvicorn==0.51.0
 pyswisseph==2.10.3.2
