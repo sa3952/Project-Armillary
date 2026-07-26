@@ -5,6 +5,9 @@ Astrology Data Service. The service is an invited Private Alpha and is not
 professional medical, legal, financial, psychological, or other professional
 advice.
 
+Canonical public repository:
+<https://github.com/sa3952/Project-Armillary>
+
 ## License
 
 The hosted application is licensed under the GNU Affero General Public License

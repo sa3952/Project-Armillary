@@ -187,6 +187,15 @@ def test_hosted_identity_trust_and_discovery_controls_are_profile_scoped():
     assert "applyApplicationProfile" in script
 
 
+def test_hosted_source_notice_links_the_decided_public_repository():
+    html = INDEX_HTML.read_text(encoding="utf-8")
+
+    source_url = "https://github.com/sa3952/Project-Armillary"
+    assert f'href="{source_url}"' in html
+    assert 'rel="noopener noreferrer"' in html
+    assert "實際 URL 尚未配置" not in html
+
+
 def test_privacy_lifecycle_precedes_handlers_and_blocks_browser_persistence():
     html = INDEX_HTML.read_text(encoding="utf-8")
     script = APP_JS.read_text(encoding="utf-8")
