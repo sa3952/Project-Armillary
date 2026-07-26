@@ -1,0 +1,28 @@
+{
+  "provenance": {
+    "authority": "United States Naval Observatory, Astronomical Applications Department",
+    "api_version": "4.0.1",
+    "retrieved_at": "2026-07-24T07:50:00+08:00",
+    "url": "https://aa.usno.navy.mil/api/moon/phases/date?date=1999-12-01&nump=12",
+    "time_scale": "UT",
+    "published_precision": "one minute"
+  },
+  "events_around_2000_01_01T04_00_00Z": {
+    "new_moon": {
+      "previous": "1999-12-07T22:32:00Z",
+      "next": "2000-01-06T18:14:00Z"
+    },
+    "first_quarter": {
+      "previous": "1999-12-16T00:50:00Z",
+      "next": "2000-01-14T13:34:00Z"
+    },
+    "full_moon": {
+      "previous": "1999-12-22T17:31:00Z",
+      "next": "2000-01-21T04:40:00Z"
+    },
+    "last_quarter": {
+      "previous": "1999-12-29T14:04:00Z",
+      "next": "2000-01-28T07:57:00Z"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install test dependencies
+        run: python -m pip install --requirement backend/requirements-dev.txt
+      - name: Privacy dependency boundary
+        run: python scripts/verify_privacy_dependencies.py --check
+      - name: Hosted Python tests
+        run: python -m pytest backend/tests -q
+      - name: Frontend tests
+        run: node --test frontend/tests/*.test.cjs
+      - name: Python compile
+        run: python -m compileall -q backend/app scripts

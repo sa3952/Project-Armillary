@@ -1,0 +1,42 @@
+services:
+  private-alpha-app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        VCS_REF: "${VCS_REF:-uncommitted}"
+      secrets:
+        - "private_alpha_probe"
+    image: "classical-astrology-private-alpha:${IMAGE_TAG:-local}"
+    init: true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777"
+    cap_drop:
+      - "ALL"
+    security_opt:
+      - "no-new-privileges:true"
+    pids_limit: 64
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    logging:
+      driver: "local"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 1024
+    networks:
+      - "private-alpha-internal"
+    stop_grace_period: 30s
+
+networks:
+  private-alpha-internal:
+    internal: true
+
+secrets:
+  private_alpha_probe:
+    file: "./buildkit-probe.txt"

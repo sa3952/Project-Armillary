@@ -1,0 +1,44 @@
+name: linux-amd64-container
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - "scripts/**"
+      - "third_party/**"
+      - ".github/workflows/linux-amd64.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  container:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify publication candidate
+        run: python scripts/verify_publication_candidate.py --root .
+      - name: Build and exercise linux/amd64 image
+        run: |
+          python scripts/verify_container_runtime.py \
+            --build \
+            --require-clean \
+            --platform linux/amd64 \
+            --container-only \
+            --worker-resilience \
+            --soak-requests 50 \
+            --receipt /tmp/container-receipt.json
+      - name: Closed result
+        if: always()
+        run: |
+          if test -f /tmp/container-receipt.json; then
+            python -c 'import json; p=json.load(open("/tmp/container-receipt.json")); print({"status": p.get("status"), "image": p.get("image"), "architecture": p.get("architecture")})'
+          fi
