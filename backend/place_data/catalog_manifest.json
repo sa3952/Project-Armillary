@@ -1,0 +1,51 @@
+{
+  "artifact_id": "offline-place-catalog-v1",
+  "classification": "generated_runtime_dataset",
+  "producer": "scripts/validation/build_place_catalog.py",
+  "generator_version": "place-catalog-builder-v1",
+  "mutable": false,
+  "distribution": {
+    "private_git": "direct",
+    "docker": "same_exact_file",
+    "publication": "same_exact_file",
+    "ci": "verify_manifest_hash_rows_and_integrity",
+    "local_runtime": "same_exact_file"
+  },
+  "release_policy": "low_frequency_intentional_dataset_release",
+  "rebuild": {
+    "command": "backend/.venv/bin/python -m scripts.validation.build_place_catalog --geonames-zip <cities500.zip> --taiwan-admin-csv <taiwan-admin.csv> --taiwan-settlement-csv <taiwan-settlement.csv> --output backend/place_data/places.sqlite3 --manifest backend/place_data/catalog_manifest.json --source-date 2026-07-29",
+    "exact_inputs_required": true,
+    "input_identity": "source_sha256"
+  },
+  "catalog": {
+    "filename": "places.sqlite3",
+    "sha256": "24fd271b06267ace2038c1c24ae23f073c6ad6b566517396691f1ffe44641898",
+    "size_bytes": 78688256
+  },
+  "licenses": {
+    "geonames_cities500": "CC-BY-4.0",
+    "taiwan_moi_place_names": "Taiwan Government Data Open License 1.0"
+  },
+  "row_counts": {
+    "geonames_cities500": 235062,
+    "taiwan_moi_administrative": 2593,
+    "taiwan_moi_settlement": 27710
+  },
+  "runtime_policy": {
+    "catalog_mode": "bundled_read_only_sqlite",
+    "runtime_outbound": false,
+    "user_data_written": false
+  },
+  "schema_version": 1,
+  "source_sha256": {
+    "geonames_cities500": "461972430ea8b031d60c0954fc4cbc3269d22e9da4520d07d34df349d5934360",
+    "taiwan_moi_administrative": "b9aaca5b04bd19c622a675354d2f5c1b67a5c7d7409263bc1e379191beffdb39",
+    "taiwan_moi_settlement": "e1e72eb17fb26852860f4d5dc5f0ca99200bdd8a65b37bc0bd523efbd0fa66a5"
+  },
+  "source_snapshot_date": "2026-07-29",
+  "sources": {
+    "geonames_cities500": "https://download.geonames.org/export/dump/cities500.zip",
+    "taiwan_moi_administrative": "https://data.gov.tw/dataset/40281",
+    "taiwan_moi_settlement": "https://data.gov.tw/dataset/53677"
+  }
+}

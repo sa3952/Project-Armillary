@@ -1,0 +1,59 @@
+name: Production amd64 runtime
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/production-amd64.yml"
+      - "backend/**"
+      - "deploy/**"
+      - "frontend/**"
+      - "scripts/**"
+      - "third_party/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/production-amd64.yml"
+      - "backend/**"
+      - "deploy/**"
+      - "frontend/**"
+      - "scripts/**"
+      - "third_party/**"
+
+# Repository/organization setting required before enabling this workflow:
+# Actions log retention: 7 days. The workflow uploads no artifacts and prints
+# only a closed summary; GitHub job logs remain a separate remote data layer.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-amd64-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  container-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout tested revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Publication boundary
+        run: python3 -m scripts.publication.verify_publication_candidate --root .
+
+      - name: Privacy dependency boundary
+        run: python3 -m scripts.verification.verify_privacy_dependencies --check
+
+      - name: Native amd64 production runtime and resilience
+        run: >-
+          python3 -m scripts.verification.verify_container_runtime
+          --build
+          --require-clean
+          --platform linux/amd64
+          --container-only
+          --worker-resilience
+          --soak-requests 250
+          --quiet

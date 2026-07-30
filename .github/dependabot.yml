@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    # Routine version churn is reviewed manually. Security updates configured
+    # in repository settings are not subject to this version-update limit.
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0

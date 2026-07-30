@@ -1,0 +1,59 @@
+# Third-Party Notices
+
+## Swiss Ephemeris and pyswisseph
+
+This application uses `pyswisseph 2.10.3.2`, a Python extension incorporating
+Swiss Ephemeris.
+
+Swiss Ephemeris:
+
+- Copyright (C) 1997-2021 Astrodienst AG, Switzerland.
+- Authors: Dieter Koch and Alois Treindl.
+- Distributed under a dual-license model. This project uses the GNU Affero
+  General Public License route.
+- The original copyright and license notice is preserved inside the exact
+  `pyswisseph` source distribution under `third_party/pyswisseph/`.
+
+The authors and copyright holder have no control over this derived service.
+Their names are included only as part of the required copyright notice and
+must not be interpreted as endorsement.
+
+## GeoNames cities500
+
+The bundled global place-search catalog contains a snapshot derived from
+GeoNames `cities500`.
+
+- Source: https://download.geonames.org/export/dump/cities500.zip
+- License: Creative Commons Attribution 4.0 International (CC BY 4.0),
+  https://creativecommons.org/licenses/by/4.0/
+- Attribution: GeoNames, https://www.geonames.org/
+
+GeoNames provides the data as-is without a warranty of accuracy, timeliness,
+or completeness. Coordinates exposed by this application are representative
+place points and are not asserted to be a birth address.
+
+## Taiwan Ministry of the Interior place names
+
+The bundled Taiwan overlay contains administrative-area and settlement place
+names published by the Taiwan Ministry of the Interior.
+
+- Administrative-area dataset: https://data.gov.tw/dataset/40281
+- Settlement dataset: https://data.gov.tw/dataset/53677
+- License: Taiwan Government Data Open License 1.0,
+  https://data.gov.tw/license
+- Attribution: Department of Land Administration, Ministry of the Interior,
+  Taiwan.
+
+The overlay remains a separately attributed dataset. It does not imply that
+the Ministry of the Interior endorses this application.
+
+## Other dependencies
+
+Exact production and build dependencies are pinned with hashes in:
+
+- `deploy/requirements.lock`
+- `deploy/build-requirements.lock`
+
+`third_party/SOURCE_MANIFEST.json` records source archives, hashes, licenses,
+and upstream locations. A release must not be published if this inventory or
+its accompanying source bundle is incomplete.

@@ -1,0 +1,31 @@
+{
+  "fixture_version": 1,
+  "policy": "Exact accepted 0.x API and Dossier pairs; export version remains independent.",
+  "accepted": {
+    "api_schema_version": "0.10.0",
+    "dossier_version": "0.3.2",
+    "export_contract_version": "0.1.2"
+  },
+  "rejected": [
+    {
+      "name": "unknown_api_schema",
+      "api_schema_version": "0.11.0",
+      "dossier_version": "0.3.2"
+    },
+    {
+      "name": "unknown_dossier_schema",
+      "api_schema_version": "0.10.0",
+      "dossier_version": "0.4.0"
+    },
+    {
+      "name": "missing_api_schema",
+      "api_schema_version": null,
+      "dossier_version": "0.3.2"
+    },
+    {
+      "name": "missing_dossier_schema",
+      "api_schema_version": "0.10.0",
+      "dossier_version": null
+    }
+  ]
+}

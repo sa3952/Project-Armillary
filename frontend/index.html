@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>古典西洋占星天文計算</title>
+<link rel="icon" href="favicon.svg?v=0.7.1" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=0.8.0-alpha-ux0-a11y1">
+</head>
+<body>
+<a class="skip-link" href="#chart-form">跳到出生資料表單</a>
+<div id="private-alpha-banner" class="alpha-banner hidden" data-profile-only="private_alpha" role="status">
+  Private Alpha · 僅限受邀測試 · 非專業建議
+</div>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">NATAL COMPUTATION · SWISS EPHEMERIS</p>
+    <h1>古典西洋占星<br><span>天文計算工作台</span></h1>
+    <p class="subtitle">把出生時間、地點與計算假設攤開，提供可追溯、可複製、可核對的結果。</p>
+    <div class="hero-meta">
+      <span id="profile-badge">環境確認中</span>
+      <span>34 顆恆星</span>
+      <span>完整計算軌跡</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="workspace-intro" aria-labelledby="input-title">
+    <div>
+      <p class="section-kicker">01 · INPUT</p>
+      <h2 id="input-title">建立命盤計算條件</h2>
+    </div>
+    <p>請優先使用 IANA 時區。若時間落在夏令時間重複區間，系統會要求你確認是哪一次；不存在的民用時間將直接拒絕計算。</p>
+  </section>
+
+  <div class="input-guidance">
+    <p>
+      敏感欄位預設保持空白。請填入你有權使用的資料；若只想測試流程，可載入明確標示的範例。
+    </p>
+    <button id="load-example-button" class="secondary-btn" type="button">載入範例資料</button>
+  </div>
+
+  <form id="chart-form" class="chart-form" autocomplete="off">
+    <fieldset>
+      <legend>出生日期時間</legend>
+      <div class="row">
+        <label>年 <span class="requirement required">必填</span><input type="number" id="year" min="1900" max="2399" required autocomplete="off" data-sensitive-input></label>
+        <label>月 <span class="requirement required">必填</span><input type="number" id="month" min="1" max="12" required autocomplete="off" data-sensitive-input></label>
+        <label>日 <span class="requirement required">必填</span><input type="number" id="day" min="1" max="31" required autocomplete="off" data-sensitive-input></label>
+        <label>時 <span class="requirement required">必填</span><input type="number" id="hour" min="0" max="23" required autocomplete="off" data-sensitive-input></label>
+        <label>分 <span class="requirement required">必填</span><input type="number" id="minute" min="0" max="59" required autocomplete="off" data-sensitive-input></label>
+        <label>秒 <span class="requirement optional">選填，預設 0</span><input type="number" id="second" min="0" max="59.999" step="0.01" autocomplete="off" data-sensitive-input></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>時區</legend>
+      <div class="row">
+        <label class="radio"><input type="radio" name="tz-mode" value="iana" checked> IANA 時區名稱</label>
+        <label class="standalone-input-label">
+          IANA 時區名稱 <span class="requirement conditional">符合條件時必填</span>
+          <input type="text" id="iana-name" placeholder="例如 Asia/Taipei"
+               aria-label="IANA 時區名稱"
+               autocomplete="off" autocapitalize="off" spellcheck="false" data-sensitive-input>
+        </label>
+        <label class="radio"><input type="radio" name="tz-mode" value="fixed_offset"> 固定 UTC 偏移(小時)</label>
+        <label class="standalone-input-label">
+          固定 UTC 偏移 <span class="requirement conditional">符合條件時必填</span>
+          <input type="number" id="fixed-offset" step="0.25" disabled
+                 aria-label="固定 UTC 偏移小時" autocomplete="off" data-sensitive-input>
+        </label>
+      </div>
+      <div class="row">
+        <span class="group-label">日光節約時間重複時刻</span>
+        <label class="radio"><input type="radio" name="fold" value="0" checked> 第一次（較早／夏令）</label>
+        <label class="radio"><input type="radio" name="fold" value="1"> 第二次（較晚／標準時間）</label>
+        <span class="hint">僅在出生時間剛好落在秋季調慢、時鐘重複的那一小時內才有差別；計算後若偵測到會特別提示。</span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>出生地點</legend>
+      <div class="row">
+        <label>緯度(十進位度，北緯為正) <span class="requirement required">必填</span><input type="number" id="latitude" min="-90" max="90" step="0.0001" required autocomplete="off" data-sensitive-input></label>
+        <label>經度(十進位度，東經為正) <span class="requirement required">必填</span><input type="number" id="longitude" min="-180" max="180" step="0.0001" required autocomplete="off" data-sensitive-input></label>
+        <label>海拔(公尺) <span class="requirement optional">選填，預設 0</span><input type="number" id="altitude" min="-500" max="10000" step="1" autocomplete="off" data-sensitive-input></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>黃道系統</legend>
+      <div class="row">
+        <label class="radio"><input type="radio" name="zodiac" value="tropical" checked> Tropical 回歸黃道</label>
+        <label class="radio"><input type="radio" name="zodiac" value="sidereal"> Sidereal 恆星黃道</label>
+        <select id="ayanamsa-select" aria-label="Ayanamsa 歲差模型" disabled>
+          <option value="fagan_bradley">Fagan-Bradley</option>
+          <option value="hipparchos">Hipparchos</option>
+          <option value="sassanian">Sassanian</option>
+          <option value="aldebaran_15_tau">Aldebaran 15° Tau</option>
+        </select>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>宮位制（單選）</legend>
+      <div class="row">
+        <label class="radio"><input type="radio" name="house_system" value="B"> Alcabitius</label>
+        <label class="radio"><input type="radio" name="house_system" value="R"> Regiomontanus</label>
+        <label class="radio"><input type="radio" name="house_system" value="W" checked> Whole Sign</label>
+        <label class="radio"><input type="radio" name="house_system" value="P"> Placidus</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>天文輸出</legend>
+      <div class="row">
+        <label class="checkbox"><input type="checkbox" id="opt-fixed-stars" checked> 恆星位置</label>
+        <label class="checkbox"><input type="checkbox" id="opt-lunar-phases"> 前後朔望弦＋出生前朔望</label>
+        <label class="checkbox"><input type="checkbox" id="opt-eclipses"> 出生前最近日食／月食</label>
+        <label class="checkbox"><input type="checkbox" id="opt-rise-set-transits"> 主要星體升降＋上下中天</label>
+      </div>
+    </fieldset>
+
+    <details class="advanced">
+      <summary>選配的幾何／方法計算（預設關閉）</summary>
+      <p class="advanced-note">
+        這些項目不是單純的星曆原始輸出，會涉及公式、門檻或古典占星方法選擇。
+        目前保留供研究與相容性使用，不代表方法已獲正式採用。
+      </p>
+      <div class="row">
+        <label class="checkbox"><input type="checkbox" id="opt-antiscia"> 對蹠點 (Antiscia，幾何轉換)</label>
+        <label class="checkbox"><input type="checkbox" id="opt-lots"> 阿拉伯點 (Fortune/Spirit)</label>
+        <label class="checkbox"><input type="checkbox" id="opt-voc"> 月空亡 (VOC)</label>
+        <label class="checkbox"><input type="checkbox" id="opt-declination-aspects"> 赤緯平行／反平行判定</label>
+      </div>
+    </details>
+
+    <details class="advanced">
+      <summary>進階天文設定／現代星體（預設不影響核心輸出）</summary>
+      <p class="advanced-note">
+        以下參數屬天文工程或現代星體範疇。維持預設值即為一般地心視位置計算；
+        調整這些選項可能產生彼此不相容的組合（例如日心行星配地心宮位），僅供研究或除錯使用。
+      </p>
+      <div class="row">
+        <span class="group-label">計算中心</span>
+        <label class="radio"><input type="radio" name="center" value="geocentric" checked> Geocentric 地心</label>
+        <label class="radio"><input type="radio" name="center" value="topocentric"> Topocentric 站心</label>
+        <label class="radio"><input type="radio" name="center" value="heliocentric"> Heliocentric 日心</label>
+        <label class="radio"><input type="radio" name="center" value="barycentric"> Barycentric 質心</label>
+      </div>
+      <div class="row">
+        <span class="group-label">位置</span>
+        <label class="radio"><input type="radio" name="position_mode" value="apparent" checked> Apparent 視位置</label>
+        <label class="radio"><input type="radio" name="position_mode" value="true"> True 真位置</label>
+        <span class="group-label">黃道參考框架</span>
+        <label class="radio"><input type="radio" name="ecliptic_frame" value="of_date" checked> 當日黃道</label>
+        <label class="radio"><input type="radio" name="ecliptic_frame" value="j2000"> J2000</label>
+        <label class="checkbox"><input type="checkbox" id="nutation" checked> 章動(Nutation)</label>
+      </div>
+      <div class="row">
+        <span class="group-label">視高度折射參數</span>
+        <label>氣壓 hPa（留空＝依海拔估算；必須大於 0）
+          <span class="requirement optional">選填</span>
+          <input type="number" id="pressure-hpa" min="0.01" max="1100" step="0.01" placeholder="自動"
+                 autocomplete="off" data-sensitive-input>
+        </label>
+        <label>溫度 °C
+          <span class="requirement optional">選填，預設 0</span>
+          <input type="number" id="temperature-c" min="-100" max="60" step="0.1"
+                 autocomplete="off" data-sensitive-input>
+        </label>
+      </div>
+      <div class="row">
+        <label class="checkbox"><input type="checkbox" id="opt-outer"> 外行星 (天王/海王/冥王，非古典)</label>
+      </div>
+    </details>
+
+    <div class="form-actions">
+      <div class="form-action-copy">
+        <p>送出後會依「天文資料、幾何轉換、方法判定」分層顯示。</p>
+        <p class="transient-privacy-note hidden" data-profile-only="local">
+          暫時工作階段：App 不使用瀏覽器儲存。清除不會撤回你已複製到剪貼簿或已下載的檔案。
+        </p>
+        <div id="hosted-trust-notice" class="trust-notice hidden" data-profile-only="private_alpha">
+          <p class="trust-notice-status">信任與隱私重點</p>
+          <p>
+            僅限受邀測試；不建立 account database。出生日期時間、時區與精確座標經 HTTPS
+            傳至 Infomaniak 瑞士 VPS，只用於這次 chart／dossier 計算；application 不持久化
+            request／response、不加入 analytics 或第三方 telemetry，且
+            <code>/api/chart</code> 不產生 application access log。
+          </p>
+          <p>
+            NGINX access log 關閉且不把原始IP傳給application；provider與Internet網路仍會處理
+            連線metadata。RAM、clipboard與下載檔不能安全抹除。請只輸入你有權使用的資料；
+            本工具不是醫療、法律、財務或其他專業建議。完整限制見下方。
+          </p>
+        </div>
+      </div>
+      <div class="form-action-buttons">
+        <button id="clear-results-button" class="clear-btn" type="button">清除計算結果</button>
+        <button id="panic-clear-button" class="clear-btn danger" type="button">清除本頁敏感資料</button>
+        <button id="calculate-button" type="submit" disabled>
+          <span class="submit-label">載入中</span><span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div id="privacy-status" class="privacy-status hidden" role="status" aria-live="polite"></div>
+  <div id="error-box" class="error hidden" role="alert"></div>
+  <details id="privacy-notice" class="advanced privacy-notice hidden" data-profile-only="local">
+    <summary>目前本機版的資料流與限制</summary>
+    <p>
+      出生資料只在目前頁面的 browser memory、同源 <code>POST /api/chart</code> request、
+      本機計算 process 與 response 中處理；目前路徑不使用出生資料資料庫、request cache 或
+      background queue。canonical launcher 關閉 Uvicorn access log，application event 只接受
+      固定欄位。
+    </p>
+    <p>
+      App 不自動使用 browser storage API 保存出生資料。清除本頁敏感資料會清空 App 仍控制的
+      表單、結果、錯誤、匯出狀態與暫存 URL；清除無法撤回已寫入剪貼簿或已完成的下載，也不代表
+      RAM、browser history、crash restore 或作業系統副本已安全抹除。
+    </p>
+    <p>
+      本機頁面不證明未來host的proxy、CDN、hosting、telemetry、jurisdiction或E2EE share邊界；
+      Private Alpha的已選政策與待真實host驗證事項請見其專用說明。既有Claude coverage queue
+      已關閉，但這不是security approved、安全或法規認證。
+    </p>
+  </details>
+  <details id="hosted-privacy-notice" class="advanced privacy-notice hidden" data-profile-only="private_alpha">
+    <summary>Private Alpha 的資料流、保留與限制</summary>
+    <p>
+      每位受邀者使用獨立、可撤銷、無識別性的HTTP Basic credential；伺服器只保存bcrypt hash，
+      不建立account database、自助註冊、email或忘記密碼系統。出生資料會存在目前頁面的
+      browser memory、同源 <code>POST /api/chart</code> request、application process memory與
+      response；application不把chart request／response放入database、request cache、
+      background queue或檔案。
+    </p>
+    <p>
+      服務部署於Infomaniak瑞士VPS；其一般條款對客戶傳送資料承諾使用自有瑞士資料中心。
+      Host NGINX關閉access log，且不把原始IP或forwarded-IP headers交給application；
+      <code>/api/chart</code>跳過application access event。服務不使用analytics、Sentry、
+      APM或遠端log forwarding。DNS、ACME、Internet transit與provider仍可能處理IP及連線metadata，
+      所以本服務不宣稱「所有metadata都只在瑞士」或「零第三方接觸」。
+    </p>
+    <p>
+      部署政策停用host及container swap、core dump、自動backup／snapshot與出生資料Volume；
+      journald最多保留7日且50 MiB，只接收封閉營運欄位。這些控制必須在每台真實host以verifier及
+      privacy canary重驗。清除本頁敏感資料可清空App仍控制的表單、結果、錯誤、匯出狀態與暫存URL；
+      無法安全抹除RAM，也無法撤回clipboard、browser download、extension、provider incident copy
+      或使用者建立的外部副本。
+    </p>
+    <p>
+      AGPL Corresponding Source 發布於
+      <a href="https://github.com/sa3952/Project-Armillary"
+         target="_blank" rel="noopener noreferrer">Project Armillary 原始碼 repository</a>；
+      每次部署另記錄 exact Git revision 並提供 release source archive。Calculation Dossier 是計算
+      trace 與方法揭露，不是外部正確性、security 或法規認證；本工具也不構成醫療、法律、財務或
+      其他專業建議。
+    </p>
+  </details>
+  <section id="results-region" aria-labelledby="results-title">
+    <div class="workspace-intro results-heading">
+      <div>
+        <p class="section-kicker">02 · OUTPUT</p>
+        <h2 id="results-title">計算結果</h2>
+      </div>
+      <p>每個結果區段可獨立複製，也可由同一份 Calculation Dossier 下載 CSV、JSON、純文字或 AI-friendly Markdown。</p>
+    </div>
+    <div id="results" class="hidden" aria-live="polite"></div>
+  </section>
+</main>
+
+<script src="privacy-lifecycle.js?v=0.8.0-alpha-ux0-a11y1"></script>
+<script src="exporters.js?v=0.8.0-alpha-ux0-a11y1"></script>
+<script src="client-context.js?v=0.8.0-alpha-ux0-a11y1"></script>
+<script src="app.js?v=0.8.0-alpha-ux0-a11y1"></script>
+</body>
+</html>

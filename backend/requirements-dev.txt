@@ -1,0 +1,5 @@
+# 開發/測試用依賴，不隨production部署安裝。
+-r requirements.txt
+pytest==9.1.1
+httpx2==2.7.0
+hypothesis==6.161.5
