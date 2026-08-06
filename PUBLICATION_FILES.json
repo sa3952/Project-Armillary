@@ -67,8 +67,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "sha256": "85085de850e8e2c6fed8aa59aa8f1439cf756bdaad61e5835ba30a400d68f442",
-      "size_bytes": 2938
+      "sha256": "d2b4e708eaa6282ccc7de07553fa2cb4c33d2a4b6d6ebbacd8d736829c13e782",
+      "size_bytes": 3731
     },
     {
       "path": "backend/app/__init__.py",

@@ -56,10 +56,30 @@ this notice and the licence text, but it does not carry the lockfiles, the
 source manifest, or the vendored upstream archives; those live in the source
 distribution.
 
-Obtaining that source is a separate obligation and is not yet stated here: the
-public location is pending (`PIA-2026-08-06-011`). Until it is published and
-verified anonymously reachable, this notice deliberately does not name a URL
-rather than name one that does not resolve.
+## Obtaining the Corresponding Source
+
+The Corresponding Source for this service is published at:
+
+    https://github.com/sa3952/Project-Armillary
+
+No account is required and no credential is involved; the repository is
+readable anonymously.
+
+**Do not guess which revision a given deployment was built from.** The service
+reports it. The release identity returned by the running service, and the
+`public_source_revision` field of the frontend release manifest, each name a
+40-character commit. Read that exact tree at:
+
+    https://github.com/sa3952/Project-Armillary/tree/<public_source_revision>
+
+The revision matters because this notice ships inside an image that does not
+carry the lockfiles, the source manifest, or the vendored upstream archives.
+Those live only in the source tree above, and they differ between revisions.
+
+This section previously said the public location was pending, and deliberately
+named no URL rather than name one that did not resolve. The location above was
+published and confirmed anonymously reachable before this paragraph replaced
+it.
 
 ## Other dependencies
 
