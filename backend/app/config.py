@@ -24,11 +24,90 @@ OUTER_BODIES = [
     {"key": "pluto", "zh": "冥王星", "id": swe.PLUTO},
 ]
 
-# 南北交點
-NODE_BODIES = [
-    {"key": "true_node", "zh": "北交點(真)", "id": swe.TRUE_NODE},
-    {"key": "mean_node", "zh": "北交點(平)", "id": swe.MEAN_NODE},
+# 現代小天體。與三王星分開設選項，避免「include_outer_planets」在不知情下
+# 擴張成另一套物件集合。這些物件不自動加入古典方法或相位參與者。
+MODERN_MINOR_BODIES = [
+    {
+        "key": "chiron",
+        "zh": "凱龍星",
+        "id": swe.CHIRON,
+        "calculation_source": "swiss_ephemeris_minor_planet",
+        "method_classification": "modern_body_not_classical_planet",
+    },
 ]
+
+# CMP-A6（Sebastian 2026-08-04，方案三）。這些是月球軌道遠近地點，不是
+# 物理天體，也不是小行星 1181 Lilith。Natural Priapus 必須用 Swiss 的
+# INTP_PERG 獨立計算；Swiss 文件明示 natural apogee/perigee 通常不精確對沖。
+LUNAR_APSIDES = [
+    {
+        "key": "mean_lilith",
+        "zh": "平均黑月莉莉絲",
+        "id": swe.MEAN_APOG,
+        "expose_swiss_body_id": True,
+        "calculation_source": "swiss_ephemeris_mean_lunar_apogee",
+        "method_classification": "modern_research_lunar_apsis_not_physical_body",
+        "naming_note": (
+            "Swiss Ephemeris mean lunar apogee; astrological Mean Black Moon "
+            "Lilith, not asteroid 1181 Lilith"
+        ),
+    },
+    {
+        "key": "natural_lilith",
+        "zh": "自然／插值月球遠地點（Lilith）",
+        "id": swe.INTP_APOG,
+        "expose_swiss_body_id": True,
+        "calculation_source": (
+            "swiss_ephemeris_interpolated_natural_lunar_apogee"
+        ),
+        "method_classification": "modern_research_lunar_apsis_not_physical_body",
+        "naming_note": (
+            "Swiss Ephemeris interpolated/natural lunar apogee; not the "
+            "osculating point marketed as True Lilith"
+        ),
+    },
+    {
+        "key": "natural_priapus",
+        "zh": "自然／插值月球近地點（Priapus）",
+        "id": swe.INTP_PERG,
+        "expose_swiss_body_id": True,
+        "calculation_source": (
+            "swiss_ephemeris_interpolated_natural_lunar_perigee"
+        ),
+        "method_classification": "modern_research_lunar_apsis_not_physical_body",
+        "naming_note": (
+            "Swiss Ephemeris interpolated/natural lunar perigee (Priapus); "
+            "independently calculated, not Lilith plus 180 degrees"
+        ),
+    },
+]
+
+# 南北交點
+#
+# 標籤刻意不用「真交點」。Swiss Ephemeris 自己的文件說得很清楚：
+#   "In the strict sense of the word, even the 'true' nodes are true only twice a
+#    month, viz. at the times when the Moon crosses the ecliptic."
+#   "There are no planetary nodes or apsides ... that really deserve the label
+#    'true'. ... It is more appropriate to call them 'osculating'."
+# 所謂真交點是密切軌道(osculating orbit)的交點：把此刻的瞬時軌道當成兩體問題來解，
+# 只在月亮實際穿越黃道的那兩個時刻為真，其餘時間是數學構造。它在平均交點附近振盪
+# ±約 1.29°、週期約半年，每年數次短暫順行——那個順行是模型產物，不是天象。
+#
+# Sebastian 2026-08-03 裁決（MTH-Q-008 甲）：**正式技法採平均交點**，
+# 理由是古代與中世紀的交點一律出自平均運動表（Ptolemy《Handy Tables》、印度 siddhānta），
+# 真交點在現代計算能力出現前不可得；本產品定位為古典西洋占星。
+# 兩者仍並列輸出，因為差距達 1°–1.5°，讀者有權看到。
+# 見 RES-MTH-SOURCES-2026-08-03 §3。
+#
+# API 鍵值 true_node 維持不變以保相容；顯示標籤改為如實描述。
+NODE_BODIES = [
+    {"key": "true_node", "zh": "北交點(密切)", "id": swe.TRUE_NODE},
+    {"key": "mean_node", "zh": "北交點(平均)", "id": swe.MEAN_NODE},
+]
+
+# 需要單一交點的技法一律採此者（MTH-Q-008 甲 裁決）。
+# 目前沒有任何技法消費交點；本常數是為日後的技法預先固定選擇。
+FORMAL_TECHNIQUE_NODE_KEY = "mean_node"
 
 # 古典占星常引用的恆星（名稱需與 sefstars.txt 內拼寫完全一致，大小寫不拘）
 FIXED_STARS = [

@@ -317,3 +317,137 @@ def test_request_boundary_never_starts_second_response_after_late_oversize():
             "headers": [],
         }
     ]
+
+
+def test_hosted_chart_rejects_a_declared_empty_body_as_a_framing_fault():
+    """An empty body is a framing fault, not twelve missing fields.
+
+    Content-Length: 0 previously passed this boundary and failed inside
+    Pydantic, so the caller got a 422 enumerating every required field.  That
+    answer describes the schema instead of the actual fault, and it leaks the
+    shape of the request model to a caller who sent nothing at all.  Body
+    framing is this boundary's own contract, so it answers here.
+    """
+    with _hosted_client() as client:
+        response = client.post(
+            "/api/chart",
+            content=b"",
+            headers={"Content-Type": "application/json", "Content-Length": "0"},
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "empty_request_body"
+
+
+def test_compute_capacity_refusal_is_bounded_rather_than_an_open_ended_stall():
+    """Overload must degrade into refusals, not into a wedged process.
+
+    _COMPUTE_LOCK serialises every calculation, which is required for
+    correctness: FastAPI runs sync endpoints on a threadpool and the Swiss
+    ephemeris C library keeps its topocentre and ayanamsa as process-global
+    state, so concurrent threads would quietly contaminate each other's
+    results.  The lock is right.  The unbounded wait in front of it was not:
+    a few expensive requests could hold every other caller indefinitely.
+    """
+    import threading
+
+    from app import main
+
+    assert main._COMPUTE_LOCK_WAIT_TIMEOUT_SECONDS > 0
+
+    # Hold the lock from another thread, exactly as a long calculation would.
+    main._COMPUTE_LOCK.acquire()
+    try:
+        with pytest.raises(main.ComputeCapacityExhaustedError):
+            # Shorten the budget so the test does not actually wait 20 seconds;
+            # the behaviour under test is "refuses after the budget", not the
+            # specific number.
+            original = main._COMPUTE_LOCK_WAIT_TIMEOUT_SECONDS
+            main._COMPUTE_LOCK_WAIT_TIMEOUT_SECONDS = 0.05
+            try:
+                main.compute_chart(object())
+            finally:
+                main._COMPUTE_LOCK_WAIT_TIMEOUT_SECONDS = original
+    finally:
+        main._COMPUTE_LOCK.release()
+
+    # The lock is released again for the next caller: a refusal must not leave
+    # the lock held, which would turn a transient overload into a permanent one.
+    assert main._COMPUTE_LOCK.acquire(timeout=1.0)
+    main._COMPUTE_LOCK.release()
+    assert threading.active_count() >= 1
+
+
+# --------------------------------------------------------------------------
+# FPI-2026-08-06-E-014
+# --------------------------------------------------------------------------
+
+def _compose_pids_limit() -> int:
+    from pathlib import Path
+    import re
+
+    text = (
+        Path(__file__).resolve().parents[2] / "deploy" / "compose.yaml"
+    ).read_text(encoding="utf-8")
+    match = re.search(r"^\s*pids_limit:\s*(\d+)\s*$", text, re.MULTILINE)
+    assert match, "compose.yaml no longer declares pids_limit"
+    return int(match.group(1))
+
+
+def _dockerfile_worker_count() -> int:
+    from pathlib import Path
+    import re
+
+    text = (
+        Path(__file__).resolve().parents[2] / "deploy" / "Dockerfile"
+    ).read_text(encoding="utf-8")
+    match = re.search(r'"--workers",\s*"(\d+)"', text)
+    assert match, "Dockerfile no longer pins a worker count"
+    return int(match.group(1))
+
+
+def test_e014_pids_limit_covers_the_capacity_this_service_declares():
+    """The pids cgroup counts threads as tasks, and every endpoint here is a
+    sync `def` served from the AnyIO thread pool.
+
+    Measured with production flags, each worker reaches AnyIO's default
+    40-thread ceiling rather than the application's own 32 + 4 boundary,
+    because threads are reused and released lazily. The limit has to cover
+    that, plus one main thread per worker, plus the supervisor, the
+    multiprocessing resource tracker, the `init: true` process and the
+    healthcheck subprocess.
+    """
+
+    import anyio
+    import anyio.to_thread
+
+    async def _pool_size() -> int:
+        return int(
+            anyio.to_thread.current_default_thread_limiter().total_tokens
+        )
+
+    per_worker_threads = anyio.run(_pool_size)
+    workers = _dockerfile_worker_count()
+    # main thread per worker, supervisor, resource tracker, init, healthcheck
+    overhead = workers + 4
+    required = workers * per_worker_threads + overhead
+
+    assert _compose_pids_limit() >= required, (
+        f"pids_limit {_compose_pids_limit()} is below the {required} tasks "
+        f"{workers} workers can reach at {per_worker_threads} pool threads "
+        "each; either raise the limit or lower the declared capacity"
+    )
+
+
+def test_e014_the_declared_request_capacity_still_fits_under_the_limit():
+    """Adjacent control: raising the limit must not be allowed to hide a
+    capacity increase that outgrows it again."""
+
+    from app.request_limits import (
+        MAX_HOSTED_COMPUTE_REQUESTS_PER_WORKER,
+        MAX_HOSTED_REQUESTS_PER_WORKER,
+    )
+
+    workers = _dockerfile_worker_count()
+    declared = MAX_HOSTED_REQUESTS_PER_WORKER + MAX_HOSTED_COMPUTE_REQUESTS_PER_WORKER
+    assert workers * (declared + 1) + workers + 4 <= _compose_pids_limit()

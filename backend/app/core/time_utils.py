@@ -104,6 +104,7 @@ def compute_time_conversion(
     trace: Trace,
     *,
     require_explicit_fold: bool = False,
+    input_semantics: str = "exact_birth_time",
 ) -> dict:
     utc_dt, offset_hours, tz_label, dst_warning = _to_utc_datetime(
         dt_input,
@@ -199,12 +200,17 @@ def compute_time_conversion(
             "均時差(分鐘)": round(eq_of_time_minutes, 4),
             "真太陽時(參考)": true_solar_dt.strftime("%Y-%m-%d %H:%M:%S"),
         },
-        note="此為輔助資訊，出生時刻仍以使用者輸入之時鐘時間為準",
+        note=(
+            "此為輔助資訊，出生時刻以使用者輸入之精確時鐘時間為準"
+            if input_semantics == "exact_birth_time"
+            else "此為輔助資訊；本次時鐘值只是代表計算錨點，不是實際出生時刻"
+        ),
     )
 
     return {
         "input_local_time": f"{dt_input.year:04d}-{dt_input.month:02d}-{dt_input.day:02d} "
                              f"{dt_input.hour:02d}:{dt_input.minute:02d}:{dt_input.second:05.2f}",
+        "input_semantics": input_semantics,
         "timezone_label": tz_label,
         "utc_offset_hours": offset_hours,
         "utc_time": utc_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],

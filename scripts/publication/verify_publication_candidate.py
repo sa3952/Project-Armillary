@@ -6,11 +6,20 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
+import stat
 import subprocess
 import sys
 import tarfile
+import tempfile
 from pathlib import Path
+
+from scripts.publication.prepare_third_party_sources import (
+    SourcePreparationError,
+    render_dependency_license_table,
+    verify_manifest_lock_inputs,
+)
 
 
 TEXT_SUFFIXES = {
@@ -50,6 +59,11 @@ SECRET_PATTERNS = {
 }
 LITERAL_REMOTE_URL = re.compile(r"https?://", re.IGNORECASE)
 PUBLIC_FILE_INVENTORY = "PUBLICATION_FILES.json"
+RECONSTRUCTION_PLATFORM = "linux/amd64"
+RECONSTRUCTION_BUILDER_IMAGE = (
+    "python:3.13.14-trixie@"
+    "sha256:153e964bee18ef816ff55c8b026a345c62d4ccf05ad119ce5d7c10dee79574d7"
+)
 
 
 class CandidateFailure(RuntimeError):
@@ -79,6 +93,184 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _candidate_snapshot(root: Path) -> dict[str, tuple[object, ...]]:
+    """Capture content, type and mode for every candidate entry.
+
+    Only the candidate's own top-level Git administrative directory is
+    excluded.  A nested ``.git`` path is publication payload and must remain
+    observable.
+    """
+    snapshot: dict[str, tuple[object, ...]] = {}
+    for path in root.rglob("*"):
+        relative = path.relative_to(root)
+        if relative.parts and relative.parts[0] == ".git":
+            continue
+        metadata = path.lstat()
+        mode = stat.S_IMODE(metadata.st_mode)
+        rendered = relative.as_posix()
+        if stat.S_ISLNK(metadata.st_mode):
+            snapshot[rendered] = ("symlink", mode, os.readlink(path))
+        elif stat.S_ISREG(metadata.st_mode):
+            snapshot[rendered] = (
+                "file",
+                mode,
+                metadata.st_size,
+                _sha256(path),
+            )
+        elif stat.S_ISDIR(metadata.st_mode):
+            snapshot[rendered] = ("directory", mode)
+        else:
+            snapshot[rendered] = ("special", mode, metadata.st_mode)
+    return snapshot
+
+
+def _verify_docker_context_without_candidate_side_effects(root: Path) -> None:
+    before = _candidate_snapshot(root)
+    with tempfile.TemporaryDirectory(
+        prefix="publication-verifier-pycache-"
+    ) as pycache:
+        child_environment = os.environ.copy()
+        child_environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        child_environment["PYTHONPYCACHEPREFIX"] = pycache
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "scripts.verification.verify_docker_context",
+                "--check",
+            ],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+            env=child_environment,
+        )
+    if completed.returncode:
+        detail = (completed.stderr or completed.stdout).strip()
+        raise CandidateFailure(f"closed Docker context failed: {detail}")
+
+    # The child is the final executable boundary.  Re-run the manifest check
+    # afterwards, then compare every candidate file byte-for-byte with the
+    # pre-child snapshot.  This catches both undeclared cache files and edits
+    # to declared inputs.
+    _verify_public_file_inventory(root)
+    after = _candidate_snapshot(root)
+    if after != before:
+        added = sorted(after.keys() - before.keys())
+        removed = sorted(before.keys() - after.keys())
+        changed = sorted(
+            path for path in before.keys() & after.keys() if before[path] != after[path]
+        )
+        raise CandidateFailure(
+            "candidate changed during verification: "
+            f"added={added}, removed={removed}, changed={changed}"
+        )
+
+
+def _reconstruction_script(mode: str) -> str:
+    common = r'''
+set -eu
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+export PIP_NO_CACHE_DIR=1
+export PYTHONDONTWRITEBYTECODE=1
+python -m venv /work/venv
+VENV=/work/venv/bin
+export PATH="$VENV:$PATH"
+'''
+    if mode == "online-clean":
+        install = r'''
+"$VENV/pip" install --require-hashes \
+  --requirement /candidate/backend/requirements-dev.lock
+'''
+    elif mode == "offline-source-only":
+        install = r'''
+"$VENV/pip" install --no-index \
+  --find-links=/candidate/third_party/build_wheels \
+  --require-hashes \
+  --requirement /candidate/deploy/build-requirements.lock
+"$VENV/pip" install --no-index \
+  --find-links=/candidate/third_party/dependency_wheels \
+  --find-links=/candidate/third_party/sources \
+  --only-binary=:all: --no-binary=pyswisseph \
+  --no-build-isolation --require-hashes \
+  --requirement /candidate/backend/requirements-dev.lock
+'''
+    else:
+        raise CandidateFailure(f"unsupported reconstruction mode: {mode}")
+    # This gate runs linux/amd64 under QEMU on the current arm64 verifier.
+    # The concurrency test has a product timeout and is replayed in the native
+    # fresh-environment gate; including it here tests emulation speed, not the
+    # dependency reconstruction invariant.
+    test_filter = "-k 'not test_concurrent_requests_do_not_cross_contaminate'"
+    checks = rf'''
+cd /candidate
+PYTHONPATH=.:backend "$VENV/python" -m pytest \
+  -p no:cacheprovider \
+  tests/backend/test_chart_api.py \
+  tests/backend/test_calculation_dossier.py -q {test_filter}
+"$VENV/python" -m scripts.verification.build_sbom \
+  --output deploy/sbom.cyclonedx.json --check
+PYTHONPATH=.:backend "$VENV/python" -m uvicorn \
+  app.main:create_app --factory --app-dir /candidate/backend \
+  --host 127.0.0.1 --port 8765 --no-access-log >/work/server.log 2>&1 &
+server_pid=$!
+trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+"$VENV/python" -c 'import json,time,urllib.request
+for attempt in range(100):
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8765/api/health", timeout=1) as response:
+            assert response.status == 200
+            payload = json.load(response)
+            assert payload["status"] == "ok"
+            assert payload["ready"] is True
+            break
+    except Exception:
+        if attempt == 99: raise
+        time.sleep(0.1)'
+kill "$server_pid"
+wait "$server_pid" || true
+trap - EXIT
+'''
+    return common + install + checks
+
+
+def verify_dependency_reconstruction(
+    root: Path,
+    *,
+    mode: str,
+    builder_image: str,
+) -> None:
+    if not builder_image or any(character.isspace() for character in builder_image):
+        raise CandidateFailure("builder image identity is missing or unsafe")
+    completed = subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--platform",
+            RECONSTRUCTION_PLATFORM,
+            "--network",
+            "none" if mode == "offline-source-only" else "bridge",
+            "--volume",
+            f"{root.resolve()}:/candidate:ro",
+            "--tmpfs",
+            "/work:exec,size=4g",
+            builder_image,
+            "sh",
+            "-c",
+            _reconstruction_script(mode),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode:
+        detail = (completed.stderr + "\n" + completed.stdout).strip()
+        raise CandidateFailure(
+            f"{mode} dependency reconstruction failed: {detail[-8000:]}"
+        )
 
 
 def _load_json(path: Path) -> dict:
@@ -256,7 +448,12 @@ def verify_candidate(root: Path) -> None:
         "backend/ephe/sepl_18.se1",
         "deploy/Dockerfile",
         "deploy/requirements.lock",
-        "frontend/index.html",
+        "deploy/sbom.cyclonedx.json",
+        "backend/requirements.lock",
+        "backend/requirements-dev.lock",
+        "deploy/build-requirements.lock",
+        "docs/DEPENDENCY_LICENSES.md",
+        "frontend/zh-TW/index.html",
         "third_party/SOURCE_MANIFEST.json",
         "third_party/SHA256SUMS",
         "third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz",
@@ -302,6 +499,10 @@ def verify_candidate(root: Path) -> None:
     source_manifest = _load_json(files["third_party/SOURCE_MANIFEST.json"])
     if source_manifest.get("complete") is not True:
         raise CandidateFailure("third-party source manifest is incomplete")
+    if source_manifest.get("reconstruction_complete") is not True:
+        raise CandidateFailure(
+            "third-party source manifest lacks the verified build wheel index"
+        )
     packages = source_manifest.get("packages", [])
     if not packages:
         raise CandidateFailure("third-party source manifest is empty")
@@ -316,13 +517,62 @@ def verify_candidate(root: Path) -> None:
                 f"source archive hash mismatch for {package['name']}"
             )
         _verify_license_files(archive, package)
+    try:
+        verify_manifest_lock_inputs(
+            source_manifest,
+            {
+                "production": files["deploy/requirements.lock"],
+                "build": files["deploy/build-requirements.lock"],
+                "development": files["backend/requirements-dev.lock"],
+            },
+        )
+        expected_license_table = render_dependency_license_table(
+            source_manifest
+        )
+    except SourcePreparationError as exc:
+        raise CandidateFailure(str(exc)) from exc
+    if (
+        files["docs/DEPENDENCY_LICENSES.md"].read_text(encoding="utf-8")
+        != expected_license_table
+    ):
+        raise CandidateFailure(
+            "human-readable dependency license table has drifted"
+        )
     source_paths = {
         f"sources/{package['filename']}" for package in packages
     }
+    build_wheel_index = source_manifest.get("build_wheel_index")
+    if not isinstance(build_wheel_index, dict) or build_wheel_index.get(
+        "complete"
+    ) is not True:
+        raise CandidateFailure("verified build wheel index is missing")
+    build_wheel_paths = set()
+    for artifact in build_wheel_index.get("artifacts", []):
+        relative = f"build_wheels/{artifact['filename']}"
+        path = root / "third_party" / relative
+        if not path.is_file() or _sha256(path) != artifact.get("sha256"):
+            raise CandidateFailure(
+                f"build wheel index mismatch for {artifact.get('filename')}"
+            )
+        build_wheel_paths.add(relative)
+    dependency_wheel_index = source_manifest.get("dependency_wheel_index")
+    if not isinstance(
+        dependency_wheel_index, dict
+    ) or dependency_wheel_index.get("complete") is not True:
+        raise CandidateFailure("verified dependency wheel index is missing")
+    dependency_wheel_paths = set()
+    for artifact in dependency_wheel_index.get("artifacts", []):
+        relative = f"dependency_wheels/{artifact['filename']}"
+        path = root / "third_party" / relative
+        if not path.is_file() or _sha256(path) != artifact.get("sha256"):
+            raise CandidateFailure(
+                f"dependency wheel index mismatch for {artifact.get('filename')}"
+            )
+        dependency_wheel_paths.add(relative)
     _verify_sha256sums(
         root / "third_party",
         files["third_party/SHA256SUMS"],
-        source_paths,
+        source_paths | build_wheel_paths | dependency_wheel_paths,
     )
     _verify_sha256sums(
         root / "third_party" / "pyswisseph",
@@ -362,29 +612,33 @@ def verify_candidate(root: Path) -> None:
     if expected_copy not in dockerfile:
         raise CandidateFailure("Dockerfile does not use bundled pyswisseph")
 
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "scripts.verification.verify_docker_context",
-            "--check",
-        ],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode:
-        detail = (completed.stderr or completed.stdout).strip()
-        raise CandidateFailure(f"closed Docker context failed: {detail}")
+    _verify_docker_context_without_candidate_side_effects(root)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument(
+        "--reconstruction-mode",
+        choices=("online-clean", "offline-source-only"),
+    )
+    parser.add_argument(
+        "--builder-image",
+        default=RECONSTRUCTION_BUILDER_IMAGE,
+        help=(
+            "digest-pinned builder; defaults to the documented linux/amd64 "
+            "image containing the C toolchain required by pyswisseph"
+        ),
+    )
     args = parser.parse_args()
     try:
         verify_candidate(args.root)
+        if args.reconstruction_mode:
+            verify_dependency_reconstruction(
+                args.root,
+                mode=args.reconstruction_mode,
+                builder_image=args.builder_image,
+            )
     except (CandidateFailure, OSError, UnicodeError) as exc:
         print(f"PUBLICATION CANDIDATE FAILED: {exc}", file=sys.stderr)
         return 1

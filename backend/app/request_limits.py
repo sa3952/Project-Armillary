@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Final
+from typing import Final, Mapping
 
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -11,7 +11,22 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 MAX_CHART_REQUEST_BYTES: Final = 16 * 1024
 MAX_HOSTED_HEADER_BYTES: Final = 16 * 1024
-MAX_HOSTED_REQUESTS_PER_WORKER: Final = 4
+# Two pools, because the two classes of traffic fail for different reasons.
+#
+# The compute cap exists because a chart is an order of magnitude more
+# expensive than anything else this service does.  The general cap exists so
+# that concurrency is bounded at all, inside the application's own response
+# lifecycle.  Sharing one four-slot pool between them meant a page bootstrap -
+# a dozen parallel asset GETs - could exhaust the budget reserved for
+# computation and 503 its own stylesheet (`PIA-2026-08-06-001`).
+#
+# The general cap is sized so an ordinary bootstrap cannot reach it: the page
+# requests 12 assets, and a small number of tabs must still fit.  It is not
+# "unlimited" - an unbounded static path would just move the exhaustion into
+# the worker's event loop, where a rejection could no longer carry the
+# application's security headers or closed telemetry.
+MAX_HOSTED_REQUESTS_PER_WORKER: Final = 32
+MAX_HOSTED_COMPUTE_REQUESTS_PER_WORKER: Final = 4
 _CHART_PATH: Final = "/api/chart"
 _BOUNDED_JSON_PATHS: Final = frozenset(
     {
@@ -19,6 +34,50 @@ _BOUNDED_JSON_PATHS: Final = frozenset(
         "/api/places/search",
     }
 )
+
+
+class ApiMethodBoundary:
+    """Return an RFC-compliant ``Allow`` header for known API paths.
+
+    The frontend is mounted at ``/`` after the API routes.  Starlette's static
+    mount can therefore answer an unsupported method before the partial API
+    route gets a chance to construct its normal 405 response.  Keep the
+    method map explicit and profile-specific rather than exposing a generic
+    router introspection surface.
+    """
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        route_methods: Mapping[str, frozenset[str]],
+    ) -> None:
+        self.app = app
+        self.route_methods = dict(route_methods)
+
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope.get("type") == "http":
+            path = scope.get("path")
+            method = scope.get("method")
+            # An ASGI scope always carries a path, but the type says otherwise;
+            # treating a missing one as "no declared methods" keeps the boundary
+            # closed rather than crashing inside the lookup.
+            methods = (
+                self.route_methods.get(path) if isinstance(path, str) else None
+            )
+            if methods is not None and method not in methods:
+                await JSONResponse(
+                    status_code=405,
+                    headers={"Allow": ", ".join(sorted(methods))},
+                    content={"detail": "Method Not Allowed"},
+                )(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
 
 
 class _RequestBodyTooLarge(Exception):
@@ -37,8 +96,18 @@ class RequestCapacityBoundary:
 
     Uvicorn's ``--limit-concurrency`` rejects below ASGI, so those responses
     cannot receive application security headers or closed telemetry.  Keeping
-    the same per-worker cap here preserves bounded concurrency while making
-    every rejection traverse the application's reviewed response lifecycle.
+    the per-worker caps here preserves bounded concurrency while making every
+    rejection traverse the application's reviewed response lifecycle.
+
+    Each request occupies exactly one pool, chosen by path: the expensive JSON
+    endpoints draw on the compute pool, everything else on the general pool.
+    One request never holds both, so saturating either class leaves the other
+    class answering normally.
+
+    Residual, deliberately not fixed here: place search and chart share the
+    compute pool, so a search burst can still delay a chart.  Both are already
+    bounded and no observed failure separates them; splitting a third pool
+    without that evidence would be speculation (CG-08).
     """
 
     def __init__(
@@ -46,12 +115,17 @@ class RequestCapacityBoundary:
         app: ASGIApp,
         *,
         max_concurrent: int = MAX_HOSTED_REQUESTS_PER_WORKER,
+        max_compute_concurrent: int = MAX_HOSTED_COMPUTE_REQUESTS_PER_WORKER,
     ) -> None:
         if max_concurrent <= 0:
             raise ValueError("max_concurrent must be positive")
+        if max_compute_concurrent <= 0:
+            raise ValueError("max_compute_concurrent must be positive")
         self.app = app
         self.max_concurrent = max_concurrent
+        self.max_compute_concurrent = max_compute_concurrent
         self._active = 0
+        self._active_compute = 0
         self._lock = threading.Lock()
 
     async def __call__(
@@ -64,13 +138,20 @@ class RequestCapacityBoundary:
             await self.app(scope, receive, send)
             return
 
+        compute = scope.get("path") in _BOUNDED_JSON_PATHS
         with self._lock:
-            if self._active >= self.max_concurrent:
-                accepted = False
+            if compute:
+                accepted = self._active_compute < self.max_compute_concurrent
+                if accepted:
+                    self._active_compute += 1
             else:
-                self._active += 1
-                accepted = True
+                accepted = self._active < self.max_concurrent
+                if accepted:
+                    self._active += 1
         if not accepted:
+            # One reason code for both pools: the client's recovery is the
+            # same either way, and an unconsumed second code would be a field
+            # with no consumer (CG-11).
             await _error_response(
                 503,
                 "request_capacity_exhausted",
@@ -82,7 +163,10 @@ class RequestCapacityBoundary:
             await self.app(scope, receive, send)
         finally:
             with self._lock:
-                self._active -= 1
+                if compute:
+                    self._active_compute -= 1
+                else:
+                    self._active -= 1
 
 
 def _header_values(scope: Scope, name: bytes) -> list[bytes]:
@@ -224,6 +308,17 @@ class ChartRequestBoundary:
                 413,
                 "request_body_too_large",
                 "請求內容超過 16 KiB 上限。",
+            )(scope, receive, send)
+            return
+        if content_length == 0:
+            # A declared empty body reaches Pydantic as a JSON parse failure and
+            # comes back as a 422 listing every missing field, which describes
+            # the schema rather than the actual fault.  The body framing is this
+            # boundary's own contract, so it answers for it here.
+            await _error_response(
+                400,
+                "empty_request_body",
+                "此端點需要 JSON 請求內容，但 Content-Length 為 0。",
             )(scope, receive, send)
             return
 

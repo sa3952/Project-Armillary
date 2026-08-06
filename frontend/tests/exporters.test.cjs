@@ -1,13 +1,24 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
-const Exporters = require("../exporters.js");
+const Exporters = require("../zh-TW/exporters.js");
+const compatibilityFixture = JSON.parse(
+  fs.readFileSync(
+    path.join(__dirname, "fixtures", "response-compatibility.json"),
+    "utf8"
+  )
+);
 
+// 版本一律取自 response-compatibility.json 的 accepted 組合，不在此重複字面值。
+// 這兩個字串曾各自釘死在 0.10.0／0.3.2，而契約已走到 0.13.0／0.6.0，
+// 使八個與版本無關的 serializer 測試一起變紅。單一出處讓它不會再漂第二次。
 function fixture() {
   const response = {
-    schema_version: "0.9.0",
+    schema_version: compatibilityFixture.accepted.api_schema_version,
     calculation_dossier: {
-      dossier_version: "0.3.0",
+      dossier_version: compatibilityFixture.accepted.dossier_version,
       authority: "backend-authored calculation receipt",
       input_receipt: {
         datetime: { year: 1997, month: 8, day: 17, hour: 9, minute: 42, second: 0 },
@@ -77,11 +88,54 @@ test("one canonical document keeps the dossier, raw precision, and display secti
   assert.equal(document.export_contract_version, "0.1.2");
   assert.equal(document.calculation_dossier, response.calculation_dossier);
   assert.equal(document.source_response, response);
-  assert.deepEqual(document.sections, sections);
+  // 正規化會補上預設收據狀態；沒有 status 的 section 一律視為「已計算」。
+  assert.deepEqual(
+    document.sections,
+    sections.map((section) => ({
+      ...section,
+      status: {
+        state: "present",
+        label: Exporters.SECTION_STATES.present,
+        reason_code: "",
+      },
+    }))
+  );
   assert.equal(
     document.source_response.astronomical_data.bodies[0].longitude,
     321.123456789
   );
+});
+
+test("compatibility fixture accepts only the supported API and Dossier pair", () => {
+  const { response, sections } = fixture();
+  const accepted = compatibilityFixture.accepted;
+  response.schema_version = accepted.api_schema_version;
+  response.calculation_dossier.dossier_version = accepted.dossier_version;
+
+  const document = Exporters.createDocument(response, sections);
+  assert.equal(
+    document.export_contract_version,
+    accepted.export_contract_version
+  );
+
+  compatibilityFixture.rejected.forEach((entry) => {
+    const rejectedResponse = structuredClone(response);
+    if (entry.api_schema_version === null) {
+      delete rejectedResponse.schema_version;
+    } else {
+      rejectedResponse.schema_version = entry.api_schema_version;
+    }
+    if (entry.dossier_version === null) {
+      delete rejectedResponse.calculation_dossier.dossier_version;
+    } else {
+      rejectedResponse.calculation_dossier.dossier_version =
+        entry.dossier_version;
+    }
+    assert.throws(
+      () => Exporters.createDocument(rejectedResponse, sections),
+      /不相容|缺少.*版本/
+    );
+  });
 });
 
 test("section and full copy are rendered from the canonical section model", () => {
@@ -93,7 +147,12 @@ test("section and full copy are rendered from the canonical section model", () =
   assert.match(sectionText, /時間轉換/);
   assert.match(sectionText, /項目\t數值/);
   assert.match(sectionText, /UTC\t1997-08-17T01:42:00\.000Z/);
-  assert.match(fullText, /Calculation Dossier 0\.3\.0/);
+  assert.ok(
+    fullText.includes(
+      `Calculation Dossier ${compatibilityFixture.accepted.dossier_version}`
+    ),
+    "全文複製必須印出目前 accepted 的 Dossier 版本"
+  );
   assert.match(fullText, /TEST_WARNING/);
   assert.match(fullText, /木星, Jupiter/);
   assert.match(fullText, /"latitude": 24\.1477/);
@@ -236,4 +295,313 @@ test("download action returns an explicit failure instead of claiming success", 
     ok: false,
     error_message: "simulated Blob delivery failure",
   });
+});
+
+// ── PIA-2026-08-06-002 ───────────────────────────────────────
+// Markdown 允許 raw HTML，所以未經處理的自由文字在支援 HTML 的 renderer
+// 裡就是 active content。匯出物是 L1、會脫離脈絡流傳，因此 escaping 是
+// serializer 自己的契約責任，不能倚賴「目前 schema 剛好沒有自由文字」。
+
+function hostileDocument(payload) {
+  const { response } = fixture();
+  return {
+    export_contract_version: Exporters.EXPORT_CONTRACT_VERSION,
+    source_response: response,
+    calculation_dossier: response.calculation_dossier,
+    sections: [{
+      id: "probe",
+      title: `標題 ${payload}`,
+      layer_label: `層級 ${payload}`,
+      status: { state: "present" },
+      notes: [`備註 ${payload}`],
+      tables: [{
+        title: `表格標題 ${payload}`,
+        columns: ["欄位", "值"],
+        rows: [["地點標籤", payload]],
+      }],
+      blocks: [],
+    }],
+  };
+}
+
+test("markdown escapes HTML metacharacters on every free-text surface", () => {
+  const markdown = Exporters.renderMarkdown(
+    hostileDocument('<img src=x onerror=alert(1)>')
+  );
+
+  assert.ok(!markdown.includes("<img"), "raw <img 進入了 Markdown");
+  assert.ok(!markdown.includes("onerror=alert(1)>"), "raw HTML 尾端仍在");
+  // 四個面都要涵蓋：先前只有表格儲存格被討論，標題／備註／表格標題同樣沒防。
+  for (const surface of ["## 標題", "**層級：**", "> 備註", "### 表格標題"]) {
+    const line = markdown.split("\n").find((l) => l.startsWith(surface));
+    assert.ok(line, `找不到 ${surface} 這一行`);
+    assert.match(line, /&lt;img/, `${surface} 沒有被 escape`);
+  }
+});
+
+test("markdown escaping does not double-encode an ampersand", () => {
+  // & 必須先換。若順序反了，`<` 會變成 `&amp;lt;`，使用者看到的是亂碼。
+  const markdown = Exporters.renderMarkdown(hostileDocument("A & B < C"));
+  assert.ok(markdown.includes("A &amp; B &lt; C"), markdown.slice(0, 400));
+  assert.ok(!markdown.includes("&amp;lt;"), "重複編碼");
+});
+
+test("markdown keeps legitimate text and table structure intact", () => {
+  // 反向控制：一個把所有東西都吃掉的 escaper 也會讓上面兩個測試通過。
+  const markdown = Exporters.renderMarkdown(hostileDocument("台中 24.1469"));
+  assert.match(markdown, /## 標題 台中 24\.1469/);
+  assert.match(markdown, /\| 地點標籤 \| 台中 24\.1469 \|/);
+  assert.ok(markdown.includes("| --- | --- |"), "表格分隔列不見了");
+});
+
+test("json and csv are unchanged by the markdown escaping", () => {
+  // 相鄰控制：escaping 只屬於 Markdown serializer，不得滲進其他格式。
+  const document = hostileDocument('<img src=x>');
+  assert.ok(Exporters.renderJson(document).includes('<img src=x>'),
+    "JSON 應保存原始位元組，不做 HTML escaping");
+  assert.ok(Exporters.renderCsv(document).includes('<img src=x>'),
+    "CSV 的守衛是 formula hardening，不是 HTML escaping");
+});
+
+// ══ FPI-2026-08-06 盲審 findings ═══════════════════════════════════════
+//
+// E-008 與 E-009 目前都**不可觸發**：`authority` 是後端硬編碼字串，
+// 進入儲存格的自由文字也不含 tab 或換行。列為 finding 而非略過，是因為
+// `AGENTS.md` §3A 明文禁止「因為目前 schema 沒有自由文字就假設未來安全」
+// 這條推理——而那正是這兩處原本依賴的推理。測試以合成的敵意輸入證明
+// serializer 自己就守得住，不依賴上游剛好乾淨。
+
+test("E-008：Markdown 的 authority 與 UTC 兩個插值點都經過 escape", () => {
+  const { response } = fixture();
+  response.calculation_dossier.authority = "<script>alert(1)</script> & more";
+  response.calculation_dossier.time_conversion.utc_iso_8601 = "1997`x`Z";
+  const markdown = Exporters.renderMarkdown(
+    Exporters.createDocument(response, [])
+  );
+
+  const authorityLine = markdown
+    .split("\n")
+    .find((line) => line.startsWith("- Authority:"));
+  assert.ok(authorityLine, "Authority 行不見了");
+  assert.ok(
+    authorityLine.includes("&lt;script&gt;"),
+    `authority 未經 escape 就插入 Markdown：${authorityLine}`
+  );
+  // 文件末端的 dossier JSON code fence 內仍是原值，那是刻意的：fence 內不解析
+  // Markdown，且那份 JSON 就是要逐字重現後端回應。這裡只查散文插值點。
+  assert.ok(!authorityLine.includes("<script>"));
+  // inline code span 內的反引號會提早關閉 span，後面的文字就落在 code 之外。
+  const utcLine = markdown
+    .split("\n")
+    .find((line) => line.startsWith("- UTC:"));
+  assert.ok(utcLine, "UTC 行不見了");
+  const fenceMatch = utcLine.match(/`+/);
+  assert.ok(
+    fenceMatch[0].length >= 2,
+    `UTC 的 code span 沒有避開內容裡的反引號：${utcLine}`
+  );
+});
+
+test("E-008：blocks 的 fence 依內容加長，內容撐不破它", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "hostile",
+      title: "測試區段",
+      blocks: ["```\n偽造的區段外文字\n```"],
+    },
+  ]);
+  const markdown = Exporters.renderMarkdown(document);
+
+  const lines = markdown.split("\n");
+  const opening = lines.findIndex((line) => /^`{4,}text$/.test(line));
+  assert.ok(
+    opening >= 0,
+    "含 ``` 的 block 仍使用三個反引號的 fence，內容可以逃出去"
+  );
+});
+
+test("E-008：一般內容仍使用三個反引號（相鄰控制）", () => {
+  const document = Exporters.createDocument(fixture().response, [
+    {
+      id: "plain",
+      title: "一般區段",
+      blocks: ["沒有反引號的內容"],
+    },
+  ]);
+  const markdown = Exporters.renderMarkdown(document);
+  assert.ok(markdown.includes("```text\n沒有反引號的內容\n```"));
+});
+
+test("E-009：TSV 在儲存格邊界中和 tab 與換行", () => {
+  const section = {
+    id: "tsv",
+    title: "測試表",
+    tables: [
+      {
+        title: "含惡意字元",
+        columns: ["欄一", "欄二"],
+        rows: [["a\tb", "c\nd"]],
+      },
+    ],
+  };
+  const document = Exporters.createDocument(fixture().response, [section]);
+  const text = Exporters.renderSectionText(document.sections[0]);
+
+  const dataLine = text
+    .split("\n")
+    .find((line) => line.startsWith("a"));
+  assert.ok(dataLine, "資料列不見了");
+  assert.equal(
+    dataLine.split("\t").length,
+    2,
+    `儲存格內的 tab 多切出一欄：${JSON.stringify(dataLine)}`
+  );
+  assert.ok(
+    !dataLine.includes("\n"),
+    "儲存格內的換行把一列拆成兩列"
+  );
+});
+
+test("E-009：不含這些字元的表格逐字不變（相鄰控制）", () => {
+  const section = {
+    id: "clean",
+    title: "測試表",
+    tables: [
+      {
+        columns: ["天體", "黃經"],
+        rows: [["太陽", "23°26′31.79″"]],
+      },
+    ],
+  };
+  const document = Exporters.createDocument(fixture().response, [section]);
+  const text = Exporters.renderSectionText(document.sections[0]);
+  assert.ok(text.includes("天體\t黃經"));
+  assert.ok(text.includes("太陽\t23°26′31.79″"));
+});
+
+// ══ Codex 複審打回的兩項 ═══════════════════════════════════════════════
+//
+// 兩項都是我上一輪修得**不完整**，不是判準嚴苛：E-008 我 escape 了三個插值點
+// 漏掉第四個，E-009 我處理了 `\r\n` 卻漏掉單獨的 `\r`。
+
+test("E-008：reason_code 的 code span 不會被內容裡的反引號提前關閉", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "s",
+      title: "測試區段",
+      status: {
+        state: "executed_unavailable",
+        reason_code: "alpha`偽造散文`omega",
+      },
+      tables: [],
+      notes: [],
+      blocks: [],
+    },
+  ]);
+  const line = Exporters.renderMarkdown(document)
+    .split("\n")
+    .find((row) => row.startsWith("**狀態：**"));
+
+  assert.ok(line, "狀態行不見了");
+  // 反引號成對才代表 span 沒有被撐開；奇數個必然有一段內容落在 span 之外。
+  const backticks = (line.match(/`/g) || []).length;
+  assert.equal(
+    backticks % 2,
+    0,
+    `code span 被內容裡的反引號提前關閉：${line}`
+  );
+  assert.ok(!/`偽造散文`/.test(line.replace(/^.*?（原因代碼 /, "")) ||
+    /``+/.test(line), `分隔沒有加長：${line}`);
+});
+
+test("E-008：一般 reason_code 仍使用單一反引號（相鄰控制）", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "s",
+      title: "測試區段",
+      status: { state: "not_requested", reason_code: "house_not_requested" },
+      tables: [],
+      notes: [],
+      blocks: [],
+    },
+  ]);
+  const line = Exporters.renderMarkdown(document)
+    .split("\n")
+    .find((row) => row.startsWith("**狀態：**"));
+  assert.ok(line.includes("`house_not_requested`"), line);
+});
+
+test("E-009：單獨的 CR 也在儲存格邊界被中和", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "t",
+      title: "測試表",
+      tables: [{ columns: ["A", "B"], rows: [["left\rright", "ok"]] }],
+      notes: [],
+      blocks: [],
+    },
+  ]);
+  const text = Exporters.renderSectionText(document.sections[0]);
+
+  // 試算表把裸 CR 當成 record separator，所以它自己就能拆列。
+  assert.ok(!text.includes("\r"), `裸 CR 仍在輸出中：${JSON.stringify(text)}`);
+  const dataLine = text.split("\n").find((row) => row.startsWith("left"));
+  assert.equal(dataLine.split("\t").length, 2, dataLine);
+});
+
+test("E-009：CRLF 與 LF 仍如既有行為被折成空白（相鄰控制）", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "t",
+      title: "測試表",
+      tables: [{ columns: ["A"], rows: [["a\r\nb"], ["c\nd"]] }],
+      notes: [],
+      blocks: [],
+    },
+  ]);
+  const text = Exporters.renderSectionText(document.sections[0]);
+  assert.ok(text.includes("a b"), text);
+  assert.ok(text.includes("c d"), text);
+});
+
+test("E-023：Markdown 表格儲存格的裸 CR 也轉成 <br>", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "t",
+      title: "測試表",
+      tables: [{ columns: ["A", "B"], rows: [["left\rright", "ok"]] }],
+      notes: [],
+      blocks: [],
+    },
+  ]);
+  const row = Exporters.renderMarkdown(document)
+    .split("\n")
+    .find((line) => line.includes("left"));
+
+  assert.ok(row, "資料列不見了");
+  assert.ok(!row.includes("\r"), `裸 CR 仍在表格列中：${JSON.stringify(row)}`);
+  assert.ok(row.includes("left<br>right"), row);
+});
+
+test("E-023：CRLF 只產生一個 <br>（相鄰控制）", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "t",
+      title: "測試表",
+      tables: [{ columns: ["A"], rows: [["a\r\nb"], ["c\nd"]] }],
+      notes: [],
+      blocks: [],
+    },
+  ]);
+  const markdown = Exporters.renderMarkdown(document);
+  assert.ok(markdown.includes("a<br>b"), "CRLF 應折成單一 <br>");
+  assert.ok(markdown.includes("c<br>d"));
+  assert.ok(!markdown.includes("<br><br>"), "CRLF 被算成兩次換行");
 });

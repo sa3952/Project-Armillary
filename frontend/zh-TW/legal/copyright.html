@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>著作權與原始碼｜渾儀 Armillary</title>
+<link rel="icon" href="/zh-TW/favicon.svg">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/zh-TW/">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="16"/>
+        <ellipse cx="20" cy="20" rx="16" ry="4.5"/>
+        <ellipse cx="20" cy="20" rx="16" ry="8" transform="rotate(-32 20 20)" class="mark-ecliptic"/>
+        <ellipse cx="20" cy="20" rx="5" ry="16"/>
+        <line x1="20" y1="4" x2="20" y2="36" transform="rotate(-18 20 20)"/>
+      </svg>
+      <span>渾儀<small>ARMILLARY</small></span>
+    </a>
+    <nav class="site-nav" aria-label="主要導覽">
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/about">關於</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap page-body">
+  <div class="eyebrow">法律 · LEGAL</div>
+  <h1>著作權與開源授權</h1>
+  <p class="draft-flag"><strong>本文尚未經合格法律查核，Sebastian 亦尚未逐字審閱。</strong>
+  原始碼 repository 的位置已裁決並列於下表；<strong>release 原始碼封存檔與 checksum 尚未產生</strong>，
+  該 repository 目前的可見性與內容也尚未逐項核對。</p>
+  <p class="lede">本服務以 <strong>GNU Affero General Public License v3</strong> 授權。</p>
+  <p><strong>你正在使用的這一版，它的完整對應原始碼可以取得。</strong>下面是位置與版本識別碼。</p>
+
+  <section>
+    <h2>取得本次部署的原始碼</h2>
+    <table class="log">
+      <thead><tr><th>項目</th><th>值</th></tr></thead>
+      <tbody>
+        <tr><td>公開原始碼 repository</td><td><a href="https://github.com/sa3952/Project-Armillary" rel="noopener noreferrer">github.com/sa3952/Project-Armillary</a></td></tr>
+        <tr class="mark"><td><strong>本次部署的版本識別碼</strong></td><td><span class="todo">由後端提供，40 位十六進位字串</span></td></tr>
+        <tr><td>對應的 release 原始碼封存檔</td><td><span class="todo">待填 URL</span></td></tr>
+        <tr><td>封存檔 checksum</td><td><span class="todo">待填 SHA-256</span></td></tr>
+      </tbody>
+    </table>
+    <p><strong>這個識別碼不是手打上去的。</strong>它由發布流程注入容器，同時寫進映像標籤與應用程式設定；容器啟動檢查會核對兩者一致。</p>
+    <p><strong>範圍：</strong>它是發布可追溯性的強化，<strong>不單獨證明</strong>簽出是乾淨的、原始碼提供是完整的，或已符合 AGPL 的全部義務。</p>
+  </section>
+
+  <section>
+    <h2>線上跑的是哪一版：不要從程式庫推定</h2>
+    <p>後端會持續更新。<strong>線上正在執行的版本，不必然等於公開程式庫的最新版本。</strong></p>
+    <p>AGPL 第 13 條要求你能取得的，是<strong>你正在互動的那一版</strong>的對應原始碼，不是程式庫當下的最新狀態。</p>
+    <p>所以：<strong>以上表的識別碼為準，也以你那次計算卷宗裡的版本識別碼為準。</strong>兩者應該一致；若不一致，那是我們的錯誤，請通知我們。</p>
+    <p><strong>我們自己也不從程式庫的最新提交推定線上版本。</strong></p>
+  </section>
+
+  <section>
+    <h2>AGPL v3 說明</h2>
+    <p>本服務使用 Swiss Ephemeris 與 pyswisseph，並採 AGPL v3 路線（Swiss Ephemeris 為雙重授權；<strong>本專案不使用其 Professional License</strong>）。</p>
+    <p>依 AGPL 第 13 條，透過網路與本服務互動的使用者，應能取得本服務所執行版本的對應原始碼。提供範圍包含：程式碼、build 與安裝腳本、鎖定檔、介面定義，以及形成並執行該版本所需的對應原始碼。</p>
+    <p><strong>不在提供範圍內的：</strong>私人開發歷程、內部審查報告、工作紀錄，以及與執行中服務無關的內部研究。這些不因「對應原始碼」一詞而自動成為發布範圍。</p>
+    <p>但<strong>實際部署所需的原始碼不得為了保持私密而漏發</strong>——發布集合以部署映像的實際內容與 AGPL 的定義判斷。</p>
+  </section>
+
+  <section>
+    <h2>Swiss Ephemeris</h2>
+    <ul>
+      <li>Swiss Ephemeris，Copyright © 1997–2021 Astrodienst AG, Switzerland</li>
+      <li>作者：Dieter Koch、Alois Treindl</li>
+      <li>本服務使用 <code>pyswisseph 2.10.3.2</code>（Swiss Ephemeris 2.10.03）</li>
+      <li>內建星曆檔基於 JPL DE441，由 Astrodienst 建立</li>
+    </ul>
+    <p>原始的著作權與授權聲明、以及對應的原始碼散布，保存於 release 的原始碼封存檔中。</p>
+    <p><strong>Astrodienst、作者與著作權人並未控制本衍生服務。</strong>此處列名僅為授權要求的姓名標示，<strong>不表示他們為本服務背書。</strong></p>
+  </section>
+
+  <section>
+    <h2>資料集</h2>
+    <dl class="legal-terms">
+      <dt>全球地名</dt>
+      <dd>GeoNames <code>cities500</code> 衍生快照。姓名標示：GeoNames（<code>geonames.org</code>）。授權：Creative Commons Attribution 4.0 International。</dd>
+
+      <dt>台灣地名</dt>
+      <dd>政府資料開放平臺所列的行政區域與聚落地名資料，依政府資料開放授權條款第 1 版使用。資料提供機關以發布清單的實際欄位為準。</dd>
+
+      <dt>時區資料</dt>
+      <dd>IANA 時區資料庫。本服務記錄所使用的版本並寫進卷宗；時區規則會隨各國法規變動而更新。</dd>
+    </dl>
+    <p>地名座標是<strong>代表點</strong>，不保證到地址等級、不保證即時、不保證完整正確。使用資料集不表示資料提供者為本服務或任何占星結果背書。</p>
+  </section>
+
+  <section>
+    <h2>其他開源相依套件</h2>
+    <p>生產與建置相依套件的確切版本與雜湊值固定於鎖定檔；另有一份標準格式的<strong>軟體物料清單</strong>列出實際組成。第三方原始碼封存檔、雜湊、授權與上游位置記於獨立清單。</p>
+    <p>各套件的 MIT、BSD、PSF、Apache 或其他授權的聲明與條件<strong>分別適用</strong>，不因本頁的總述而被取代。</p>
+    <p>相依套件、星曆檔與時區資料庫三者<strong>各有自己的更新節奏與驗證步驟</strong>，不共用一套流程。</p>
+    <p><span class="todo">待接：完整的第三方聲明清單，由發布流程依鎖定檔與物料清單逐項產生。</span></p>
+  </section>
+
+  <section>
+    <h2>你的資料與計算結果</h2>
+    <p>你合法提供的出生資料，以及你自行產生或保存的匯出檔，<strong>不因使用本服務而移轉所有權。</strong></p>
+    <p>計算所得的客觀數值本身是否受著作權保護，依適用法律判斷；<strong>本服務不藉條款對不可受保護的事實主張排他權利。</strong></p>
+    <p>產品輸出中的<strong>歷史尊貴表</strong>（界、面、三分性、廟旺）是古代文本的轉錄。我們對這些數值不主張任何排他權利；每一套表都標明它的來源版本，<strong>包含我們是從一手文本還是從二手彙編取得的。</strong></p>
+  </section>
+
+  <section>
+    <h2>商標</h2>
+    <p>渾儀 Armillary、Astrodienst、Swiss Ephemeris、GeoNames、Python 及其他名稱與標誌，各歸其權利人所有。除授權明示者外，本頁不授與任何第三方商標的使用權，也不暗示合作或認證關係。</p>
+  </section>
+
+  <section>
+    <h2>官方依據</h2>
+    <ul>
+      <li>GNU Affero General Public License v3：<a href="https://www.gnu.org/licenses/agpl-3.0.en.html" rel="noreferrer">gnu.org/licenses/agpl-3.0.en.html</a></li>
+      <li>Swiss Ephemeris 授權：<a href="https://www.astro.com/swisseph/sweph_g.htm" rel="noreferrer">astro.com/swisseph/sweph_g.htm</a></li>
+      <li>CC BY 4.0：<a href="https://creativecommons.org/licenses/by/4.0/" rel="noreferrer">creativecommons.org/licenses/by/4.0/</a></li>
+      <li>政府資料開放授權條款：<a href="https://data.gov.tw/license" rel="noreferrer">data.gov.tw/license</a></li>
+    </ul>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap sitemap">
+    <div class="sitemap-col">
+      <h2>產品</h2>
+      <a href="/zh-TW/">首頁</a>
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/roadmap">路線</a>
+      <a href="/zh-TW/blog">文章</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>可查證性</h2>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>法律與聯絡</h2>
+      <a href="/zh-TW/legal/privacy">隱私政策</a>
+      <a href="/zh-TW/legal/terms">使用條款</a>
+      <a href="/zh-TW/legal/copyright">著作權與原始碼</a>
+      <a href="/zh-TW/contact">聯絡方式</a>
+      <a href="/zh-TW/about">關於</a>
+    </div>
+  </div>
+
+  <div class="wrap footer-rule"><span class="ring-strip" aria-hidden="true"></span></div>
+  <div class="wrap">
+    <span>渾儀 ARMILLARY</span>
+    <span>只計算，不解盤，不預測</span>
+    <span>/zh-TW/legal/copyright · L1 受託宣稱</span>
+  </div>
+</footer>
+
+</body>
+</html>

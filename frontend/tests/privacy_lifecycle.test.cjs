@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const PrivacyLifecycle = require("../privacy-lifecycle.js");
+const PrivacyLifecycle = require("../zh-TW/privacy-lifecycle.js");
 
 test("canonical document rejects arrays and preserves a valid object", () => {
   const lifecycle = PrivacyLifecycle.createSensitiveDataLifecycle({
@@ -125,4 +125,47 @@ test("releasing a Blob URL is idempotent and clear does not revoke it twice", ()
   lifecycle.clear();
 
   assert.deepEqual(revoked, ["blob:short-lived"]);
+});
+
+// ── PIA-2026-08-06-007 ───────────────────────────────────────
+// 送出後唯一會 abort 的入口是兩個清除鈕，而它們在第一次成功前不可達。
+// 新增的中止入口必須只停這一次請求，不得順手把已算出的結果一起收掉。
+
+test("aborting the active request stops it without clearing results", () => {
+  const lifecycle = PrivacyLifecycle.createSensitiveDataLifecycle({
+    revokeObjectUrl: () => {},
+  });
+  lifecycle.setCanonicalDocument({ export_contract_version: "0.1.2" });
+  const controller = new AbortController();
+  const token = lifecycle.beginRequest(controller);
+
+  assert.equal(lifecycle.abortActiveRequest(), true);
+  assert.equal(controller.signal.aborted, true);
+  assert.equal(lifecycle.isCurrentRequest(token), false, "遲到的回應仍被視為當前");
+  assert.equal(lifecycle.inspect().request_active, false);
+  // 這一項是與 clear() 的分界：中止不是清除。
+  assert.deepEqual(lifecycle.requireCanonicalDocument(),
+    { export_contract_version: "0.1.2" });
+});
+
+test("aborting when nothing is in flight reports that honestly", () => {
+  const lifecycle = PrivacyLifecycle.createSensitiveDataLifecycle({
+    revokeObjectUrl: () => {},
+  });
+  assert.equal(lifecycle.abortActiveRequest(), false);
+});
+
+test("a late response cannot revive itself after an abort", () => {
+  // generation 必須在 abort() 之前就失效，否則 abort() 丟例外時
+  // 遲到的回應會被當成當前結果填回畫面。
+  const lifecycle = PrivacyLifecycle.createSensitiveDataLifecycle({
+    revokeObjectUrl: () => {},
+  });
+  const hostile = {
+    signal: {},
+    abort() { throw new Error("abort refused"); },
+  };
+  const token = lifecycle.beginRequest(hostile);
+  assert.equal(lifecycle.abortActiveRequest(), true);
+  assert.equal(lifecycle.isCurrentRequest(token), false);
 });

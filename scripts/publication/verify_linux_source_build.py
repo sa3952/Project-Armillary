@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from typing import Any
 from pathlib import Path
 import platform
 import sys
@@ -37,7 +38,7 @@ def _one(paths: list[Path], description: str) -> Path:
     return paths[0]
 
 
-def verify(source_dir: Path, wheel_dir: Path) -> dict[str, object]:
+def verify(source_dir: Path, wheel_dir: Path) -> dict[str, Any]:
     if platform.system() != "Linux":
         raise RuntimeError("source-build proof must run on Linux")
     if platform.python_version() != EXPECTED_PYTHON:

@@ -47,6 +47,20 @@ names published by the Taiwan Ministry of the Interior.
 The overlay remains a separately attributed dataset. It does not imply that
 the Ministry of the Interior endorses this application.
 
+## Where the paths in this notice point
+
+Every repository path named in this document — including
+`third_party/pyswisseph/` above — is relative to the **Corresponding Source
+tree** of this service, not to the running container image. The image ships
+this notice and the licence text, but it does not carry the lockfiles, the
+source manifest, or the vendored upstream archives; those live in the source
+distribution.
+
+Obtaining that source is a separate obligation and is not yet stated here: the
+public location is pending (`PIA-2026-08-06-011`). Until it is published and
+verified anonymously reachable, this notice deliberately does not name a URL
+rather than name one that does not resolve.
+
 ## Other dependencies
 
 Exact production and build dependencies are pinned with hashes in:

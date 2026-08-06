@@ -83,9 +83,12 @@ def build_baseline(
     )
     schema_versions = sorted(
         {
-            response.get("schema_version")
+            # Bound once so the isinstance narrowing reaches the element. Calling
+            # .get() twice left the set typed as Any | None even though the guard
+            # already excluded None.
+            version
             for response in responses
-            if isinstance(response.get("schema_version"), str)
+            if isinstance(version := response.get("schema_version"), str)
         }
     )
     return {
@@ -109,6 +112,9 @@ def build_baseline(
             "container_controls": controls,
         },
         "response_schema_versions": schema_versions,
+        # Travels with the file, because the file is published on its own and a
+        # provenance note kept anywhere else would not reach its readers.
+        "payload_provenance": runtime_gate.PAYLOAD_PROVENANCE,
         "payloads": payloads,
         "responses": responses,
     }

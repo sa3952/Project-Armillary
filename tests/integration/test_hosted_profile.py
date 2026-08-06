@@ -112,6 +112,57 @@ def test_local_profile_preserves_runtime_health_and_live_openapi():
     assert "/api/runtime-health" in schema.json()["paths"]
 
 
+def test_local_openapi_documents_runtime_failure_and_parser_boundary():
+    from app.main import create_app
+    from app.settings import AppProfile, AppSettings
+
+    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
+    with TestClient(local_app) as client:
+        schema = client.get("/openapi.json").json()
+
+    assert "400" in schema["paths"]["/api/chart"]["post"]["responses"]
+    assert "503" in schema["paths"]["/api/chart"]["post"]["responses"]
+    assert "400" in schema["paths"]["/api/places/search"]["post"]["responses"]
+    assert "503" in schema["paths"]["/api/places/search"]["post"]["responses"]
+    runtime_failure = schema["paths"]["/api/runtime-health"]["get"][
+        "responses"
+    ]["503"]["content"]["application/json"]["schema"]
+    assert runtime_failure == {
+        "$ref": "#/components/schemas/HostedBoundaryErrorResponse"
+    }
+    location_conditions = schema["components"]["schemas"]["LocationInput"][
+        "allOf"
+    ]
+    assert any(
+        condition.get("if", {}).get("properties", {})
+        .get("location_source", {})
+        .get("const")
+        == "geonames_cities500"
+        for condition in location_conditions
+    )
+    assert any(
+        condition.get("if", {}).get("not") == {"required": ["location_source"]}
+        for condition in location_conditions
+    )
+
+
+def test_api_method_rejections_keep_allow_header_before_static_mount():
+    from app.main import create_app
+    from app.settings import AppProfile, AppSettings
+
+    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
+    with TestClient(local_app) as client:
+        health = client.request("TRACE", "/api/health")
+        chart = client.request("TRACE", "/api/chart")
+        search = client.request("TRACE", "/api/places/search")
+        runtime = client.request("TRACE", "/api/runtime-health")
+
+    assert (health.status_code, health.headers.get("allow")) == (405, "GET")
+    assert (chart.status_code, chart.headers.get("allow")) == (405, "POST")
+    assert (search.status_code, search.headers.get("allow")) == (405, "POST")
+    assert (runtime.status_code, runtime.headers.get("allow")) == (405, "GET")
+
+
 def test_private_alpha_exposes_only_hosted_health_and_no_live_schema():
     from app.main import create_app
     from app.settings import AppSettings, AppProfile
@@ -170,6 +221,44 @@ def test_private_alpha_applies_noindex_headers_without_changing_local_profile():
         hosted_missing.headers["x-robots-tag"]
         == "noindex, nofollow, noarchive"
     )
+
+
+def test_frontend_uses_explicit_zh_tw_urls_and_does_not_keep_legacy_aliases():
+    """The first public URL shape must not silently drift when English is added."""
+    from app.main import create_app
+    from app.settings import AppSettings, AppProfile
+
+    application = create_app(AppSettings(profile=AppProfile.LOCAL))
+    with TestClient(application, follow_redirects=False) as client:
+        root = client.get("/")
+        localized = {
+            route: client.get(route)
+            for route in (
+                "/zh-TW/",
+                "/zh-TW/calculate",
+                "/zh-TW/features",
+                "/zh-TW/validation",
+                "/zh-TW/trust",
+                "/zh-TW/security",
+                "/zh-TW/roadmap",
+                "/zh-TW/blog",
+                "/zh-TW/about",
+                "/zh-TW/contact",
+                "/zh-TW/legal/privacy",
+                "/zh-TW/legal/terms",
+                "/zh-TW/legal/copyright",
+            )
+        }
+        legacy = {
+            route: client.get(route)
+            for route in ("/calculate", "/trust", "/legal/privacy")
+        }
+
+    assert root.status_code == 308
+    assert root.headers["location"] == "/zh-TW/"
+    assert all(response.status_code == 200 for response in localized.values())
+    assert all('lang="zh-TW"' in response.text for response in localized.values())
+    assert all(response.status_code == 404 for response in legacy.values())
 
 
 def test_private_alpha_static_openapi_is_generated_offline_not_served():
@@ -308,7 +397,7 @@ def test_numeric_fields_reject_boolean_and_string_coercion():
     assert string_response.status_code == 422
 
 
-def test_local_validation_errors_keep_existing_diagnostic_contract():
+def test_local_validation_errors_use_the_same_non_echoing_contract():
     from app.main import create_app
     from app.settings import AppSettings, AppProfile
 
@@ -320,7 +409,11 @@ def test_local_validation_errors_keep_existing_diagnostic_contract():
         response = client.post("/api/chart", json=payload)
 
     assert response.status_code == 422
-    assert any("input" in issue for issue in response.json()["detail"])
+    assert all("input" not in issue for issue in response.json()["detail"])
+    assert all(
+        set(issue) == {"type", "loc"}
+        for issue in response.json()["detail"]
+    )
 
 
 def test_private_alpha_known_errors_return_only_closed_code(monkeypatch):

@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-INDEX_HTML = PROJECT_ROOT / "frontend" / "index.html"
-APP_JS = PROJECT_ROOT / "frontend" / "app.js"
+INDEX_HTML = PROJECT_ROOT / "frontend" / "zh-TW" / "calculate.html"
+APP_JS = PROJECT_ROOT / "frontend" / "zh-TW" / "calculate.js"
 
 
 class _FormControlParser(HTMLParser):
@@ -150,10 +150,13 @@ def test_static_metadata_does_not_use_unsupported_aria_naming():
 def test_generated_table_headers_are_explicit_column_headers():
     script = APP_JS.read_text(encoding="utf-8")
 
-    assert 'el("th", { scope: "col", text: h })' in script
+    assert 'const th = document.createElement("th")' in script
+    assert 'th.scope = "col"' in script
+    assert "th.textContent = column" in script
 
 
 def test_horizontally_scrollable_generated_tables_are_keyboard_focusable():
     script = APP_JS.read_text(encoding="utf-8")
 
-    assert 'el("div", { class: "table-wrap", tabindex: "0" })' in script
+    assert 'wrap.className = "table-wrap"' in script
+    assert "wrap.tabIndex = 0" in script

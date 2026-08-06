@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM python:3.13.14-slim-trixie@sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91 AS builder
+FROM python:3.13.14-slim-trixie@sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251 AS builder
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK="1" \
     PIP_NO_CACHE_DIR="1" \
@@ -49,14 +49,16 @@ RUN --mount=type=secret,id=private_alpha_probe,required=true \
     python -c \
     'from pathlib import Path; probe=Path("/run/secrets/private_alpha_probe"); assert probe.is_file() and probe.stat().st_size > 0; Path("/release/buildkit-probe-consumed.json").write_text("{\"consumed\":true}\n", encoding="ascii")'
 
-FROM python:3.13.14-slim-trixie@sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91
+FROM python:3.13.14-slim-trixie@sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251
 
 ARG VCS_REF="uncommitted"
 LABEL org.opencontainers.image.title="Classical Astrology Private Alpha" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.source="public Git exact revision and release source archive"
+      org.opencontainers.image.source="public Git exact revision and release source archive" \
+      org.classical-astrology.frontend.mode="external-release-v1"
 
 ENV CLASSICAL_ASTROLOGY_PROFILE="private_alpha" \
+    CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE="1" \
     CLASSICAL_ASTROLOGY_SOURCE_REVISION="${VCS_REF}" \
     PATH="/opt/venv/bin:${PATH}" \
     PYTHONFAULTHANDLER="1" \
@@ -83,8 +85,8 @@ COPY --from=builder /release/buildkit-probe-consumed.json /app/release/
 COPY backend/app /app/backend/app
 COPY backend/ephe /app/backend/ephe
 COPY backend/place_data /app/backend/place_data
-COPY frontend /app/frontend
 COPY deploy/ephemeris.sha256 /app/deploy/ephemeris.sha256
+COPY deploy/frontend-contract.json /app/deploy/frontend-contract.json
 COPY deploy/entrypoint.sh /app/deploy/entrypoint.sh
 COPY deploy/container_healthcheck.py /app/deploy/container_healthcheck.py
 COPY scripts/verification/verify_ephemeris_integrity.py /app/scripts/verification/verify_ephemeris_integrity.py

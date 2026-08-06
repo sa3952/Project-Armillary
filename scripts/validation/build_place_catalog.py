@@ -6,13 +6,26 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import importlib
 import io
 import json
 import os
 from pathlib import Path
 import sqlite3
-import unicodedata
+import sys
 import zipfile
+
+# The backend package is not installed by the documented producer command,
+# which runs from repository root without an explicit PYTHONPATH. Add the
+# repository-relative backend package root, then
+# import the *same* runtime function under its one canonical module name; using
+# both ``app.*`` and ``backend.app.*`` makes mypy see one source file twice.
+_BACKEND_PACKAGE_ROOT = Path(__file__).resolve().parents[2] / "backend"
+if str(_BACKEND_PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_PACKAGE_ROOT))
+normalize_search_text = importlib.import_module(
+    "app.core.place_catalog"
+).normalize_search_text
 
 
 GEONAMES_SOURCE_URL = "https://download.geonames.org/export/dump/cities500.zip"
@@ -27,12 +40,6 @@ TAIWAN_SETTLEMENT_SOURCE_URL = (
     "AE5B85B6-0895-4D32-8027-1713F018A649/download"
 )
 GENERATOR_VERSION = "place-catalog-builder-v1"
-
-
-def normalize_search_text(value: str) -> str:
-    return " ".join(
-        unicodedata.normalize("NFKC", value).casefold().split()
-    )
 
 
 def _taiwan_character_variants(value: str) -> str:

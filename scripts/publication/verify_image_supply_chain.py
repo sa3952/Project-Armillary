@@ -123,6 +123,72 @@ def _db_status(grype: str) -> dict[str, Any]:
     }
 
 
+# A release that is genuinely old and genuinely vulnerable.  Nothing is
+# installed from it; it exists only inside a synthetic SBOM handed to Grype.
+POSITIVE_CONTROL_PACKAGE = ("django", "1.11.0")
+
+
+def _scanner_positive_control(grype: str, workspace: Path) -> dict[str, Any]:
+    """Prove the scanner can report a vulnerability before trusting a zero.
+
+    The database freshness check above bounds staleness, not effectiveness: an
+    empty database, a wrong scan target or a silently failed load all produce
+    a clean report, and a clean report is exactly the outcome this gate is
+    used to justify.  This repository already learned that lesson from secret
+    scanners — three of them stayed silent on AWS documentation keys, because
+    those keys are allowlisted — and `POSTMORTEM_6A` §4.4 records the rule
+    that a zero means nothing until the sink is shown to work.
+
+    The control feeds Grype a minimal SBOM naming one package with known
+    published advisories and requires at least one match.
+    """
+
+    name, version = POSITIVE_CONTROL_PACKAGE
+    control_sbom = workspace / "positive-control.sbom.json"
+    control_sbom.write_text(
+        json.dumps(
+            {
+                "bomFormat": "CycloneDX",
+                "specVersion": "1.5",
+                "version": 1,
+                "components": [
+                    {
+                        "type": "library",
+                        "name": name,
+                        "version": version,
+                        "purl": f"pkg:pypi/{name}@{version}",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    control_output = workspace / "positive-control.grype.json"
+    _run(
+        [
+            grype,
+            f"sbom:{control_sbom}",
+            "-o",
+            "json",
+            "--file",
+            str(control_output),
+        ]
+    )
+    report = json.loads(control_output.read_text(encoding="utf-8"))
+    found = len(report.get("matches", []))
+    if found < 1:
+        raise AuditFailure(
+            "vulnerability scanner positive control failed: Grype reported no "
+            f"match for {name} {version}. A clean scan of the real image "
+            "cannot be trusted while the scanner is provably blind."
+        )
+    return {
+        "package": f"{name}@{version}",
+        "matches": found,
+        "semantics": "a zero on the real image is only meaningful because this is non-zero",
+    }
+
+
 def _python_inventory(sbom: dict[str, Any]) -> set[str]:
     packages = set()
     for artifact in sbom.get("artifacts", []):
@@ -175,6 +241,7 @@ def main() -> int:
         grype_path = output / "grype.json"
         pip_audit_path = output / "pip-audit.json"
         _run([args.grype, "db", "update"])
+        positive_control = _scanner_positive_control(args.grype, output)
         _run(
             [
                 args.syft,
@@ -276,6 +343,7 @@ def main() -> int:
                 ).strip(),
             },
             "grype_database": database,
+            "scanner_positive_control": positive_control,
             "artifact_sha256": {
                 "syft_json": _sha256(sbom_path),
                 "spdx_json": _sha256(spdx_path),

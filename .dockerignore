@@ -58,17 +58,9 @@ frontend/tests/**
 !deploy/requirements.lock
 !deploy/build-requirements.lock
 !deploy/ephemeris.sha256
+!deploy/frontend-contract.json
 !deploy/entrypoint.sh
 !deploy/container_healthcheck.py
-
-!frontend/
-!frontend/app.js
-!frontend/client-context.js
-!frontend/exporters.js
-!frontend/favicon.svg
-!frontend/index.html
-!frontend/privacy-lifecycle.js
-!frontend/style.css
 
 !third_party/
 !third_party/pyswisseph/

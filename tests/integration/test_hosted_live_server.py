@@ -68,7 +68,9 @@ def _wait_until_ready(process: subprocess.Popen, base_url: str) -> None:
         try:
             status, body = _request(f"{base_url}/api/health")
             if status == 200:
-                assert json.loads(body) == {"status": "ok", "ready": True}
+                health = json.loads(body)
+                assert health["status"] == "ok"
+                assert health["ready"] is True
                 return
         except URLError:
             pass
@@ -220,4 +222,48 @@ def test_real_hosted_server_unexpected_error_is_generic_and_not_logged():
     assert CANARY not in output
     assert '"POST /api/chart HTTP/' not in output
     assert output.count('"route":"/api/chart"') == 1
+    assert "Traceback (most recent call last)" not in output
+
+
+def test_real_local_server_sanitizes_validation_input_and_nonfinite_numbers():
+    """The response boundary is private in local mode too, not only hosted."""
+
+    port = _unused_local_port()
+    environment = {**os.environ, PROFILE_ENV: "local"}
+    process = subprocess.Popen(
+        [
+            sys.executable, "-m", "uvicorn", "app.main:app", "--host",
+            "127.0.0.1", "--port", str(port), "--no-access-log",
+        ],
+        cwd=BACKEND_ROOT,
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    base_url = f"http://127.0.0.1:{port}"
+    coordinate = "25.0337891"
+    try:
+        _wait_until_ready(process, base_url)
+        wrong_type_payload = _payload()
+        wrong_type_payload["location"]["latitude"] = coordinate
+        wrong_type = _request(
+            f"{base_url}/api/chart",
+            body=json.dumps(wrong_type_payload).encode(),
+            content_type="application/json",
+        )
+        nonfinite_body = json.dumps(_payload()).replace("24.1477", "NaN", 1)
+        nonfinite = _request(
+            f"{base_url}/api/chart",
+            body=nonfinite_body.encode(),
+            content_type="application/json",
+        )
+    finally:
+        output = _stop_and_read(process)
+
+    assert wrong_type[0] == 422
+    assert nonfinite[0] == 422
+    assert coordinate not in wrong_type[1].decode()
+    assert "NaN" not in nonfinite[1].decode()
+    assert coordinate not in output
     assert "Traceback (most recent call last)" not in output

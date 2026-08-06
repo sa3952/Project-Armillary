@@ -74,19 +74,37 @@ class ComputationContext:
         return self.base_flags & ~swe.FLG_SIDEREAL
 
     def ayanamsa_value(self, jd_ut: float):
-        """回傳 swe.get_ayanamsa_ut() 的值，用於顯示與 houses.py/antiscia.py 的 sidereal 換算。
+        """回傳**本次計算實際套用**的 ayanamsa，供收據、houses.py 與 antiscia.py 使用。
 
-        已知的精度細節（實測+推導確認，非 bug）：get_ayanamsa_ut() 是相對「平均(mean)」
-        春分點定義的傳統 ayanamsa 數值；而 calc_ut() 搭配 FLG_SIDEREAL 算出的恆星黃經，
-        預設（章動=on）是相對「真(true/apparent)」春分點。兩者相差量精確等於當下的黃經
-        章動值（例：2000-01-01 04:00 UT 實測相差 13.93 角秒，與當時 nutation_longitude
-        完全吻合，見 tests/backend/test_chart_api.py 的 test_sidereal_antiscia_*）。
-        換算回 tropical 座標核對時會有這個量級（通常數角秒到二十角秒內）的殘差，屬於
-        章動慣例差異，不是換算公式錯誤，實務上遠小於任何占星技法會用到的容許誤差。
+        `FPI-2026-08-06-E-003`。這裡原本呼叫 `get_ayanamsa_ut()`，而那是相對**平**
+        春分點定義的傳統數值；`calc_ut(FLG_SIDEREAL)` 在章動開啟時輸出的恆星黃經卻是
+        相對**真**春分點。兩者相差恰為當下的黃經章動（實測 ±17.4 角秒內）。
+
+        舊 docstring 把這個差稱為章動慣例殘差、「遠小於任何占星技法的容許誤差」。
+        就「換算回 tropical 核對」而言那句話成立，但它沒有涵蓋這個函式的兩個實際用途：
+
+        1. **收據。** `astronomical_data.time.ayanamsa` 宣稱的是本次從星體黃經扣掉的
+           量。第三方拿它複算會差最多 17.4 角秒——這是可追溯性宣稱本身出錯，
+           不是精度問題，容許誤差的說法不適用。
+        2. **非整宮 sidereal 宮頭。** `houses.py` 以「tropical 宮頭 − 本值」求 sidereal
+           宮頭，而星體走 Swiss 原生 `FLG_SIDEREAL`。兩者相差同一個章動量，宮頭與星體
+           因此落在不同框架。落宮是硬邊界分類，±13 角秒就是一個約一秒出生時刻的翻宮窗；
+           「遠小於容許誤差」對分類邊界不成立。整宮制不受影響，它本來就走原生路徑。
+
+        `get_ayanamsa_ex_ut(jd, base_flags)` 回傳的正是同一組旗標下實際套用的值，實測與
+        「同天體同時刻的 tropical 減 sidereal 黃經」差 0.000000 角秒。改用它之後，
+        「tropical 宮頭 − ayanamsa」與原生 sidereal 宮頭在 P/R/B/A/C 各制皆完全相等，
+        三個下游後果（收據、宮頭、antiscia 的 2×ayanamsa）一次消除。
+
+        **這改變既有 sidereal 使用者的數值輸出**（≤17.4 角秒）並使 parity baseline 失效。
+        另一條路是保留平春分點值、改讓 houses 走原生 `FLG_SIDEREAL`，但那只修宮頭，
+        收據與 antiscia 仍不實。兩條路都不創設任何占星慣例；此處選擇「回報並套用同一個
+        實際值」，Sebastian 可另行裁決改採另一條。
         """
         if self.mode.zodiac != "sidereal":
             return None
-        return swe.get_ayanamsa_ut(jd_ut)
+        # 第二個回傳值才是 ayanamsa；第一個是回傳碼。
+        return swe.get_ayanamsa_ex_ut(jd_ut, self.base_flags)[1]
 
     def describe(self, trace: Trace, jd_ut: float):
         ayan = self.ayanamsa_value(jd_ut)

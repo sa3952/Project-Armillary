@@ -9,6 +9,16 @@
 from .trace import Trace
 
 SECT_METHOD_NAME = "sun_center_true_altitude_gt_zero_v1"
+# 古代來源（Paulus、Firmicus、Rhetorius 一系）只說太陽「在地上」(ὑπὲρ γῆν)，
+# **沒有任何來源規定太陽正好在地平附近時如何判定**。Robert Hand 的標準專論亦僅
+# 承認 twilight 是模糊地帶而未給解法。故本規則是本產品為求可重現而採的慣例，
+# 不是古典來源所規定者。見 RES-MTH-SOURCES-2026-08-03 §1。
+SECT_METHOD_PROVENANCE = "product_convention_no_classical_source_for_boundary"
+
+# 臨界容差（Sebastian 2026-08-03 裁決，MTH-Q-001 C2）：±50 角分。
+# 取此值的理由是文獻上唯一有物理意義的模糊寬度——大氣折射約 34′ 加太陽半徑 16′，
+# 故上緣初現（視日出）時太陽中心約在幾何地平下 50′；此區間換算成時間約 3–5 分鐘。
+SECT_NEAR_CRITICAL_DEGREES = 50.0 / 60.0
 LOTS_METHOD_NAME = "traditional_day_night_formula_v1"
 METHOD_STATUS = "provisional_pending_method_audit"
 
@@ -25,23 +35,39 @@ def determine_sect(sun_altitude_true, trace: Trace) -> dict:
             "method": SECT_METHOD_NAME,
             "method_status": METHOD_STATUS,
             "method_authority": None,
+        "method_provenance": SECT_METHOD_PROVENANCE,
             "is_day": None,
             "sun_altitude_used": None,
+            "near_critical": None,
+            "near_critical_tolerance_degrees": SECT_NEAR_CRITICAL_DEGREES,
         }
 
     is_day = sun_altitude_true > 0
+    near_critical = abs(sun_altitude_true) <= SECT_NEAR_CRITICAL_DEGREES
     trace.add(
         f"日夜盤判定 (Sect, method={SECT_METHOD_NAME})",
         formula="太陽地平真高度 > 0 → 日生盤；否則 → 夜生盤（採太陽中心，未計入蒙氣折射）",
         inputs={"太陽真高度": sun_altitude_true},
-        result={"盤性": "日生盤 (Day)" if is_day else "夜生盤 (Night)"},
+        result={
+            "盤性": "日生盤 (Day)" if is_day else "夜生盤 (Night)",
+            "臨近臨界": near_critical,
+        },
+        note=(
+            "⚠ 太陽高度在地平上下 50 角分內，屬日夜交界的模糊區間（約 3–5 分鐘）。"
+            "古典來源只規定太陽「在地上」，未規定此區間如何判定；本產品採幾何中心、"
+            "不計折射，是為求可重現而採的慣例。此盤的日夜判定對出生時刻高度敏感。"
+            if near_critical else ""
+        ),
     )
     return {
         "method": SECT_METHOD_NAME,
         "method_status": METHOD_STATUS,
         "method_authority": None,
+        "method_provenance": SECT_METHOD_PROVENANCE,
         "is_day": is_day,
         "sun_altitude_used": sun_altitude_true,
+        "near_critical": near_critical,
+        "near_critical_tolerance_degrees": SECT_NEAR_CRITICAL_DEGREES,
     }
 
 

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>安全｜渾儀 Armillary</title>
+<link rel="icon" href="/zh-TW/favicon.svg">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/zh-TW/">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="16"/>
+        <ellipse cx="20" cy="20" rx="16" ry="4.5"/>
+        <ellipse cx="20" cy="20" rx="16" ry="8" transform="rotate(-32 20 20)" class="mark-ecliptic"/>
+        <ellipse cx="20" cy="20" rx="5" ry="16"/>
+        <line x1="20" y1="4" x2="20" y2="36" transform="rotate(-18 20 20)"/>
+      </svg>
+      <span>渾儀<small>ARMILLARY</small></span>
+    </a>
+    <nav class="site-nav" aria-label="主要導覽">
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/about">關於</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap page-body">
+  <div class="eyebrow">安全 · SECURITY</div>
+  <h1>安全頁通常在說服你。<br>這一頁在告訴你邊界在哪。</h1>
+  <p class="lede">我們沒有第三方安全認證，沒有通過外部紅隊，沒有漏洞獎金計畫。</p>
+  <p>有的是：一組寫進程式、由失敗優先測試守著的限制；一台跑過驗證器與隱私探針的主機；以及一份誠實的「我們控制不了什麼」清單。</p>
+  <p><strong>三者分開列。混在一起的安全頁，等於沒有安全頁。</strong></p>
+
+  <section>
+    <h2>不儲存什麼</h2>
+    <p><strong>應用程式裡沒有可以存出生資料的地方。</strong>不是「我們選擇不存」，是<strong>沒有那個元件</strong>：</p>
+    <p>沒有帳號資料庫、沒有命盤資料庫、沒有工作階段儲存、沒有請求快取、沒有出生資料快取、沒有背景佇列。</p>
+    <p>完整的資料流：</p>
+    <pre class="flow">請求內容 → 請求範圍的資料模型 → 行程鎖底下的同步計算
+         → 回應 ＋ 計算卷宗 → 你的瀏覽器記憶體
+         → （只有你按下時）剪貼簿或下載檔案</pre>
+    <p><strong>這條路徑上沒有任何一步寫入磁碟。</strong>自動化守衛在計算請求期間攔截檔案寫入介面；只要請求路徑嘗試寫檔，<strong>測試就失敗</strong>。</p>
+    <p>唯一的資料庫是內建的地名目錄，以唯讀、不可變模式開啟。它不含帳號或出生資料，也不寫入搜尋字串。另有驗證器檢查它的雜湊、完整性、沒有寫入暫存附檔，以及唯讀執行策略。</p>
+    <p><strong>這說的是沒有主動寫入，不是安全抹除。</strong>計算期間資料存在於記憶體中，之後由執行環境回收。我們<strong>不宣稱</strong>能從記憶體、swap 或當機傾印中安全抹除任何東西。</p>
+  </section>
+
+  <section>
+    <h2>伺服器日誌裡有什麼</h2>
+    <p>每完成一個請求輸出一行事件，<strong>只能有這十個欄位</strong>：</p>
+    <table class="log">
+      <thead><tr><th>欄位</th><th>允許的值</th></tr></thead>
+      <tbody>
+        <tr><td>事件版本</td><td>固定字串</td></tr>
+        <tr><td>事件名稱</td><td>固定字串</td></tr>
+        <tr><td>請求 ID</td><td><strong>伺服器產生</strong>的 32 字元十六進位字串</td></tr>
+        <tr><td>路由</td><td>固定分類，<strong>不是原始網址</strong></td></tr>
+        <tr><td>方法</td><td><code>GET</code>／<code>POST</code>／<code>HEAD</code>／<code>OPTIONS</code>／其他</td></tr>
+        <tr><td>狀態碼</td><td>100–599</td></tr>
+        <tr><td>耗時分組</td><td>固定分組，<strong>不記精確耗時</strong></td></tr>
+        <tr><td>請求大小分組</td><td>固定區間，<strong>不記內容</strong></td></tr>
+        <tr><td>結果</td><td>成功／拒絕／錯誤／未知</td></tr>
+        <tr><td>錯誤代碼</td><td>空值或四個固定字串之一</td></tr>
+      </tbody>
+    </table>
+    <p><strong>不會出現的東西：</strong>請求或回應內容、例外文字、堆疊追蹤、區域變數、查詢字串、完整網址、HTTP 標頭、cookie、authorization、呼叫端提供的請求 ID、IP 位址、User-Agent、referrer、出生時間、時區、地點、卷宗、計算軌跡、匯出內容。</p>
+    <p>這不是靠事後過濾做到的。事件由固定的建構函式產生，送出前再檢查一次欄位順序、版本、字彙與格式；<strong>把未清洗的資料直接送進輸出端會失敗關閉，該事件不會被輸出。</strong></p>
+    <p>外部送來的請求 ID 標頭<strong>一律不採用</strong>。</p>
+  </section>
+
+  <section>
+    <h2>錯誤訊息裡有什麼</h2>
+    <p>未預期的例外一律回傳固定錯誤代碼與伺服器產生的請求 ID，<strong>不回顯例外原文</strong>。星曆函式庫的錯誤回傳固定代碼，<strong>不回顯原始錯誤文字</strong>（那可能含本機路徑）。</p>
+    <p>比較難處理的是回應已經開始送出之後才失敗——那時狀態碼已不能安全改寫。做法是：保留實際送出的狀態碼、把事件記為錯誤，<strong>並阻止原始例外進入框架的錯誤日誌。</strong>串流與背景工作的失敗路徑都有真實伺服器的反證測試。</p>
+    <p>日誌輸出端本身故障時，<strong>直接放棄該筆事件，不建立備援輸出端</strong>，也不影響你的回應。</p>
+  </section>
+
+  <section>
+    <h2>不連出去</h2>
+    <p>後端<strong>不含</strong>任何錯誤追蹤服務、應用效能監控、外部分析，也沒有對外的 HTTP 客戶端。原始碼守衛偵測到這類相依就直接失敗。</p>
+    <p>前端不載入外部字型、CDN 腳本、第三方 JavaScript 或遠端圖片。<strong>0 追蹤器、0 分析 cookie、0 第三方請求。</strong></p>
+    <p>地名搜尋走同源請求，讀內建的唯讀目錄；<strong>不使用瀏覽器定位、不使用 IP 定位、不呼叫任何線上服務。</strong></p>
+    <p>匯出檔名固定，<strong>不嵌入出生日期、時間、姓名或座標</strong>——檔案躺在下載資料夾裡，檔名本身不洩漏任何東西。</p>
+    <p><strong>這項守衛的邊界：</strong>它是針對已審查名單上的名稱所設的迴歸阻擋，<strong>不是完整的資訊流分析，不是相依套件的遞移稽核，也不是執行期沙箱。</strong>名單外的新途徑仍需人工審查與探針測試。</p>
+  </section>
+
+  <section>
+    <h2>瀏覽器端</h2>
+    <p>不使用 localStorage、sessionStorage、IndexedDB、Cache Storage 或 beacon。敏感欄位使用 <code>autocomplete="off"</code>——<strong>這是提示，瀏覽器可以忽略。</strong></p>
+    <dl class="legal-terms">
+      <dt>清除結果</dt>
+      <dd>中止進行中的請求、使匯出文件失效、撤銷暫存網址、清除結果與錯誤，<strong>保留表單</strong>方便你修正後重算。</dd>
+
+      <dt>清除本頁敏感資料</dt>
+      <dd>另外清空所有出生與地點輸入、重設選項、清除網址參數，並在頁面隱藏時做盡力清除。</dd>
+    </dl>
+    <p><strong>遲到的回應必須通過世代檢查</strong>——你清除之後，早先發出的請求不會把結果再貼回畫面。</p>
+    <p>這些控制<strong>不宣稱</strong>：JavaScript 引擎已安全覆寫記憶體；瀏覽器或作業系統不會保留當機還原、swap、螢幕截圖或擴充套件看得到的內容；已完成的剪貼簿寫入或下載可以撤回。</p>
+  </section>
+
+  <section>
+    <h2>主機與部署</h2>
+    <dl class="legal-terms">
+      <dt>容器</dt>
+      <dd>沒有任何儲存掛載點；根檔案系統唯讀；只有一個小的記憶體暫存區且標為不可執行；丟棄全部系統權限；禁止提權；記憶體上限與 swap 上限相同（<strong>等於停用容器 swap</strong>）；行程數、檔案描述子、CPU 均設上限；內部網路。</dd>
+
+      <dt>反向代理</dt>
+      <dd>存取日誌關閉；<strong>不轉送原始 IP 與各種轉送標頭給應用程式</strong>；線上的 API 文件關閉。</dd>
+
+      <dt>作業系統</dt>
+      <dd>系統日誌短保留上限；停用 swap、當機傾印、自動備份與快照。</dd>
+
+      <dt>存取控制</dt>
+      <dd>少於 20 名受邀者，每人一組<strong>可撤銷、無識別性別名</strong>的憑證。憑證在代理層驗證，<strong>不在應用程式</strong>；主機只保存雜湊值。<strong>沒有帳號資料庫、沒有自助註冊、沒有 email 名單、沒有忘記密碼資料庫。</strong></dd>
+
+      <dt>驗證方式</dt>
+      <dd>上列每一項在實際運行的主機上以驗證器與隱私探針逐項確認——<strong>設定檔存在不等於設定生效，我們用探針去證明它生效。</strong></dd>
+    </dl>
+    <p>回應標頭要求搜尋引擎不索引、不追蹤、不封存。<strong>這是降低被收錄的措施，不是驗證機制，也不是「秘密網址」保護。</strong></p>
+  </section>
+
+  <section>
+    <h2>線上跑的是哪一版</h2>
+    <p>後端會持續更新，<strong>線上執行的版本不必然等於公開程式庫的最新版本。</strong></p>
+    <p>要確認你正在使用哪一版，請看卷宗裡的版本識別碼——<strong>不要從程式庫的最新提交推定。我們自己也不這樣推定。</strong></p>
+  </section>
+
+  <section>
+    <h2>相依套件與供應鏈</h2>
+    <p>生產環境的相依套件以帶雜湊的鎖定檔固定；另有一份標準格式的軟體物料清單列出實際組成。第三方原始碼封存檔、雜湊、授權與上游位置另有清單記錄。</p>
+    <p>相依套件、星曆檔與時區資料庫<strong>三者性質不同，各有自己的更新節奏與驗證步驟</strong>，不共用一套流程。</p>
+    <p>星曆檔與恆星表的雜湊由測試直接驗證——<strong>有人替換了資料檔，測試會失敗。</strong></p>
+    <p>這些是可查的程序與清單。<strong>它們不是供應鏈稽核，也不是對上游套件本身的安全保證。</strong></p>
+  </section>
+
+  <section>
+    <h2>我們控制不了什麼</h2>
+    <p>卷宗裡的隱私聲明把下列各層列為<strong>未涵蓋</strong>，這不是疏漏，是刻意標示：</p>
+    <table class="log">
+      <thead><tr><th>層</th><th>為什麼</th></tr></thead>
+      <tbody>
+        <tr><td>內容傳遞網路／應用防火牆</td><td>目前架構沒有這些元件</td></tr>
+        <tr><td>供應商基礎設施</td><td>由供應商決定</td></tr>
+        <tr><td>第三方遙測</td><td>目前沒有；未來若新增須先經隱私審查</td></tr>
+        <tr><td>瀏覽器／作業系統／原生函式庫記憶體</td><td>我們沒有能力觀察或抹除</td></tr>
+      </tbody>
+    </table>
+    <p><strong>不能從「某個元件不存在」推論出「因此安全」。</strong></p>
+    <p>其他明確不在能力範圍內的：已取得你使用者權限的本機攻擊者；你安裝的瀏覽器擴充套件；你複製或下載之後的副本及其同步備份；供應商依法或依契約保存的紀錄；DNS、憑證簽發、網路轉送必然處理的連線 metadata。</p>
+  </section>
+
+  <section>
+    <h2>測試證明了什麼、沒證明什麼</h2>
+    <p>repository 內的測試是<strong>設計期的迴歸證據</strong>：</p>
+    <ul>
+      <li><strong>不會</strong>在你每次計算時重新執行</li>
+      <li>卷宗裡的證據欄位是指向測試的指標，<strong>不是「這次執行過並通過」的紀錄</strong></li>
+      <li>只證明它們各自陳述的範圍</li>
+    </ul>
+    <p>隱私聲明的狀態標為「暫定，待外部審查」。<strong>在獨立紅隊完成之前不會改；即使通過，也不會自動延伸到未涵蓋的層。</strong></p>
+  </section>
+
+  <section>
+    <h2>通報安全問題</h2>
+    <p class="mono"><strong>security@</strong><span class="todo">〔正式網域待定；信箱尚未建立〕</span></p>
+    <p>請描述重現步驟，<strong>不要附上任何人的真實出生資料</strong>。</p>
+    <p>我們目前沒有安全港政策，因此使用條款不承諾超出法律範圍的測試授權。這是現況陳述，不是拒絕——<strong>歡迎善意通報。</strong></p>
+    <p>我們沒有漏洞獎金計畫。</p>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap sitemap">
+    <div class="sitemap-col">
+      <h2>產品</h2>
+      <a href="/zh-TW/">首頁</a>
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/roadmap">路線</a>
+      <a href="/zh-TW/blog">文章</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>可查證性</h2>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>法律與聯絡</h2>
+      <a href="/zh-TW/legal/privacy">隱私政策</a>
+      <a href="/zh-TW/legal/terms">使用條款</a>
+      <a href="/zh-TW/legal/copyright">著作權與原始碼</a>
+      <a href="/zh-TW/contact">聯絡方式</a>
+      <a href="/zh-TW/about">關於</a>
+    </div>
+  </div>
+
+  <div class="wrap footer-rule"><span class="ring-strip" aria-hidden="true"></span></div>
+  <div class="wrap">
+    <span>渾儀 ARMILLARY</span>
+    <span>只計算，不解盤，不預測</span>
+    <span>/zh-TW/security · L1 受託宣稱</span>
+  </div>
+</footer>
+
+</body>
+</html>

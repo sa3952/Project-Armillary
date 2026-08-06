@@ -7,7 +7,7 @@ schema 層驗證，而非留給下游計算時才失敗：這樣所有輸入錯�
 """
 
 import datetime as _dt
-import re
+import unicodedata
 from typing import Literal, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -28,16 +28,40 @@ from .config import AYANAMSA_OPTIONS, PRODUCT_YEAR_RANGE
 #     and of plain-text exports;
 #   - bidi overrides and isolates, which allow a rendered label to disagree
 #     with the stored label in the UI and in every export.
-_FORBIDDEN_LABEL_CODEPOINTS = re.compile(
-    "["
-    "\u0000-\u001f"      # C0 controls, including NUL, CR and LF
-    "\u007f-\u009f"      # DEL and C1 controls
-    "\u200e\u200f"       # LRM / RLM
-    "\u202a-\u202e"      # bidi embedding and override
-    "\u2066-\u2069"      # bidi isolates
-    "\ufeff"             # zero-width no-break space / BOM
-    "]"
-)
+#
+# The rule is expressed as Unicode general categories rather than as an
+# enumerated codepoint list.  A blacklist of invisible codepoints does not
+# converge: every Unicode release may add another format character, and the
+# enumerated version of this rule already missed ZWSP (U+200B) and the line and
+# paragraph separators (U+2028/U+2029), which some JSON and JavaScript
+# consumers treat as line terminators.  Categories cover those, and cover
+# additions this code has not seen.
+#
+#   Cc  C0/C1 controls, including NUL, CR and LF
+#   Cf  format characters: bidi overrides and isolates, LRM/RLM, ZWSP,
+#       BOM/ZWNBSP
+#   Zl  U+2028 line separator
+#   Zp  U+2029 paragraph separator
+_FORBIDDEN_LABEL_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
+
+# ZWNJ (U+200C) and ZWJ (U+200D) are category Cf but are deliberately exempt.
+# They are orthographically required in Persian, Arabic and Indic scripts,
+# where they select joining and non-joining letter forms; banning them would
+# reject legitimate place names rather than hostile ones.  Unlike the bidi
+# controls they cannot reorder a rendered label, so the display-spoofing
+# argument that justifies this boundary does not reach them.
+_ALLOWED_FORMAT_CODEPOINTS = frozenset("\u200c\u200d")
+
+
+def _first_forbidden_label_codepoint(label: str) -> str | None:
+    """Return the first codepoint a place label may not contain, if any."""
+
+    for character in label:
+        if character in _ALLOWED_FORMAT_CODEPOINTS:
+            continue
+        if unicodedata.category(character) in _FORBIDDEN_LABEL_CATEGORIES:
+            return character
+    return None
 
 
 class StrictInputModel(BaseModel):
@@ -103,7 +127,8 @@ class TimezoneInput(StrictInputModel):
                                 "maximum": 14.0,
                                 "minimum": -14.0,
                                 "type": "number",
-                            }
+                            },
+                            "fold": {"const": 0},
                         },
                         "required": ["utc_offset_hours"],
                     },
@@ -150,6 +175,110 @@ class TimezoneInput(StrictInputModel):
 
 
 class LocationInput(StrictInputModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "allOf": [
+                {
+                    "if": {
+                        "not": {"required": ["location_source"]}
+                    },
+                    "then": {
+                        "properties": {
+                            "source_record_id": {"type": "null"},
+                            "location_precision": {
+                                "enum": [
+                                    "user_supplied_coordinates",
+                                    "unknown",
+                                ]
+                            },
+                        }
+                    },
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "location_source": {"const": "manual"}
+                        },
+                        "required": ["location_source"],
+                    },
+                    "then": {
+                        "properties": {
+                            "source_record_id": {"type": "null"},
+                            "location_precision": {
+                                "enum": [
+                                    "user_supplied_coordinates",
+                                    "unknown",
+                                ]
+                            },
+                        }
+                    },
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "location_source": {
+                                "const": "geonames_cities500"
+                            }
+                        },
+                        "required": ["location_source"],
+                    },
+                    "then": {
+                        "properties": {
+                            "place_label": {
+                                "type": "string",
+                                "minLength": 1,
+                            },
+                            "source_record_id": {
+                                "type": "string",
+                                "minLength": 1,
+                            },
+                            "location_precision": {
+                                "const": "place_representative_point"
+                            }
+                        },
+                        "required": [
+                            "place_label",
+                            "source_record_id",
+                            "location_precision",
+                        ],
+                    },
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "location_source": {
+                                "const": "taiwan_moi_place_names"
+                            }
+                        },
+                        "required": ["location_source"],
+                    },
+                    "then": {
+                        "properties": {
+                            "place_label": {
+                                "type": "string",
+                                "minLength": 1,
+                            },
+                            "source_record_id": {
+                                "type": "string",
+                                "minLength": 1,
+                            },
+                            "location_precision": {
+                                "enum": [
+                                    "settlement_representative_point",
+                                    "administrative_area_representative_point",
+                                ]
+                            }
+                        },
+                        "required": [
+                            "place_label",
+                            "source_record_id",
+                            "location_precision",
+                        ],
+                    },
+                },
+            ]
+        }
+    )
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     altitude_m: float = Field(default=0.0, ge=-500, le=10000)
@@ -175,11 +304,17 @@ class LocationInput(StrictInputModel):
 
     @model_validator(mode="after")
     def check_place_label_has_no_control_or_bidi_codepoints(self):
-        if self.place_label is not None and _FORBIDDEN_LABEL_CODEPOINTS.search(
-            self.place_label
-        ):
+        if self.place_label is None:
+            return self
+        forbidden = _first_forbidden_label_codepoint(self.place_label)
+        if forbidden is not None:
+            # The offending codepoint is reported as U+XXXX rather than echoed,
+            # so the message stays diagnosable without putting an invisible or
+            # direction-flipping character into an error string that other
+            # surfaces will render.
             raise ValueError(
-                "place_label 不得包含控制字元、換行或雙向文字覆寫碼位"
+                "place_label 不得包含控制字元、換行、行段分隔或雙向文字覆寫碼位"
+                f"（U+{ord(forbidden):04X}）"
             )
         return self
 
@@ -255,22 +390,188 @@ class ComputationModeInput(StrictInputModel):
 
 class OptionsInput(StrictInputModel):
     # 一次只計算一種宮位制。選擇何種宮位制屬方法決策，不宣稱四種系統具有相同權威地位。
+    # `False` 是 CMP-C2 的真正無宮位模式：不得先算完再從 response 隱藏。
+    # house_system 在此時只保留為未執行的 request 欄位，不得出現在 effective receipt。
+    include_houses: bool = True
     house_system: Literal["B", "R", "W", "P"] = "W"
     include_fixed_stars: bool = False
     # 產品核心是可驗證的天文數值；需要古典方法選擇的判斷一律 opt-in，
     # 不因 Swiss Ephemeris 能提供原料就假裝方法已獲採用。
     include_lots: bool = False
     include_antiscia: bool = False
+    # MTH-Q-008 乙：反照點的對象範圍為「七政（必要）＋交點（可選）」，
+    # 恆星與軸點不計算。此開關即該裁決的「可選」。
+    antiscia_include_nodes: bool = False
     include_void_of_course: bool = False
     include_declination_aspects: bool = False
+    # MTH-Q-004 的研究性分類不變；1°只是既有產品預設。使用者可在 0–3°
+    # 間明示覆寫，response 必須保存 default 與 effective 值。
+    declination_aspect_orb_degrees: float = Field(gt=0.0, le=3.0, default=1.0)
     include_outer_planets: bool = False
+    include_chiron: bool = False
+    # Sebastian 2026-08-04 CMP-A6 方案三：平均遠地點、Swiss 的
+    # interpolated/natural 遠地點，以及獨立計算的 natural 近地點。
+    # 三者是現代／研究附加點，不因開啟而自動參與相位或古典方法。
+    include_lilith_priapus: bool = False
+    # CMP-A10：整體計算模式維持 geocentric，但月亮另以出生地站心位置取代
+    # bodies 中的 effective Moon；response 同時保存地心 reference。此選項不等於
+    # 「比較準」，而是明示的 mixed-origin coordinate policy。
+    moon_position_profile: Literal[
+        "global_computation_mode", "moon_only_topocentric_v1"
+    ] = "global_computation_mode"
+    # 南交點不是另一個 Swiss body：它是所選北交點方向的精確對蹠點。
+    # 預設保留既有兩個北交點；明示要求時才把兩個導出南交點加入 nodes。
+    include_south_nodes: bool = False
     include_lunar_phases: bool = False
     include_eclipses: bool = False
     include_rise_set_transits: bool = False
 
+    # --- 黃道相位 ---
+    #
+    # **MTH-Q-016 已裁決（Sebastian 2026-08-03）：預設開啟，但可 opt-out。**
+    #
+    # 沿革：初版預設 True 是實作者自行決定的，紅隊據
+    # 「待審閱的方法項目不得默默成為預設的使用者可見計算」提出異議
+    # （RT-BACKEND-9-E-001），因此一度改回 opt-in 以恢復裁決前狀態。
+    # 現由 Sebastian 正式裁決為預設開啟。
+    #
+    # 這是本檔唯一預設開啟的判斷類選項。它與其餘項目的差別在於：預設輸出的
+    # 整宮配置與角距離都是算術，未選 orb_profile 時 `in_orb` 一律為 null，
+    # 故預設狀態不含任何容許度承諾。方法收據仍為 provisional，Dossier 也仍會
+    # 發出 `provisional_method_result` 通知——預設開啟不等於方法已獲採用。
+    include_aspects: bool = True
+    # 不設預設容許度表。歷史來源彼此不一致（見 core/aspects.py docstring），
+    # 由本程式代選一張等於代替 Sebastian 做出方法裁決。
+    aspect_orb_profile: Optional[
+        Literal["abu_mashar_lineage_v1", "lilly_1647_experience_v1"]
+    ] = None
+    # 逐度相位集合與整宮 doctrine 分開：不論選哪個逐度集合，整宮層仍只使用
+    # 托勒密五相。現代小相位 profile 是使用者選項，不宣稱古典權威。
+    aspect_set_profile: Literal[
+        "ptolemaic_major_v1",
+        "modern_common_minor_v1",
+        "modern_quintile_family_v1",
+        "modern_minor_combined_v1",
+    ] = "ptolemaic_major_v1"
+    # 兩種明示覆寫互斥：具名七政 orb 表可按百分比縮放；或直接指定所有逐度
+    # 配對的固定門檻。後者是 user override，不繼承歷史來源宣稱。
+    aspect_orb_scale_percent: Optional[float] = Field(
+        gt=0.0, le=300.0, default=None
+    )
+    aspect_fixed_orb_degrees: Optional[float] = Field(
+        gt=0.0, le=30.0, default=None
+    )
+    # Partile 慣例（MTH-Q-012 / E-012 裁決：做成 profile）。三種慣例並存，
+    # 其中兩種都出自 Lilly 本人且互相矛盾。與 orb 表不同，這一項有預設值：
+    # 「同一整數度」是最通行者，也是本模組原本的行為。
+    partile_profile: Literal[
+        "same_degree_number_v1",
+        "within_one_degree_v1",
+        "lilly_1677_three_degrees_v1",
+    ] = "same_degree_number_v1"
+    # 成相時刻需要在時間軸上反覆查星曆，比其餘欄位昂貴一個量級，故預設關閉。
+    include_aspect_perfection: bool = False
+    # 三王星與阿拉伯點是否參與相位，直接跟隨其本身的計算開關，避免出現
+    # 「要求三王星入相位但沒算三王星」這種自相矛盾的請求。交點永遠已算出，
+    # 故單獨給一個開關。
+    aspect_include_nodes: bool = False
+    # ASC／MC 只加入逐度層；不加入整宮 doctrine、不互相配對，也不推測日周運動
+    # 的 applying。若未給角點門檻，仍輸出幾何但 in_orb 為 null。
+    aspect_include_angles: bool = False
+    aspect_angle_orb_degrees: Optional[float] = Field(
+        gt=0.0, le=30.0, default=None
+    )
+
+    # --- 非古典角點 ---
+    # Vertex 等五個角點由 swe.houses_ex 附帶回傳，過去被丟棄。開啟後另闢
+    # astronomical_data.extra_angles 輸出，`angles` 的鍵集合不變。
+    include_extra_angles: bool = False
+    # Anti-Vertex 是 Vertex 的黃道對蹠點，可單獨要求，不必同時輸出其餘四個
+    # 現代技術角點。
+    include_anti_vertex: bool = False
+
+    # 純後端 body preset。它只約束「星體目錄」的現代附加物件；交點、Lots 與
+    # 額外角點是 points/method outputs，刻意不被此 preset 靜默關閉。
+    body_selection_preset: Literal["custom", "classical_seven_v1"] = "custom"
+
+    # --- 具名古典尊貴元件；只回傳規則／表格結果，不打分、不解讀 ---
+    # 傳統七政的 domicile/exaltation 星座層級是基礎 profile，預設計算但可明示
+    # 關閉。精確擢升度數、失勢／陷落、互容與總分均不在此開關範圍。
+    include_domicile_exaltation: bool = True
+    bounds_profile: Optional[
+        Literal[
+            "egyptian_bounds_robbins_1940_v1",
+            "chaldaean_bounds_ptolemy_i_21_v1",
+            "ptolemy_bounds_robbins_1940_v1",
+            "lilly_received_bounds_1647_v1",
+        ]
+    ] = None
+    decan_profile: Optional[
+        Literal[
+            "chaldean_planetary_faces_firmicus_ii_4_v1",
+            "manilius_sign_decans_astronomica_iv_v1",
+        ]
+    ] = None
+    triplicity_profile: Optional[
+        Literal[
+            "dorothean_triplicity_three_rulers_v1",
+            "ptolemy_triplicity_textual_corulership_v1",
+            "lilly_triplicity_compact_1647_v1",
+        ]
+    ] = None
+    triplicity_include_research_comparison: bool = False
+
+    @model_validator(mode="after")
+    def check_body_selection_preset(self):
+        if self.body_selection_preset != "classical_seven_v1":
+            return self
+        incompatible = [
+            name
+            for name in (
+                "include_outer_planets",
+                "include_fixed_stars",
+                "include_chiron",
+                "include_lilith_priapus",
+            )
+            if getattr(self, name)
+        ]
+        if incompatible:
+            raise ValueError(
+                "classical_seven_v1 與下列非古典星體選項衝突: "
+                + ", ".join(incompatible)
+            )
+        return self
+
+    @model_validator(mode="after")
+    def check_aspect_orb_configuration(self):
+        if (
+            self.aspect_orb_scale_percent is not None
+            and self.aspect_orb_profile is None
+        ):
+            raise ValueError(
+                "aspect_orb_scale_percent requires aspect_orb_profile"
+            )
+        if (
+            self.aspect_fixed_orb_degrees is not None
+            and self.aspect_orb_profile is not None
+        ):
+            raise ValueError(
+                "aspect_fixed_orb_degrees and aspect_orb_profile are mutually exclusive"
+            )
+        if (
+            self.aspect_angle_orb_degrees is not None
+            and not self.aspect_include_angles
+        ):
+            raise ValueError(
+                "aspect_angle_orb_degrees requires aspect_include_angles=true"
+            )
+        return self
+
 
 class ChartRequest(StrictInputModel):
-    birth_time_precision: Literal["exact", "approximate_hour"] = "exact"
+    birth_time_precision: Literal[
+        "exact", "approximate_hour", "date_only"
+    ] = "exact"
     datetime: DateTimeInput
     timezone: TimezoneInput
     location: LocationInput
@@ -280,6 +581,15 @@ class ChartRequest(StrictInputModel):
 
     @model_validator(mode="after")
     def check_birth_time_precision(self):
+        if (
+            self.options.moon_position_profile
+            == "moon_only_topocentric_v1"
+            and self.computation_mode.center != "geocentric"
+        ):
+            raise ValueError(
+                "moon_only_topocentric_v1 requires geocentric global center; "
+                "topocentric/heliocentric/barycentric cannot be silently mixed"
+            )
         if self.birth_time_precision == "approximate_hour" and (
             self.datetime.minute != 0 or self.datetime.second != 0
         ):
@@ -287,6 +597,23 @@ class ChartRequest(StrictInputModel):
                 "approximate_hour 只接受已知民用小時；minute 與 second 必須為 0，"
                 "系統會自行建立一小時敏感度取樣。"
             )
+        if self.birth_time_precision == "date_only":
+            if (
+                self.datetime.hour != 0
+                or self.datetime.minute != 0
+                or self.datetime.second != 0
+            ):
+                raise ValueError(
+                    "date_only 只接受日期；datetime 的 hour、minute、second "
+                    "必須全為 0。這些零值只是 API 日期容器，不代表午夜出生。"
+                )
+            # Unknown time 本身即是不請求 houses。正規化在 request boundary 完成，
+            # 讓 requested_options、Dossier input receipt 與實際執行一致；不保留一個
+            # `include_houses=true` 再在下游偷偷忽略。
+            if self.options.include_houses:
+                self.options = self.options.model_copy(
+                    update={"include_houses": False}
+                )
         return self
 
 

@@ -53,18 +53,59 @@ def test_chart_request_reasserts_ephemeris_path_in_worker_thread(monkeypatch):
 
     calling_thread = threading.get_ident()
     init_threads = []
-    original_init = main_module.init_ephemeris
+    original_init = main_module.ensure_ephemeris_initialized_for_thread
 
     def recording_init():
         init_threads.append(threading.get_ident())
-        original_init()
+        return original_init()
 
-    monkeypatch.setattr(main_module, "init_ephemeris", recording_init)
+    monkeypatch.setattr(
+        main_module,
+        "ensure_ephemeris_initialized_for_thread",
+        recording_init,
+    )
     response = client.post("/api/chart", json=base_payload())
 
     assert response.status_code == 200
     assert init_threads
     assert all(thread_id != calling_thread for thread_id in init_threads)
+
+
+def test_ephemeris_path_is_set_once_per_thread_not_once_per_request():
+    """The path is reasserted per thread, which is what the comment claims.
+
+    The previous code called init_ephemeris() on every request, so "once per
+    worker thread" and "every time" were indistinguishable in the source.  A
+    thread that has already set the path must not set it again, and a thread
+    that has not must still set it — including a thread created after the
+    module was imported.
+    """
+    import threading
+
+    from app.ephemeris import ensure_ephemeris_initialized_for_thread
+
+    results: list[bool] = []
+
+    def run_in_fresh_thread():
+        results.append(ensure_ephemeris_initialized_for_thread())
+        results.append(ensure_ephemeris_initialized_for_thread())
+        results.append(ensure_ephemeris_initialized_for_thread())
+
+    worker = threading.Thread(target=run_in_fresh_thread)
+    worker.start()
+    worker.join()
+
+    # First call does the work; every later call in that same thread is a no-op.
+    assert results == [True, False, False]
+
+    # A second fresh thread does not inherit the first thread's flag.
+    second: list[bool] = []
+    another = threading.Thread(
+        target=lambda: second.append(ensure_ephemeris_initialized_for_thread())
+    )
+    another.start()
+    another.join()
+    assert second == [True]
 
 
 def test_private_runtime_health_proves_knowledge_of_launcher_secret(monkeypatch):
@@ -78,7 +119,10 @@ def test_private_runtime_health_proves_knowledge_of_launcher_secret(monkeypatch)
     assert unavailable.status_code == 503
     assert unavailable.json()["detail"]["code"] == "runtime_auth_unavailable"
 
-    token = "test-only-runtime-secret"
+    # A real launcher token is secrets.token_urlsafe(32) — 43 characters.  The
+    # endpoint refuses to attest with anything shorter, so the fixture uses a
+    # realistic length rather than a short literal.
+    token = "test-only-runtime-secret-with-realistic-length"
     monkeypatch.setenv("CLASSICAL_ASTROLOGY_RUNTIME_TOKEN", token)
     response = client.get(
         "/api/runtime-health",
@@ -96,6 +140,29 @@ def test_private_runtime_health_proves_knowledge_of_launcher_secret(monkeypatch)
             hashlib.sha256,
         ).hexdigest(),
     }
+
+
+def test_runtime_health_refuses_to_attest_with_a_weak_token(monkeypatch):
+    """The attestation is worth exactly the token's entropy, so bound it.
+
+    The endpoint answers HMAC(token, caller-chosen nonce), which is the correct
+    shape for challenge-response and does not leak the key.  What it does give
+    an attacker who can reach it is unlimited known-plaintext pairs for offline
+    brute force, so the scheme's strength is the token's and nothing else.
+    Rather than attest with a secret that cannot carry that weight, refuse.
+    """
+    nonce = "runtime-health-test-nonce"
+    monkeypatch.setenv("CLASSICAL_ASTROLOGY_RUNTIME_TOKEN", "short-secret")
+
+    response = client.get(
+        "/api/runtime-health",
+        headers={"X-Local-Runtime-Nonce": nonce},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "runtime_auth_token_too_weak"
+    # The refusal must not itself become an oracle: no digest is returned.
+    assert "nonce_hmac" not in response.text
 
 
 def test_health_check_identifies_running_service():
@@ -141,8 +208,9 @@ def test_benchmark_chart_full_response_shape():
     assert data["schema_version"].startswith("0.")
     assert data["output_contract"]["status"] == "provisional"
     assert set(data["astronomical_data"].keys()) == {
-        "time", "atmosphere", "bodies", "nodes", "fixed_stars", "angles",
-        "lunar_events", "horizon_events",
+        "time", "atmosphere", "bodies", "nodes", "fixed_stars",
+        "fixed_star_policy", "angles", "extra_angles",
+        "lunar_apsides", "parallax_moon", "lunar_events", "horizon_events",
     }
     assert len(data["astronomical_data"]["bodies"]) == 7  # 古典七政
     assert len(data["astronomical_data"]["nodes"]) == 2   # 真/平交點
@@ -192,6 +260,9 @@ def test_approximate_hour_uses_one_midpoint_chart_and_five_lightweight_probes():
     )
     assert sensitivity["precision"] == "approximate_hour"
     assert sensitivity["representative_minute"] == 30
+    assert sensitivity["representative_semantics"] == (
+        "representative_midpoint_not_exact_birth_time"
+    )
     assert [probe["minute"] for probe in sensitivity["probes"]] == [
         0,
         15,
@@ -1220,7 +1291,7 @@ def test_security_and_privacy_headers_are_present():
 
 
 def test_frontend_assets_are_not_cached_across_local_schema_updates():
-    for path in ("/", "/app.js", "/style.css"):
+    for path in ("/zh-TW/", "/zh-TW/calculate.js", "/zh-TW/calculate.css"):
         response = client.get(path)
         assert response.status_code == 200
         assert response.headers["cache-control"] == "no-store"
@@ -1228,12 +1299,12 @@ def test_frontend_assets_are_not_cached_across_local_schema_updates():
 
 def test_static_mount_serves_only_runtime_frontend_allowlist():
     for path in (
-        "/app.js",
-        "/client-context.js",
-        "/exporters.js",
-        "/favicon.svg",
-        "/privacy-lifecycle.js",
-        "/style.css",
+        "/zh-TW/calculate.js",
+        "/zh-TW/client-context.js",
+        "/zh-TW/exporters.js",
+        "/zh-TW/favicon.svg",
+        "/zh-TW/privacy-lifecycle.js",
+        "/zh-TW/calculate.css",
     ):
         assert client.get(path).status_code == 200
 

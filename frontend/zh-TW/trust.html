@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>信任｜渾儀 Armillary</title>
+<link rel="icon" href="/zh-TW/favicon.svg">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/zh-TW/">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="16"/>
+        <ellipse cx="20" cy="20" rx="16" ry="4.5"/>
+        <ellipse cx="20" cy="20" rx="16" ry="8" transform="rotate(-32 20 20)" class="mark-ecliptic"/>
+        <ellipse cx="20" cy="20" rx="5" ry="16"/>
+        <line x1="20" y1="4" x2="20" y2="36" transform="rotate(-18 20 20)"/>
+      </svg>
+      <span>渾儀<small>ARMILLARY</small></span>
+    </a>
+    <nav class="site-nav" aria-label="主要導覽">
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/about">關於</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap page-body">
+  <div class="eyebrow">信任 · TRUST</div>
+  <h1>信任頁通常列十個打勾符號。<br>打勾符號沒告訴你一件事：這個保護由誰執行？</h1>
+  <p class="lede">是程式碼？是伺服器設定？還是供應商的契約措辭？</p>
+  <p><strong>三者的強度完全不同。</strong>程式裡的限制可以由測試反覆反證；伺服器設定要在真實主機上驗過；供應商契約只約束供應商，不約束網路上的其他環節。</p>
+  <p>所以這一頁把每項承諾拆成三欄：<strong>做了什麼、由哪一層執行、涵蓋範圍到哪裡。</strong></p>
+
+  <section>
+    <h2>先講產品邊界</h2>
+    <p>渾儀輸出天文位置、座標轉換、幾何推導，以及具名的古典占星判定。<strong>它不解盤、不預測、不描述性格、不給運勢。</strong></p>
+    <p>界線畫在哪裡，用一個實例說明：我們會告訴你太陽落在哪一個界、依你所選的那套表由哪顆行星主宰、那顆行星是否落在自己的廟或旺。</p>
+    <p><strong>我們不會告訴你這代表什麼。</strong>判定是查表與區間運算，意義不是。</p>
+  </section>
+
+  <section>
+    <h2>承諾對應控制</h2>
+    <table class="log">
+      <thead>
+        <tr><th>承諾</th><th>由哪一層執行</th><th>涵蓋範圍</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>不建立帳號資料庫</strong></td><td>應用程式</td><td>免註冊、免 email、免密碼。存取憑證在代理層，不在應用程式</td></tr>
+        <tr><td><strong>出生資料不寫入資料庫、快取、佇列或檔案</strong></td><td>應用程式</td><td>計算期間攔截寫檔介面——任何寫入嘗試都會讓測試失敗。<strong>不等於記憶體安全抹除</strong></td></tr>
+        <tr><td><strong>伺服器日誌不含任何個人資料</strong></td><td>應用程式</td><td>營運事件只允許十個固定欄位，見〈安全〉。不含出生資料、IP、User-Agent、請求內容</td></tr>
+        <tr><td><strong>不使用第三方追蹤、廣告、分析、遠端日誌</strong></td><td>應用程式</td><td>原始碼守衛阻擋這類相依。<strong>這是針對已知名稱的阻擋，不是完整資訊流分析</strong></td></tr>
+        <tr><td><strong>前端不使用瀏覽器持久化儲存</strong></td><td>瀏覽器</td><td>不用 localStorage、sessionStorage、IndexedDB、Cache Storage、beacon</td></tr>
+        <tr><td><strong>錯誤訊息不回顯例外原文或本機路徑</strong></td><td>應用程式 ＋ 傳輸邊界</td><td>含串流與背景工作的失敗路徑。已知的輸入錯誤仍會回傳必要診斷</td></tr>
+        <tr><td><strong>匯出檔名不含個人資料</strong></td><td>瀏覽器</td><td>固定通用檔名。你另存或改名之後不在我們控制內</td></tr>
+        <tr><td><strong>主機不記錄存取日誌、不轉送原始 IP</strong></td><td>反向代理</td><td>已驗證。<strong>供應商、DNS 與網路轉送環節仍會為建立連線處理連線 metadata</strong></td></tr>
+        <tr><td><strong>系統日誌短保留、停用 swap 與當機傾印</strong></td><td>作業系統</td><td>已驗證</td></tr>
+        <tr><td><strong>容器無出生資料儲存區、檔案系統唯讀</strong></td><td>容器</td><td>無掛載點、唯讀根檔案系統、丟棄全部權限、禁止提權</td></tr>
+        <tr><td><strong>主機位於瑞士</strong></td><td>供應商契約</td><td>契約涵蓋供應商代管的資料。<strong>DNS、憑證簽發、Internet 轉送、付款與客服不保證只在瑞士</strong></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>這些事我們做不到，所以不承諾</h2>
+    <dl class="legal-terms">
+      <dt>記憶體安全抹除</dt>
+      <dd>計算期間出生資料存在於伺服器行程與你的瀏覽器記憶體中，之後由執行環境回收。我們沒有能力覆寫或證明它已被抹除。</dd>
+
+      <dt>作業系統與瀏覽器的副本</dt>
+      <dd>swap、當機傾印、工作階段還原、螢幕截圖、無障礙介面、擴充套件都可能持有你螢幕上的內容。</dd>
+
+      <dt>你按下複製或下載之後</dt>
+      <dd>剪貼簿與檔案由你的裝置與其同步備份設定控制，我們無法撤回、刪除或追蹤。</dd>
+
+      <dt>已取得你帳號權限的本機攻擊者</dt>
+      <dd>不在本服務的控制範圍內。</dd>
+
+      <dt>連線 metadata</dt>
+      <dd>網際網路要送達封包就需要位址。我們可以不記錄，但不能宣稱它在網路上不存在。</dd>
+    </dl>
+    <p class="after"><code>autocomplete="off"</code> 是給瀏覽器的提示，瀏覽器可以忽略它。</p>
+  </section>
+
+  <section>
+    <h2>「已驗證」在這裡是什麼意思</h2>
+    <p>我們區分四種強度，不把它們混成一個字：</p>
+    <dl class="legal-terms">
+      <dt>已由測試反證</dt><dd>有失敗優先的測試，反例會讓測試失敗。</dd>
+      <dt>已在主機驗證</dt><dd>在實際運行的那台主機上跑過驗證器與探針。</dd>
+      <dt>已裁決來源</dt><dd>這套規則依據哪個文本、哪個版本，已經確定。</dd>
+      <dt>待方法審閱</dt><dd>算得出來，但採用哪一套文獻尚未裁決。</dd>
+    </dl>
+    <p>我們<strong>沒有</strong>取得第三方安全認證，<strong>沒有</strong>通過外部紅隊，<strong>沒有</strong>法規合規認證。</p>
+    <p>而且：repository 內的測試是設計期的迴歸證據，<strong>不會在你每次計算時重跑</strong>。卷宗裡的證據欄位是指向測試的指標，不是「這次執行過並通過」的紀錄。</p>
+    <p><strong>我們寧可寫這一段，也不想用一個模糊的「已驗證」讓你以為我們有。</strong></p>
+  </section>
+
+  <section>
+    <h2>方法的狀態不是一致的</h2>
+    <p>每一項需要選擇技法的輸出，都帶著自己的方法版本與來源狀態，<strong>而它們不一樣。</strong></p>
+    <p>有些已經有明確的文獻依據；有些算得出來但採用哪一套說法尚未裁決；有一項連它的歷史歸屬本身都還沒有定論——<strong>那一項我們就是這樣標的。</strong></p>
+    <p><strong>不要從畫面上一項有來源，推論其他項也有。</strong>每一項的狀態印在自己的結果旁邊。</p>
+  </section>
+
+  <section>
+    <h2>你可以怎麼查我們</h2>
+    <p><strong>每次計算都附一份卷宗</strong>，內含本次口徑、時間換算、引擎版本、星曆來源、各項方法版本與狀態、軌跡步數與雜湊值。<strong>另一個人拿著它可以重建等價請求並核對你的結果。</strong></p>
+    <p><strong>逐步計算軌跡可以整份看</strong>，含每一步的函式、輸入、旗標與回傳值。步數隨你啟用的模組而變，實際步數印在該次卷宗裡。</p>
+    <p><strong>SHA-256 收據可日後核對。</strong>技術限制直接寫出來：雜湊是對固定參數序列化後的結果計算的，不跨語言可攜。它證明的是完整性，不是跨實作的通用指紋。</p>
+    <p><strong>原始碼公開。</strong>GNU AGPL v3。你正在使用的版本識別碼印在卷宗裡——<strong>以卷宗為準。</strong></p>
+  </section>
+
+  <section>
+    <h2>收費</h2>
+    <p>目前全部免費，我們不承諾永久免費。</p>
+    <p>未來可能有付費項目。<strong>任何收費方式改變都會事先公告，不會回溯套用在已經產生的內容上。</strong></p>
+    <p>我們不打算靠出售或分析你的出生資料獲利——那會同時違反本產品的隱私原則與它被選擇的理由。</p>
+  </section>
+
+  <section>
+    <h2>完整條文</h2>
+    <dl class="legal-terms">
+      <dt><a href="/zh-TW/legal/privacy">隱私政策</a></dt><dd>實際處理哪些資料、保存多久、誰會接觸到。</dd>
+      <dt><a href="/zh-TW/legal/terms">使用條款</a></dt><dd>服務範圍、使用者責任、責任界線。</dd>
+      <dt><a href="/zh-TW/legal/copyright">著作權與開源</a></dt><dd>AGPL、原始碼位置、部署版本識別碼。</dd>
+      <dt><a href="/zh-TW/security">安全</a></dt><dd>技術細節與邊界。</dd>
+      <dt><a href="/zh-TW/contact">聯絡方式</a></dt><dd>隱私請求、安全通報。</dd>
+    </dl>
+    <p>本頁是摘要，<strong>條文以法律頁為準。</strong></p>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap sitemap">
+    <div class="sitemap-col">
+      <h2>產品</h2>
+      <a href="/zh-TW/">首頁</a>
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/roadmap">路線</a>
+      <a href="/zh-TW/blog">文章</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>可查證性</h2>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>法律與聯絡</h2>
+      <a href="/zh-TW/legal/privacy">隱私政策</a>
+      <a href="/zh-TW/legal/terms">使用條款</a>
+      <a href="/zh-TW/legal/copyright">著作權與原始碼</a>
+      <a href="/zh-TW/contact">聯絡方式</a>
+      <a href="/zh-TW/about">關於</a>
+    </div>
+  </div>
+
+  <div class="wrap footer-rule"><span class="ring-strip" aria-hidden="true"></span></div>
+  <div class="wrap">
+    <span>渾儀 ARMILLARY</span>
+    <span>只計算，不解盤，不預測</span>
+    <span>/zh-TW/trust · L1 受託宣稱</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -24,7 +24,7 @@ and timezone so the user can inspect or correct the resolution.
 Rebuild from pinned source snapshots:
 
 ```bash
-backend/.venv/bin/python -m scripts.validation.build_place_catalog \
+python -m scripts.validation.build_place_catalog \
   --geonames-zip /path/to/cities500.zip \
   --taiwan-admin-csv /path/to/taiwan-admin.csv \
   --taiwan-settlement-csv /path/to/taiwan-settlement.csv \

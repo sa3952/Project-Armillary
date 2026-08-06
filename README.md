@@ -28,31 +28,56 @@ Requirements:
 - a Linux `amd64` or `arm64` host for the validated container paths;
 - no production credential is required for a local build.
 
-Create a non-empty build probe outside the repository, then build:
+Materialize the governed closed context outside the source tree, create a
+non-empty BuildKit probe, then build only from that context:
 
 ```bash
-mkdir -p /tmp/classical-astrology-build
-printf 'local-build-probe\n' > /tmp/classical-astrology-build/probe.txt
+build_root="$(mktemp -d /tmp/classical-astrology-build.XXXXXX)"
+printf 'local-build-probe\n' > "$build_root/probe.txt"
+python -m scripts.verification.verify_docker_context \
+  --materialize "$build_root/context"
 DOCKER_BUILDKIT=1 docker build \
-  --secret id=private_alpha_probe,src=/tmp/classical-astrology-build/probe.txt \
+  --secret id=private_alpha_probe,src="$build_root/probe.txt" \
   --build-arg VCS_REF="$(git rev-parse HEAD)" \
   --tag classical-astrology-data:local \
-  --file deploy/Dockerfile .
+  --file "$build_root/context/deploy/Dockerfile" \
+  "$build_root/context"
 ```
 
 The production image intentionally contains application runtime files, not
-tests, documentation, Git metadata, or third-party source archives.
-
-For a local hosted-profile check:
+tests, documentation, Git metadata, third-party source archives, or frontend
+assets. Build the immutable frontend release separately from this same clean
+exact revision:
 
 ```bash
-docker run --rm --read-only \
-  --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777 \
-  --publish 127.0.0.1:8000:8000 \
-  classical-astrology-data:local
+public_revision="$(git rev-parse HEAD)"
+python -m scripts.deployment.frontend_release build \
+  --source-root "$PWD" \
+  --output-parent /SAFE/OUTSIDE/SOURCE/frontend-releases \
+  --public-source-revision "$public_revision"
 ```
 
-Open `http://127.0.0.1:8000/`. Production deployment requires an authenticated
+The command prints the artifact digest and release directory. Do not edit that
+directory after publication.
+
+For a local hosted-profile check, use the base runtime configuration, hosted
+overlay, and the external frontend overlay together. Set each value from the
+verified image/release receipts; `COMBINED_RELEASE_ID` is produced by the
+deployment tooling and is not an arbitrary label:
+
+```bash
+FRONTEND_RELEASE_DIR=/absolute/path/to/frontend-releases/ARTIFACT_DIGEST \
+FRONTEND_RELEASE_DIGEST=ARTIFACT_DIGEST \
+BACKEND_IMAGE_ID=sha256:FULL_IMAGE_ID \
+COMBINED_RELEASE_ID=FULL_COMBINED_RELEASE_ID \
+docker compose \
+  -f deploy/compose.yaml \
+  -f deploy/staging/compose.staging.yaml \
+  -f deploy/compose.frontend-release.yaml \
+  up --force-recreate
+```
+
+Open `http://127.0.0.1:8124/`. Production deployment requires an authenticated
 HTTPS reverse proxy and additional host controls described in
 `docs/DEPLOYMENT_SECURITY.md`.
 
@@ -79,7 +104,10 @@ Each release publishes:
 - a source archive;
 - a third-party source archive and manifest;
 - an SBOM and dependency inventory;
-- the deployed container image digest and build receipt.
+- the deployed container image digest and build receipt;
+- the frontend artifact digest, its file-hash manifest, and its exact public
+  source revision;
+- a combined runtime receipt binding the backend image and frontend release.
 
 The public source revision is the source used to build the deployed image.
 Development conversations, private operational records, credentials, logs,

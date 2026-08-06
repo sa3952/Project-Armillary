@@ -6,12 +6,12 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import copy
-import importlib.metadata
+import hashlib
 import json
 import math
-import os
 from pathlib import Path
 import re
+import platform as platform_module
 import shutil
 import subprocess
 import sys
@@ -24,12 +24,15 @@ from urllib.request import Request, urlopen
 import uuid
 
 from scripts.verification.verify_docker_context import (
-    context_file_paths,
-    verify as verify_docker_context,
+    materialize_context,
 )
 from scripts.verification.container_platform_contract import (
     platform_args as _platform_args,
     platform_contract,
+)
+from scripts.deployment.frontend_release import (
+    build_release as build_frontend_release,
+    combined_release_id,
 )
 
 
@@ -104,7 +107,12 @@ RUNTIME_SPECIFIC_PARITY_PATHS = frozenset(
         (
             "$.calculation_dossier.trace_receipt."
             "python_json_serialization_sha256"
-        )
+        ),
+        # The same IANA release is discovered through OS-specific filesystem
+        # layouts.  Compare the version and availability receipt, but not the
+        # resolver label (for example macOS +VERSION vs Linux tzdata.zi).
+        "$.library_info.tz_database.source",
+        "$.calculation_dossier.engine.tz_database.source",
     }
 )
 FIXED_STAR_DISTANCE_SPEED_PATH = re.compile(
@@ -142,16 +150,14 @@ def _run(
 
 def _copy_build_context(destination: Path) -> Path:
     context = destination / "context"
-    verify_docker_context(PROJECT_ROOT)
-    context.mkdir()
-    for relative_path in context_file_paths(PROJECT_ROOT):
-        source = PROJECT_ROOT / relative_path
-        target = context / relative_path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
-    (context / "build-context-probe-8f38f069.txt").write_text(
-        CANARY + "\n",
-        encoding="utf-8",
+    materialize_context(
+        PROJECT_ROOT,
+        context,
+        control_files={
+            Path("build-context-probe-8f38f069.txt"): (CANARY + "\n").encode(
+                "utf-8"
+            )
+        },
     )
     return context
 
@@ -206,6 +212,11 @@ def _build_image(
         "clean_checkout": dirty_entries == 0,
         "clean_checkout_required": require_clean,
         "platform": platform,
+        # Without these, "reproducible" is a claim nobody can falsify later.
+        # This is also where the receipt says out loud that it came from a
+        # developer workstation, so a reader does not assume a hermetic CI
+        # build produced it.
+        "builder": _builder_environment(),
     }
 
 
@@ -256,6 +267,155 @@ def _inspect_image(image: str, platform: str | None) -> dict[str, Any]:
     }
 
 
+# Docker writes these per container, so they differ between two runs of the
+# same image and must not enter the content identity.
+DOCKER_INJECTED_PATHS = frozenset({"/etc/hostname", "/etc/hosts", "/etc/resolv.conf"})
+
+APP_TREE_MANIFEST = PROJECT_ROOT / "deploy" / "image-app-tree.json"
+COMPILED_ARTIFACTS_MANIFEST = PROJECT_ROOT / "deploy" / "image-compiled-artifacts.json"
+
+
+# Only the extensions installed into our own virtualenv. Sweeping every `.so`
+# in the image would pull in the whole Debian base — hundreds of libraries we
+# do not build, whose hashes move with the pinned base rather than with our
+# toolchain, which is the thing this pin is meant to watch.
+COMPILED_ARTIFACT_ROOT = "/opt/venv/"
+
+
+def _is_compiled_artifact(path: str) -> bool:
+    return path.startswith(COMPILED_ARTIFACT_ROOT) and (
+        path.endswith(".so") or ".so." in path.rsplit("/", 1)[-1]
+    )
+
+
+def _review_required(manifest: Path, observed: Any, what: str) -> None:
+    """Fail closed when there is nothing committed to compare against.
+
+    Writing the observed value automatically would make the check agree with
+    whatever the build produced, which is the failure mode this whole gate
+    exists to prevent.  So the first build after a change fails, prints what
+    it saw, and asks a human to review and commit it.
+    """
+
+    raise GateFailure(
+        f"no committed {what} to compare against: {manifest}.\n"
+        "Review the observed value below, and commit it to that path only if "
+        "every entry is intended:\n"
+        + json.dumps(observed, indent=2, sort_keys=True)
+    )
+
+
+def _assert_app_tree_is_expected(observed: list[str]) -> None:
+    """Compare the whole `/app` tree against a committed allowlist.
+
+    The previous control was a denylist of forbidden path fragments, and it
+    has already failed once: a stray `/app/frontend/README.md` shipped in a
+    ratified image because the list caught `tests/*` and not `README.md`
+    (`DEP-ART-E-003`).  A denylist can only exclude what someone thought of.
+    The `/app` tree is small and fully determined by the Dockerfile, so it can
+    be stated positively; the rest of the filesystem keeps the denylist.
+    """
+
+    if not APP_TREE_MANIFEST.is_file():
+        _review_required(APP_TREE_MANIFEST, observed, "/app tree manifest")
+    expected = json.loads(APP_TREE_MANIFEST.read_text(encoding="utf-8"))
+    expected_paths = sorted(expected["paths"])
+    if observed != expected_paths:
+        unexpected = sorted(set(observed) - set(expected_paths))
+        missing = sorted(set(expected_paths) - set(observed))
+        raise GateFailure(
+            "image /app tree does not match the committed manifest: "
+            f"unexpected={unexpected}, missing={missing}"
+        )
+
+
+def _assert_compiled_artifacts_are_expected(
+    observed: dict[str, str], architecture: str
+) -> None:
+    """Pin the hashes of the natively compiled extensions, per architecture.
+
+    The 2026-07-30 rebuild investigation refuted the concern that the unpinned
+    `build-essential` in the builder stage could change numeric output, by
+    showing `swisseph...so` was byte-identical across two builders.  That
+    refutation expires the moment the toolchain moves, and nobody would think
+    to repeat it.  Recording the hashes turns a future drift into a red light
+    instead of a future investigation.
+
+    Keyed by architecture because these are compiled objects: the amd64 and
+    arm64 builds of the same source produce different bytes by definition, and
+    a single flat mapping would make one platform permanently red.
+    """
+
+    if not COMPILED_ARTIFACTS_MANIFEST.is_file():
+        _review_required(
+            COMPILED_ARTIFACTS_MANIFEST,
+            {"artifacts": {architecture: observed}},
+            "compiled artifact manifest",
+        )
+    expected = json.loads(COMPILED_ARTIFACTS_MANIFEST.read_text(encoding="utf-8"))
+    by_architecture = expected["artifacts"]
+    if architecture not in by_architecture:
+        _review_required(
+            COMPILED_ARTIFACTS_MANIFEST,
+            {"artifacts": {**by_architecture, architecture: observed}},
+            f"compiled artifact manifest entry for {architecture}",
+        )
+    recorded = by_architecture[architecture]
+    drifted = {
+        path: {"expected": recorded.get(path), "observed": digest}
+        for path, digest in observed.items()
+        if recorded.get(path) != digest
+    }
+    absent = sorted(set(recorded) - set(observed))
+    if drifted or absent:
+        raise GateFailure(
+            "compiled artifact drift: the native extensions differ from the "
+            f"recorded build. drifted={drifted}, absent={absent}"
+        )
+
+
+def _builder_environment() -> dict[str, Any]:
+    def _first_line(command: list[str]) -> str | None:
+        completed = subprocess.run(
+            command, check=False, capture_output=True, text=True, timeout=60
+        )
+        if completed.returncode != 0:
+            return None
+        return completed.stdout.strip().splitlines()[0] if completed.stdout.strip() else None
+
+    return {
+        "trust_level": "developer_workstation_not_hermetic_ci",
+        "docker_version": _first_line(
+            ["docker", "version", "--format", "{{.Server.Version}}"]
+        ),
+        "buildx_version": _first_line(["docker", "buildx", "version"]),
+        "host_platform": f"{platform_module.system()}/{platform_module.machine()}",
+        "base_image_reference": _dockerfile_base_reference(),
+    }
+
+
+def _dockerfile_base_reference() -> str | None:
+    """The pinned base as written in the Dockerfile, digest included."""
+
+    dockerfile = PROJECT_ROOT / "deploy" / "Dockerfile"
+    if not dockerfile.is_file():
+        return None
+    for line in dockerfile.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.upper().startswith("FROM "):
+            return stripped[5:].split(" AS ")[0].strip()
+    return None
+
+
+def _image_architecture(image: str, platform: str | None) -> str:
+    inspected = json.loads(
+        _run(
+            ["docker", "image", "inspect", *_platform_args(platform), image]
+        ).stdout
+    )
+    return str(inspected[0]["Architecture"])
+
+
 def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
     suffix = uuid.uuid4().hex[:12]
     container = f"private-alpha-inventory-{suffix}"
@@ -277,11 +437,16 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                 timeout=600,
             )
             names: list[str] = []
+            app_entries: list[str] = []
+            content_identity_rows: list[str] = []
+            compiled_artifacts: dict[str, str] = {}
             canary_found = False
             with tarfile.open(archive_path, mode="r") as archive:
                 for member in archive:
                     normalized = "/" + member.name.lstrip("./")
                     names.append(normalized)
+                    if normalized.startswith("/app/"):
+                        app_entries.append(normalized)
                     lowered = normalized.casefold()
                     forbidden_path = (
                         "/.git/" in lowered
@@ -293,6 +458,8 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                         or lowered.endswith("/.ds_store")
                         or "/docs/red_team/" in lowered
                         or "/docs/archive/" in lowered
+                        or lowered == "/app/frontend"
+                        or lowered.startswith("/app/frontend/zh-TW/")
                         or normalized in {
                             "/build",
                             "/source",
@@ -311,12 +478,39 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                         raise GateFailure(
                             f"forbidden path included in image: {normalized}"
                         )
-                    if member.isfile() and member.size <= 8 * 1024 * 1024:
+                    payload_digest = ""
+                    if member.isfile():
                         extracted = archive.extractfile(member)
-                        if extracted is not None and CANARY.encode() in extracted.read():
-                            canary_found = True
+                        if extracted is not None:
+                            digest = hashlib.sha256()
+                            scanned = b""
+                            while True:
+                                chunk = extracted.read(1024 * 1024)
+                                if not chunk:
+                                    break
+                                digest.update(chunk)
+                                if len(scanned) < 8 * 1024 * 1024:
+                                    scanned += chunk
+                            payload_digest = digest.hexdigest()
+                            if CANARY.encode() in scanned:
+                                canary_found = True
+                            if _is_compiled_artifact(normalized):
+                                compiled_artifacts[normalized] = payload_digest
+                    if normalized not in DOCKER_INJECTED_PATHS:
+                        content_identity_rows.append(
+                            f"{normalized}\t{member.mode:04o}\t{member.uid}"
+                            f"\t{member.gid}\t{member.type.decode('ascii')}"
+                            f"\t{payload_digest}"
+                        )
             if canary_found:
                 raise GateFailure("image filesystem contains the secret canary")
+            content_identity = hashlib.sha256(
+                "\n".join(sorted(content_identity_rows)).encode("utf-8")
+            ).hexdigest()
+            _assert_app_tree_is_expected(sorted(app_entries))
+            _assert_compiled_artifacts_are_expected(
+                compiled_artifacts, _image_architecture(image, platform)
+            )
     finally:
         _run(["docker", "rm", "--force", container], check=False)
 
@@ -398,11 +592,50 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
         )
     return {
         "rootfs_entries": len(names),
+        "app_tree_entries": len(app_entries),
+        # A digest over (path, mode, uid, gid, type, content) for every entry
+        # except the ones Docker injects per container.  The image digest is
+        # not a stable identity — a 2026-07-30 rebuild of the same source
+        # produced a different digest whose only real difference was
+        # filesystem metadata from `useradd` and `chmod`, which forced an
+        # amendment to a ratified digest.  This value does not move for that
+        # reason, so it is the thing worth ratifying; the digest stays as the
+        # deployment pointer.
+        "content_identity": content_identity,
+        "compiled_artifacts": dict(sorted(compiled_artifacts.items())),
         "production_packages": sorted(packages),
         "forbidden_packages_present": sorted(forbidden),
         "secret_canary_present": False,
         "runtime": runtime,
     }
+
+
+# The birth date, time, timezone, altitude and coordinates below are fixture
+# values composed arbitrarily when this parity fixture was created.  They were
+# not taken from anyone's records.  An independent audit
+# (`IMG-2026-08-08-E-005`) could not tell that from the repository, because
+# nothing said so anywhere the file travels — and the baseline is published as
+# part of the Corresponding Source, so it travels alone.  Hence
+# PAYLOAD_PROVENANCE, which is serialized into the baseline itself rather than
+# stated only here or in a document.
+#
+# Note what the statement does not say.  It does not claim these values fail to
+# match some real person; nobody can show that, and a claim that cannot be
+# supported is worse than none.  It claims only that no record was consulted.
+PAYLOAD_PROVENANCE: dict[str, Any] = {
+    "synthetic": True,
+    "statement": (
+        "The birth datetime, timezone, altitude and coordinates in these "
+        "payloads are fixture values composed arbitrarily when the parity "
+        "fixture was created. They were not derived from, copied from, or "
+        "used to describe any real person's records, and no such record was "
+        "consulted. No claim is made that the values differ from every real "
+        "individual's birth data; the claim is only about their origin."
+    ),
+    "attested_by": "Sebastian",
+    "attested_on": "2026-08-07",
+    "finding": "IMG-2026-08-08-E-005",
+}
 
 
 def _payloads() -> list[dict[str, Any]]:
@@ -586,7 +819,7 @@ def verify_committed_parity_baseline() -> dict[str, Any]:
     if len(schema_versions) != 1:
         raise GateFailure(
             f"current responses have mixed schema versions: "
-            f"{sorted(schema_versions)}"
+            f"{sorted(schema_versions, key=str)}"
         )
     return {
         "status": "compatible",
@@ -619,6 +852,7 @@ def _assert_parity(
             if (
                 re.fullmatch(r"^\$\.calculation_trace\[\d+\]\.title$", path)
                 and isinstance(actual, str)
+                and isinstance(expected, str)
                 and expected.startswith("恆星 ")
                 and actual.startswith("恆星 ")
                 and expected.endswith("位置計算")
@@ -631,6 +865,10 @@ def _assert_parity(
                 r"^\$\.astronomical_data\.fixed_stars\[\d+\]\.catalog_name$",
                 path,
             ):
+                if not isinstance(expected, str) or not isinstance(actual, str):
+                    raise GateFailure(
+                        f"catalog name at {path} is not a string on both sides"
+                    )
                 normalized_expected = "".join(expected.split()).casefold()
                 normalized_actual = (
                     "".join(actual.split()).casefold()
@@ -795,8 +1033,28 @@ def _wait_healthy(container: str, timeout: float = 120) -> None:
 
 def _start_container(
     image: str, workers: int, platform: str | None
-) -> tuple[str, str]:
+) -> tuple[str, str, Path]:
     container = f"private-alpha-{workers}w-{uuid.uuid4().hex[:10]}"
+    image_identity = _inspect_image(image, platform)
+    revision = image_identity.get("revision")
+    image_id = image_identity.get("id")
+    if not isinstance(revision, str) or not isinstance(image_id, str):
+        raise GateFailure("image identity is unavailable for frontend release")
+    temporary = Path(tempfile.mkdtemp(prefix="container-frontend-release-"))
+    built = build_frontend_release(
+        source_root=PROJECT_ROOT,
+        output_parent=temporary,
+        public_source_revision=revision,
+        require_clean_revision=False,
+    )
+    frontend_revision = str(built["frontend_public_source_revision"])
+    frontend_digest = str(built["artifact_digest"])
+    combined = combined_release_id(
+        backend_image_id=image_id,
+        backend_public_source_revision=revision,
+        frontend_artifact_digest=frontend_digest,
+        frontend_public_source_revision=frontend_revision,
+    )
     command = [
         "docker",
         "run",
@@ -827,6 +1085,21 @@ def _start_container(
         "max-file=2",
         "--publish",
         "127.0.0.1::8000",
+        "--mount",
+        (
+            "type=bind,src=" + str(built["release_directory"])
+            + ",dst=/app/frontend,readonly"
+        ),
+        "--env",
+        "CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE=1",
+        "--env",
+        "CLASSICAL_ASTROLOGY_FRONTEND_ROOT=/app/frontend",
+        "--env",
+        f"CLASSICAL_ASTROLOGY_FRONTEND_RELEASE_DIGEST={frontend_digest}",
+        "--env",
+        f"CLASSICAL_ASTROLOGY_BACKEND_IMAGE_ID={image_id}",
+        "--env",
+        f"CLASSICAL_ASTROLOGY_COMBINED_RELEASE_ID={combined}",
         image,
         "/opt/venv/bin/python",
         "-m",
@@ -859,9 +1132,10 @@ def _start_container(
     try:
         _wait_healthy(container)
         port = _host_port(container)
-        return container, f"http://127.0.0.1:{port}"
+        return container, f"http://127.0.0.1:{port}", temporary
     except Exception:
         _run(["docker", "rm", "--force", container], check=False)
+        shutil.rmtree(temporary, ignore_errors=True)
         raise
 
 
@@ -974,7 +1248,9 @@ def _single_worker_parity(
     baselines: list[dict[str, Any]] | None,
     platform: str | None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    container, base_url = _start_container(image, 1, platform)
+    container, base_url, frontend_temporary = _start_container(
+        image, 1, platform
+    )
     try:
         controls = _runtime_controls(container, base_url)
         container_results = []
@@ -1025,6 +1301,7 @@ def _single_worker_parity(
         }, container_results
     finally:
         _run(["docker", "rm", "--force", container], check=False)
+        shutil.rmtree(frontend_temporary, ignore_errors=True)
 
 
 def _assert_container_build_identity(
@@ -1035,17 +1312,38 @@ def _assert_container_build_identity(
         raise GateFailure("image revision label is not a full lowercase Git revision")
     for case_index, result in enumerate(container_results):
         identity = result.get("calculation_dossier", {}).get("build_identity")
-        if identity != {
-            "status": "available",
-            "source_revision": image_revision,
-            "revision_source": (
-                "build_environment:"
-                "CLASSICAL_ASTROLOGY_SOURCE_REVISION"
-            ),
-        }:
+        release_identity = (
+            identity.get("release_identity")
+            if isinstance(identity, dict)
+            else None
+        )
+        if (
+            not isinstance(identity, dict)
+            or {
+                key: identity.get(key)
+                for key in ("status", "source_revision", "revision_source")
+            }
+            != {
+                "status": "available",
+                "source_revision": image_revision,
+                "revision_source": (
+                    "build_environment:"
+                    "CLASSICAL_ASTROLOGY_SOURCE_REVISION"
+                ),
+            }
+            or not isinstance(release_identity, dict)
+            or release_identity.get("status") != "available"
+            or release_identity.get("backend", {}).get(
+                "public_source_revision"
+            ) != image_revision
+            or not re.fullmatch(
+                r"[0-9a-f]{64}",
+                str(release_identity.get("combined_release_id", "")),
+            )
+        ):
             raise GateFailure(
                 f"single-worker case {case_index}: Dossier build identity "
-                "does not match the OCI image revision"
+                "does not match the OCI and mounted frontend release"
             )
 
 
@@ -1055,7 +1353,9 @@ def _two_worker_isolation(
     baselines: list[dict[str, Any]],
     platform: str | None,
 ) -> dict[str, Any]:
-    container, base_url = _start_container(image, 2, platform)
+    container, base_url, frontend_temporary = _start_container(
+        image, 2, platform
+    )
     try:
         process_table = _run(
             ["docker", "top", container, "-eo", "pid,ppid,args"]
@@ -1099,6 +1399,7 @@ def _two_worker_isolation(
         }
     finally:
         _run(["docker", "rm", "--force", container], check=False)
+        shutil.rmtree(frontend_temporary, ignore_errors=True)
 
 
 def _worker_pids(container: str) -> list[int]:
@@ -1185,20 +1486,54 @@ def _signal_worker(container: str, pid: int, signal_name: str) -> None:
 
 
 def _process_resources(container: str, pids: list[int]) -> dict[str, Any]:
-    program = (
-        "import json,pathlib;"
-        "pids=" + repr(pids) + ";"
-        "out={};"
-        "\nfor pid in pids:"
-        "\n s=pathlib.Path(f'/proc/{pid}/status').read_text();"
-        "\n fields={line.split(':',1)[0]:line.split(':',1)[1].strip() "
-        "for line in s.splitlines() if ':' in line};"
-        "\n out[str(pid)]={'rss_kib':int(fields['VmRSS'].split()[0]),"
-        "'hwm_kib':int(fields['VmHWM'].split()[0]),"
-        "'state':fields['State'].split()[0],"
-        "'threads':int(fields['Threads']),"
-        "'fds':len(list(pathlib.Path(f'/proc/{pid}/fd').iterdir()))};"
-        "\nprint(json.dumps(out))"
+    # `fds` counts every entry in /proc/<pid>/fd, and most of them are the
+    # client sockets the server is serving with at that instant, so comparing
+    # two such counts measures when the snapshots were taken. Splitting sockets
+    # out is still right; what was written here before was the conclusion drawn
+    # next, and it was wrong.
+    #
+    # This comment used to say that a direct probe held steady at 22 fds across
+    # 240 requests while the gate reported a delta of three, and therefore that
+    # the delta was noise. The gate was correct. Swiss Ephemeris opens three
+    # files per worker thread and does not return them when the thread exits,
+    # so the count tracks how many threads have ever been created — and three
+    # was not measurement error, it was the three ephemeris files. A 240-request
+    # probe almost never contains a thread creation, so it could not have
+    # contained the phenomenon it was used to rule out.
+    #
+    # The non-socket count is therefore a real leak signal, not a settled one:
+    # it does not return to steady state after warm-up. See
+    # IMG-2026-08-08-E-001, scripts/verification/probe_fd_saturation.py and
+    # POSTMORTEM_6A section 4.6.
+    program = "\n".join(
+        (
+            "import json, os, pathlib",
+            f"pids = {pids!r}",
+            "out = {}",
+            "for pid in pids:",
+            "    status = pathlib.Path(f'/proc/{pid}/status').read_text()",
+            "    fields = {",
+            "        line.split(':', 1)[0]: line.split(':', 1)[1].strip()",
+            "        for line in status.splitlines() if ':' in line",
+            "    }",
+            "    targets = []",
+            "    for entry in pathlib.Path(f'/proc/{pid}/fd').iterdir():",
+            "        try:",
+            "            targets.append(os.readlink(entry))",
+            "        except OSError:",
+            "            pass",
+            "    sockets = sum(1 for t in targets if t.startswith('socket:'))",
+            "    out[str(pid)] = {",
+            "        'rss_kib': int(fields['VmRSS'].split()[0]),",
+            "        'hwm_kib': int(fields['VmHWM'].split()[0]),",
+            "        'state': fields['State'].split()[0],",
+            "        'threads': int(fields['Threads']),",
+            "        'fds': len(targets),",
+            "        'fds_sockets': sockets,",
+            "        'fds_files': len(targets) - sockets,",
+            "    }",
+            "print(json.dumps(out))",
+        )
     )
     output = _run(
         [
@@ -1271,6 +1606,110 @@ def _warm_every_worker(
     )
 
 
+def _soak_pass(
+    *,
+    container: str,
+    base_url: str,
+    payloads: list[dict[str, Any]],
+    baselines: list[dict[str, Any]],
+    stable_pids: list[int],
+    soak_requests: int,
+    strict_handle_growth: bool,
+) -> dict[str, Any]:
+    """Run one soak and measure it.
+
+    `strict_handle_growth` separates the two roles. The warm-up pass still has
+    to hold the memory bounds — a runaway allocation is a defect whichever pass
+    it happens in — but only the measured pass may be judged on descriptors and
+    threads, because only it starts from a process that has already opened
+    everything it opens lazily.
+    """
+
+    before = _process_resources(container, stable_pids)
+    sampled_peak_rss = {
+        str(pid): before[str(pid)]["rss_kib"] for pid in stable_pids
+    }
+    completed_requests = 0
+    while completed_requests < soak_requests:
+        batch_size = min(4, soak_requests - completed_requests)
+        jobs = [
+            (request_index, request_index % len(payloads))
+            for request_index in range(
+                completed_requests, completed_requests + batch_size
+            )
+        ]
+        with ThreadPoolExecutor(max_workers=batch_size) as executor:
+            futures = {
+                executor.submit(_chart, base_url, payloads[case]): (
+                    request_index,
+                    case,
+                )
+                for request_index, case in jobs
+            }
+            for future in as_completed(futures):
+                request_index, case = futures[future]
+                try:
+                    _assert_parity(baselines[case], future.result())
+                except GateFailure as exc:
+                    raise GateFailure(
+                        f"soak request {request_index}, case {case}: {exc}"
+                    ) from exc
+        completed_requests += batch_size
+        if completed_requests % 25 == 0 or completed_requests == soak_requests:
+            sample = _process_resources(container, stable_pids)
+            for pid in stable_pids:
+                key = str(pid)
+                sampled_peak_rss[key] = max(
+                    sampled_peak_rss[key], sample[key]["rss_kib"]
+                )
+    final_pids = _worker_pids(container)
+    if final_pids != stable_pids:
+        raise GateFailure(
+            f"worker churned during soak: {stable_pids} -> {final_pids}"
+        )
+    after = _process_resources(container, final_pids)
+    deltas: dict[str, Any] = {}
+    for pid in final_pids:
+        key = str(pid)
+        deltas[key] = {
+            field: after[key][field] - before[key][field]
+            for field in (
+                "rss_kib",
+                "hwm_kib",
+                "threads",
+                "fds",
+                "fds_sockets",
+                "fds_files",
+            )
+        }
+        deltas[key]["peak_rss_kib"] = sampled_peak_rss[key]
+        if deltas[key]["rss_kib"] > 65536:
+            raise GateFailure(f"worker {pid} RSS grew by more than 64 MiB")
+        if deltas[key]["hwm_kib"] > 98304:
+            raise GateFailure(
+                f"worker {pid} high-water RSS grew by more than 96 MiB"
+            )
+        if sampled_peak_rss[key] > 393216:
+            raise GateFailure(f"worker {pid} sampled RSS exceeded 384 MiB")
+        if strict_handle_growth and (
+            deltas[key]["threads"] > 1 or deltas[key]["fds_files"] > 1
+        ):
+            raise GateFailure(
+                f"worker {pid} leaked handles on the warm soak pass: "
+                f"{deltas[key]}. The first pass already opened every lazily "
+                "opened file, so non-socket growth here is leakage, not "
+                "warm-up. Sockets are excluded deliberately: they are the "
+                "connections being served at the instant of the snapshot."
+            )
+    return {
+        "before": before,
+        "after": after,
+        "deltas": deltas,
+        "final_pids": final_pids,
+        "strict_handle_growth": strict_handle_growth,
+    }
+
+
 def _resilience_and_soak(
     image: str,
     platform: str | None,
@@ -1278,7 +1717,9 @@ def _resilience_and_soak(
     baselines: list[dict[str, Any]],
     soak_requests: int,
 ) -> dict[str, Any]:
-    container, base_url = _start_container(image, 2, platform)
+    container, base_url, frontend_temporary = _start_container(
+        image, 2, platform
+    )
     try:
         original = _worker_pids(container)
         if len(original) < 2:
@@ -1320,79 +1761,38 @@ def _resilience_and_soak(
             payloads,
             baselines,
         )
-        before = _process_resources(container, stable_pids)
-        sampled_peak_rss = {
-            str(pid): before[str(pid)]["rss_kib"] for pid in stable_pids
-        }
-        completed_requests = 0
-        while completed_requests < soak_requests:
-            batch_size = min(4, soak_requests - completed_requests)
-            jobs = [
-                (
-                    request_index,
-                    request_index % len(payloads),
-                )
-                for request_index in range(
-                    completed_requests,
-                    completed_requests + batch_size,
-                )
-            ]
-            with ThreadPoolExecutor(max_workers=batch_size) as executor:
-                futures = {
-                    executor.submit(_chart, base_url, payloads[case]): (
-                        request_index,
-                        case,
-                    )
-                    for request_index, case in jobs
-                }
-                for future in as_completed(futures):
-                    request_index, case = futures[future]
-                    try:
-                        _assert_parity(baselines[case], future.result())
-                    except GateFailure as exc:
-                        raise GateFailure(
-                            f"soak request {request_index}, case {case}: {exc}"
-                        ) from exc
-            completed_requests += batch_size
-            if completed_requests % 25 == 0 or completed_requests == soak_requests:
-                sample = _process_resources(container, stable_pids)
-                for pid in stable_pids:
-                    key = str(pid)
-                    sampled_peak_rss[key] = max(
-                        sampled_peak_rss[key],
-                        sample[key]["rss_kib"],
-                    )
-        final_pids = _worker_pids(container)
-        if final_pids != stable_pids:
-            raise GateFailure(
-                f"worker churned during soak: {stable_pids} -> {final_pids}"
-            )
-        after = _process_resources(container, final_pids)
-        deltas = {}
-        for pid in final_pids:
-            key = str(pid)
-            deltas[key] = {
-                field: after[key][field] - before[key][field]
-                for field in ("rss_kib", "hwm_kib", "threads", "fds")
-            }
-            deltas[key]["peak_rss_kib"] = sampled_peak_rss[key]
-            if deltas[key]["rss_kib"] > 65536:
-                raise GateFailure(
-                    f"worker {pid} RSS grew by more than 64 MiB"
-                )
-            if deltas[key]["hwm_kib"] > 98304:
-                raise GateFailure(
-                    f"worker {pid} high-water RSS grew by more than 96 MiB"
-                )
-            if sampled_peak_rss[key] > 393216:
-                raise GateFailure(
-                    f"worker {pid} sampled RSS exceeded 384 MiB"
-                )
-            if deltas[key]["threads"] > 2 or deltas[key]["fds"] > 4:
-                raise GateFailure(
-                    f"worker {pid} resource growth exceeded bounded "
-                    f"thresholds: {deltas[key]}"
-                )
+        first_pass = _soak_pass(
+            container=container,
+            base_url=base_url,
+            payloads=payloads,
+            baselines=baselines,
+            stable_pids=stable_pids,
+            soak_requests=soak_requests,
+            strict_handle_growth=False,
+        )
+        # Sebastian ruled option C on 2026-08-07. One soak measured file
+        # descriptors that had never been opened rather than descriptors that
+        # leaked: Swiss Ephemeris opens its data files lazily, and which worker
+        # opens which file between two snapshots is decided by the four
+        # rotating modes, not by load. Measured, it did not scale — 250
+        # requests gave +6, 500 gave +3 and +3, 750 gave +6, on native arm64 as
+        # well as emulated amd64.
+        #
+        # Raising the threshold would have bought silence at the cost of
+        # resolution: a genuine leak of five per soak would then pass forever,
+        # and this repository has already watched one gate become ignorable.
+        # A second pass costs a minute and removes the ambiguity instead of
+        # tolerating it — it runs against an already-warm process, so its
+        # growth is leakage and can be held to nearly zero.
+        second_pass = _soak_pass(
+            container=container,
+            base_url=base_url,
+            payloads=payloads,
+            baselines=baselines,
+            stable_pids=first_pass["final_pids"],
+            soak_requests=soak_requests,
+            strict_handle_growth=True,
+        )
         return {
             "SIGKILL": {
                 "target_pid": killed,
@@ -1411,17 +1811,21 @@ def _resilience_and_soak(
                 "replacement_warmup": replacement_warmup,
             },
             "soak": {
-                "requests": soak_requests,
+                "requests_per_pass": soak_requests,
+                "passes": 2,
+                "semantics": (
+                    "pass one absorbs lazily opened files; pass two runs warm, "
+                    "so its handle growth is leakage and is held near zero"
+                ),
                 "worker_pids_stable": True,
-                "before": before,
-                "after": after,
-                "deltas": deltas,
+                "warm_up_pass": first_pass,
+                "measured_pass": second_pass,
                 "thresholds": {
                     "rss_growth_kib_per_worker": 65536,
                     "hwm_growth_kib_per_worker": 98304,
                     "peak_rss_kib_per_worker": 393216,
-                    "threads_growth_per_worker": 2,
-                    "fds_growth_per_worker": 4,
+                    "threads_growth_per_worker_measured_pass": 1,
+                    "fds_files_growth_per_worker_measured_pass": 1,
                 },
                 "request_concurrency": 4,
                 "sample_every_requests": 25,
@@ -1434,6 +1838,7 @@ def _resilience_and_soak(
         }
     finally:
         _run(["docker", "rm", "--force", container], check=False)
+        shutil.rmtree(frontend_temporary, ignore_errors=True)
 
 
 def main() -> int:

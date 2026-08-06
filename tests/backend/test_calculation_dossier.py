@@ -11,7 +11,7 @@ import swisseph as swe
 from fastapi.testclient import TestClient
 
 from app.main import app, create_app
-from app.schemas import ChartRequest
+from app.schemas import ChartRequest, OptionsInput
 from app.settings import AppProfile, AppSettings
 
 
@@ -75,9 +75,9 @@ def test_dossier_is_a_versioned_backend_receipt_with_replayable_inputs():
     assert response.status_code == 200
     data = response.json()
 
-    assert data["schema_version"] == "0.10.0"
+    assert data["schema_version"] == "0.13.0"
     dossier = data["calculation_dossier"]
-    assert dossier["dossier_version"] == "0.3.2"
+    assert dossier["dossier_version"] == "0.6.0"
     assert dossier["status"] == "provisional"
     assert dossier["authority"] == "backend_effective_runtime"
     assert dossier["build_identity"] == {
@@ -145,6 +145,172 @@ def test_dossier_separates_time_policy_requested_options_and_effective_modules()
         data["astronomical_data"]["time"]["ecl_nut_retflag"]
     )
     assert time["ayanamsa_degrees"] is None
+
+
+def test_option_state_receipts_cover_the_exact_options_model_and_input_presence():
+    """D-QA-03: every option has a closed execution receipt, not only an echo."""
+
+    payload = dossier_payload()
+    # Explicitly repeat one default and select one opt-in so explicit/defaulted
+    # and requested/not-requested are both represented in one real API call.
+    payload["options"]["include_aspects"] = True
+    payload["options"]["include_chiron"] = True
+    response = client.post("/api/chart", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    states = data["calculation_dossier"]["calculation_policy"]["option_states"]
+
+    assert set(states) == set(OptionsInput.model_fields)
+    assert states["include_aspects"]["input_presence"] == "explicit"
+    assert states["include_aspects"]["requested"] is True
+    assert states["include_aspects"]["executed"] is True
+    assert states["include_aspects"]["available"] is True
+    assert states["include_chiron"]["available"] is True
+    assert states["include_south_nodes"]["input_presence"] == "defaulted"
+    assert states["include_south_nodes"]["reason_code"] == "option_not_requested"
+    assert states["moon_position_profile"]["input_presence"] == "defaulted"
+    assert states["moon_position_profile"]["requested"] is True
+    assert states["moon_position_profile"]["executed"] is True
+    assert states["moon_position_profile"]["available"] is True
+    for name, state in states.items():
+        assert set(state) == {
+            "input_presence",
+            "requested_value",
+            "requested",
+            "executed",
+            "applicable",
+            "available",
+            "source",
+            "reason_code",
+            "response_paths",
+        }, name
+        assert state["input_presence"] in {"explicit", "defaulted"}
+        assert state["response_paths"], name
+        if state["available"]:
+            assert state["executed"] is True, name
+            assert state["applicable"] is True, name
+            assert state["source"] is not None, name
+
+
+def test_available_option_response_paths_are_real_non_null_response_paths():
+    """QA-RT-03-001: an available receipt may not cite a pseudo-selector."""
+
+    payload = dossier_payload()
+    payload["options"].update(include_chiron=True)
+    response = client.post("/api/chart", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    states = data["calculation_dossier"]["calculation_policy"]["option_states"]
+
+    def resolve(path: str):
+        value = data
+        for component in path.split("."):
+            assert "[" not in component and "]" not in component, path
+            assert isinstance(value, dict) and component in value, path
+            value = value[component]
+        return value
+
+    for name, state in states.items():
+        if not state["available"]:
+            continue
+        assert state["response_paths"], name
+        assert resolve(state["source"]) is not None, (name, state["source"])
+        for path in state["response_paths"]:
+            assert resolve(path) is not None, (name, path)
+
+
+def test_dependent_option_receipts_name_parent_not_requested_and_house_inapplicability():
+    payload = dossier_payload()
+    payload["options"].update(
+        {
+            "include_houses": False,
+            "include_antiscia": False,
+            "antiscia_include_nodes": True,
+            "include_aspects": False,
+            "include_aspect_perfection": True,
+            "aspect_include_nodes": True,
+            "include_extra_angles": True,
+            "include_anti_vertex": True,
+        }
+    )
+    response = client.post("/api/chart", json=payload)
+    assert response.status_code == 200
+    dossier = response.json()["calculation_dossier"]
+    states = dossier["calculation_policy"]["option_states"]
+
+    for name in (
+        "antiscia_include_nodes",
+        "include_aspect_perfection",
+        "aspect_include_nodes",
+    ):
+        assert states[name] == {
+            **states[name],
+            "requested": True,
+            "executed": False,
+            "applicable": False,
+            "available": False,
+            "source": None,
+            "reason_code": "parent_module_not_requested_or_not_applicable",
+        }
+    for name in ("include_extra_angles", "include_anti_vertex"):
+        assert states[name]["requested"] is True
+        assert states[name]["executed"] is False
+        assert states[name]["applicable"] is False
+        assert states[name]["available"] is False
+        assert states[name]["reason_code"] == "house_calculation_not_executed"
+
+
+def test_option_state_records_attempted_upstream_failure_without_calling_it_available():
+    payload = dossier_payload()
+    payload["datetime"].update(
+        year=2399, month=12, day=31, hour=12, minute=0, second=0
+    )
+    payload["options"]["include_lunar_phases"] = True
+    response = client.post("/api/chart", json=payload)
+    assert response.status_code == 200
+    state = response.json()["calculation_dossier"]["calculation_policy"][
+        "option_states"
+    ]["include_lunar_phases"]
+
+    assert state["requested"] is True
+    assert state["executed"] is True
+    assert state["applicable"] is False
+    assert state["available"] is False
+    assert state["source"] == "astronomical_data.lunar_events"
+    assert state["reason_code"] == "full_ephemeris_unavailable_for_search_window"
+
+
+def test_dignity_option_states_fail_closed_with_the_method_boundary_reason():
+    payload = dossier_payload()
+    payload["computation_mode"]["zodiac"] = "sidereal"
+    payload["options"].update(
+        {
+            "include_domicile_exaltation": True,
+            "bounds_profile": "egyptian_bounds_robbins_1940_v1",
+            "decan_profile": "chaldean_planetary_faces_firmicus_ii_4_v1",
+            "triplicity_profile": "dorothean_triplicity_three_rulers_v1",
+        }
+    )
+    response = client.post("/api/chart", json=payload)
+    assert response.status_code == 200
+    states = response.json()["calculation_dossier"]["calculation_policy"][
+        "option_states"
+    ]
+
+    for name in (
+        "include_domicile_exaltation",
+        "bounds_profile",
+        "decan_profile",
+        "triplicity_profile",
+    ):
+        assert states[name]["requested"] is True
+        assert states[name]["executed"] is False
+        assert states[name]["applicable"] is False
+        assert states[name]["available"] is False
+        assert states[name]["source"] is None
+        assert states[name]["reason_code"] == (
+            "sidereal_dignity_basis_not_authorized"
+        )
 
 
 def test_dossier_records_engine_files_and_actual_retflags_without_absolute_paths():
@@ -347,9 +513,14 @@ def test_trace_receipt_is_integrity_checkable_and_privacy_scope_is_explicit():
         "anonymous_share_ready",
         "evidence_semantics",
         "claims",
+        # FPI-2026-08-06-E-011：未涵蓋層的敘述隨部署 profile 變動，因此收據
+        # 必須說出自己描述的是哪一種部署，否則它又會在錯誤的形態下沉默。
+        "deployment_profile",
+        "deployment_profile_status",
+        "uncovered_layer_semantics",
         "uncovered_layers",
     }
-    assert privacy["privacy_attestation_version"] == "1.2.0"
+    assert privacy["privacy_attestation_version"] == "1.3.0"
     assert privacy["attestation_status"] == (
         "provisional_pending_external_review"
     )
@@ -488,20 +659,23 @@ def test_privacy_attestation_claims_are_layered_closed_and_evidence_bound():
     for unsupported_word in ("secure", "verified", "disabled"):
         assert unsupported_word not in serialized_statuses
 
-    assert privacy["uncovered_layers"] == [
-        {
-            "layer": "reverse_proxy_cdn_waf",
-            "status": "outside_current_control_scope",
-            "note": "目前本機產品路徑不存在此層；不提供未來部署保證。",
-        },
-        {
-            "layer": "hosting_supervisor",
-            "status": "outside_current_control_scope",
-            "note": (
-                "Infomaniak provider已選且identity verification已通過；"
-                "真實VPS尚未部署或驗證，host log與retention仍待deployment canary。"
-            ),
-        },
+    # FPI-2026-08-06-E-011：前兩層的敘述隨部署 profile 變動，因此這裡改為
+    # 釘住結構與該層的關鍵語意，而不是逐字複製一段會隨 profile 改變的文字。
+    # 本測試走的是預設（local）path。逐 profile 的措辭由
+    # tests/backend/test_blind_review_second_batch.py 看守。
+    assert [layer["layer"] for layer in privacy["uncovered_layers"]] == [
+        "reverse_proxy_cdn_waf",
+        "hosting_supervisor",
+        "third_party_telemetry",
+        "browser_os_native_memory",
+    ]
+    assert all(
+        layer["status"] == "outside_current_control_scope"
+        for layer in privacy["uncovered_layers"]
+    )
+    assert "不存在此層" in privacy["uncovered_layers"][0]["note"]
+    assert "本機執行" in privacy["uncovered_layers"][1]["note"]
+    assert privacy["uncovered_layers"][2:] == [
         {
             "layer": "third_party_telemetry",
             "status": "outside_current_control_scope",

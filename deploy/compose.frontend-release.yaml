@@ -1,0 +1,17 @@
+# Frontend release overlay. The source is one already-verified immutable
+# release directory, never a live source checkout or rsync target.
+services:
+  private-alpha-app:
+    environment:
+      CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE: "1"
+      CLASSICAL_ASTROLOGY_FRONTEND_ROOT: "/app/frontend"
+      CLASSICAL_ASTROLOGY_FRONTEND_RELEASE_DIGEST: "${FRONTEND_RELEASE_DIGEST:?set FRONTEND_RELEASE_DIGEST}"
+      CLASSICAL_ASTROLOGY_COMBINED_RELEASE_ID: "${COMBINED_RELEASE_ID:?set COMBINED_RELEASE_ID}"
+      CLASSICAL_ASTROLOGY_BACKEND_IMAGE_ID: "${BACKEND_IMAGE_ID:?set BACKEND_IMAGE_ID}"
+    volumes:
+      - type: bind
+        source: "${FRONTEND_RELEASE_DIR:?set FRONTEND_RELEASE_DIR}"
+        target: /app/frontend
+        read_only: true
+        bind:
+          create_host_path: false

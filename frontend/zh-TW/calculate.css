@@ -1,0 +1,540 @@
+/* /calculate — compose ＋ read。色值與字體一律來自 tokens.css。 */
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.8;
+  font-feature-settings:"palt" 1;
+}
+.wrap{max-width:var(--wrap); margin:0 auto; padding:0 var(--pad)}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+[hidden]{display:none !important}
+
+.eyebrow{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--ink-faint);
+}
+
+/* ── 頁首：黑底招牌 ─────────────────────────────── */
+header{background:var(--plate); color:var(--plate-fg); border-bottom:1px solid var(--plate-hair)}
+header .wrap{display:flex; align-items:baseline; gap:var(--s3); min-height:70px; flex-wrap:wrap}
+.brand{font-family:var(--serif); font-size:1.35rem; letter-spacing:.18em; text-decoration:none; color:inherit}
+.brand small{font-family:var(--serif); font-size:.78rem; letter-spacing:.3em; color:var(--plate-dim); margin-left:.6rem}
+.profile-chip{
+  margin-left:auto; font-family:var(--mono); font-size:.68rem; letter-spacing:.16em;
+  color:var(--plate-dim); border:1px solid var(--plate-hair); padding:.2rem .7rem;
+}
+.profile-chip[data-state="resolving"]{color:var(--plate-dim)}
+.profile-chip[data-state="failed"]{color:var(--accent-rev); border-color:var(--accent-rev)}
+
+/* ── 表單 ───────────────────────────────────────── */
+.compose{padding:var(--s4) 0 var(--s5)}
+h1{
+  font-family:var(--serif); font-weight:400; letter-spacing:.02em;
+  font-size:clamp(1.9rem,4vw,3rem); line-height:1.35; margin:var(--s2) 0 var(--s2);
+}
+.lede{max-width:var(--measure); color:var(--ink-dim)}
+
+form{margin-top:var(--s4); border-top:1px solid var(--ink)}
+fieldset{border:0; border-bottom:1px solid var(--hair-soft); padding:var(--s3) 0}
+legend{
+  font-family:var(--serif); font-size:1.08rem; letter-spacing:.02em;
+  color:var(--ink); padding:0 0 .2rem;
+}
+.grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s2) var(--s3); margin-top:var(--s2)}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.field{display:flex; flex-direction:column; gap:.3rem}
+.field label{font-size:.88rem; color:var(--ink-dim)}
+.field .hint{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); letter-spacing:.04em}
+input,select{
+  font-family:var(--mono); font-size:.95rem; font-variant-numeric:tabular-nums;
+  background:var(--paper-2); color:var(--ink);
+  border:1px solid var(--hair); border-radius:var(--radius);
+  padding:.6rem .7rem; width:100%;
+}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px;
+}
+input:disabled{background:var(--paper); color:var(--ink-faint); cursor:not-allowed}
+.choice{display:flex; flex-wrap:wrap; gap:var(--s2); margin-top:var(--s2)}
+.choice label{
+  display:flex; gap:.5rem; align-items:flex-start; font-size:.9rem;
+  border:1px solid var(--hair); padding:.6rem .8rem; flex:1 1 14rem; cursor:pointer;
+}
+/* 單選鈕與下方的勾選框同一套刻記語彙。先前這裡沒有樣式，於是三個精確度
+   選項是作業系統預設的藍色圓點——在整片墨與紙的版面裡是唯一一處系統藍，
+   而且與同一頁的勾選框對不起來。實心圓點而非打勾，維持「單選 vs 複選」
+   的形狀差異。 */
+.choice input{width:auto; margin-top:.35rem}
+.choice input[type="radio"]{
+  appearance:none; -webkit-appearance:none;
+  width:1.05rem; height:1.05rem; flex:0 0 auto;
+  border:1px solid var(--ink-faint); border-radius:50%;
+  background:var(--paper); cursor:pointer; position:relative;
+  transition:border-color .12s ease;
+}
+.choice input[type="radio"]:hover{border-color:var(--ink)}
+.choice input[type="radio"]:checked{border-color:var(--ink)}
+.choice input[type="radio"]:checked::after{
+  content:""; position:absolute; inset:.24rem;
+  border-radius:50%; background:var(--ink);
+}
+.choice b{display:block; font-weight:600}
+.choice span{display:block; font-size:.78rem; color:var(--ink-faint); line-height:1.55}
+.choice label:has(input:checked){border-color:var(--ink); background:var(--paper-2)}
+
+.consequence{
+  margin-top:var(--s2); border-left:2px solid var(--accent);
+  padding:.5rem 0 .5rem .9rem; font-size:.86rem; color:var(--ink-dim);
+}
+
+.actions{display:flex; flex-wrap:wrap; gap:var(--s2); align-items:center; padding:var(--s3) 0}
+button{
+  font-family:var(--sans); font-size:.95rem; border-radius:var(--radius);
+  border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  padding:.8rem 1.8rem; cursor:pointer;
+}
+button:hover:not(:disabled){background:var(--accent); border-color:var(--accent)}
+button:disabled{opacity:.45; cursor:not-allowed}
+button.ghost{background:transparent; color:var(--ink)}
+button.ghost:hover:not(:disabled){background:var(--ink); color:var(--paper)}
+button.small{font-size:.82rem; padding:.45rem 1rem}
+
+.status-line{font-size:.88rem; color:var(--ink-dim)}
+/* FPI-2026-08-06-E-010：按鈕旁的短訊，與 #status-line 同文。 */
+.inline-status{font-size:.82rem; color:var(--ink-dim); margin-left:.5rem}
+.inline-status[data-tone="error"]{color:var(--accent)}
+.status-line[data-tone="error"]{color:var(--accent)}
+/* warning 是第三個狀態，不是 info 的別名：查詢被截斷時結果仍然有用，
+   但它不涵蓋使用者打的全部內容。若與 info 同色，這個區別就等於沒說。
+   借用 unavailable 的赭色——比 error 輕，比 info 重。 */
+.status-line[data-tone="warning"]{color:var(--state-unavailable)}
+
+/* ── 錯誤 ───────────────────────────────────────── */
+.error-panel{
+  border:1px solid var(--accent); border-left-width:3px;
+  background:var(--paper-2); padding:var(--s2) var(--s3); margin-top:var(--s3);
+}
+.error-panel h2{font-size:1rem; margin-bottom:.4rem}
+.error-panel p{color:var(--ink-dim); font-size:.92rem}
+.error-panel ul{margin:.6rem 0 0 1.1rem; font-size:.88rem; color:var(--ink-dim)}
+
+/* ── 結果 ───────────────────────────────────────── */
+.results{padding:0 0 var(--s6)}
+.result-head{border-top:1px solid var(--ink); padding:var(--s3) 0; display:flex; flex-wrap:wrap; gap:var(--s2) var(--s3); align-items:baseline}
+.result-head h2{font-family:var(--serif); font-weight:400; font-size:1.6rem}
+.versions{margin-left:auto; font-family:var(--mono); font-size:.7rem; color:var(--ink-faint); letter-spacing:.1em}
+
+.warnings{border:1px solid var(--hair); padding:var(--s2) var(--s3); margin-bottom:var(--s3)}
+.warnings li{list-style:none; font-size:.88rem; color:var(--ink-dim)}
+.warnings li b{font-family:var(--mono); font-size:.74rem; color:var(--accent); letter-spacing:.08em; margin-right:.5rem}
+
+.toolbar{display:flex; flex-wrap:wrap; gap:var(--s1); align-items:center; padding:var(--s2) 0; border-bottom:1px solid var(--hair-soft)}
+.toolbar .note{font-size:.78rem; color:var(--ink-faint); flex-basis:100%; line-height:1.6}
+.ring-tag{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.18em; text-transform:uppercase;
+  border-left:3px solid var(--ring-v); padding-left:.6rem; color:var(--ink-faint);
+}
+.ring-tag[data-ring="ring-1"]{border-left-color:var(--ring-1)}
+.ring-tag[data-ring="ring-2"]{border-left-color:var(--ring-2)}
+.ring-tag[data-ring="ring-3"]{border-left-color:var(--ring-3)}
+.ring-tag[data-ring="ring-v"]{border-left-color:var(--ring-v)}
+
+/* 收據狀態：形狀與顏色都不同，不只是文字不同 */
+.state{
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.1em;
+  padding:.15rem .6rem; border:1px solid currentColor; border-radius:999px;
+}
+.state[data-state="present"]{display:none}
+.state[data-state="defaulted"]{color:var(--state-defaulted)}
+.state[data-state="not_requested"]{color:var(--state-absent); border-style:dashed}
+.state[data-state="executed_unavailable"]{color:var(--state-unavailable)}
+.state[data-state="refused"]{
+  color:var(--paper); background:var(--state-refused); border-color:var(--state-refused);
+}
+.reason-code{font-family:var(--mono); font-size:.7rem; color:var(--accent); letter-spacing:.06em}
+
+.section-note{max-width:var(--measure); font-size:.9rem; color:var(--ink-dim); margin-top:var(--s1)}
+.section-block{font-family:var(--mono); font-size:.8rem; color:var(--ink-dim); margin-top:var(--s2); word-break:break-word}
+td:first-child{color:var(--ink)}
+
+footer{border-top:1px solid var(--ink); padding:var(--s3) 0 var(--s5)}
+footer .wrap{display:flex; gap:var(--s3); flex-wrap:wrap}
+footer span{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); letter-spacing:.1em}
+
+@media (max-width:900px){
+  :root{--pad:1.4rem; --s4:2.2rem; --s5:3rem; --s6:4rem}
+  .grid,.grid.three{grid-template-columns:1fr}
+  .versions{margin-left:0; flex-basis:100%}
+  header .wrap{padding-top:.8rem; padding-bottom:.8rem}
+  .profile-chip{margin-left:0}
+}
+
+/* 窄螢幕：導覽換行後，min-height 與 baseline 對齊會讓頁首吃掉近三成視窗高度。
+   改為置中對齊、收緊字級，把空間還給表單。與 page.css 的同段規則對應。 */
+@media (max-width:640px){
+  header .wrap{min-height:0; align-items:center; row-gap:.6rem}
+  .brand{font-size:1.2rem; letter-spacing:.12em}
+  .brand small{font-size:.7rem; letter-spacing:.22em; margin-left:.5rem}
+  .mark{width:1.6rem; height:1.6rem}
+  .site-nav{width:100%; gap:.85rem}
+  .site-nav a{font-size:.8rem}
+}
+
+@media print{
+  /* Sebastian 2026-08-05：「列印／PDF 只要列印出使用者要的占星結果和相關
+     receipt 就好了」。原本只藏 header/form/toolbar/button——但 .clear-zone
+     的按鈕被藏掉後，它的標題「清除 · CLEAR」與說明文字仍會印出來，變成一段
+     指向不存在按鈕的孤兒文字；區塊索引與地名查詢結果同理，都是互動用的。 */
+  header,form,.toolbar,.actions,button,
+  .clear-zone,.section-index-wrap,#place-results,footer{display:none !important}
+  body{background:var(--print-bg); color:var(--print-fg)}
+  section.result-section{break-inside:avoid}
+}
+
+/* ═══ L 層分區（憲法子-3.2：混合介面明示各區歸屬）═════════ */
+.layer-region{padding:var(--s4) 0 var(--s5)}
+.layer-region + .layer-region{border-top:2px solid var(--ink)}
+.layer-badge{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.12em;
+  color:var(--ink-faint); border-left:3px solid var(--ink-faint);
+  padding:.15rem 0 .15rem .7rem; margin-bottom:var(--s3); max-width:none;
+}
+.layer-region[data-layer="L1"] .layer-badge{border-left-color:var(--accent); color:var(--accent)}
+.layer-badge b{font-weight:400; letter-spacing:.2em; margin-right:.5rem}
+
+/* 中文術語旁的英文技術詞（PRODUCT_CHARTER 競爭楔子第 6 條）*/
+.en{font-family:var(--mono); font-size:.7em; letter-spacing:.08em; color:var(--ink-faint); margin-left:.5em}
+
+.row{display:flex; gap:var(--s1); align-items:center}
+.row.wrap-row{flex-wrap:wrap}
+.field.grow{flex:1}
+.note{font-size:.82rem; color:var(--ink-faint); line-height:1.7; max-width:var(--measure)}
+
+/* ═══ 地點查詢 ═════════════════════════════════════════ */
+.place-search{margin-top:var(--s2)}
+.place-search .row input{flex:1}
+.place-results{list-style:none; margin-top:var(--s2); border:1px solid var(--hair); max-height:22rem; overflow-y:auto}
+.place-results li + li{border-top:1px solid var(--hair-soft)}
+.place-option{
+  display:block; width:100%; text-align:left; background:transparent; color:var(--ink);
+  border:0; padding:.7rem .9rem; cursor:pointer; border-radius:0;
+}
+.place-option:hover{background:var(--paper-2)}
+.place-option b{display:block; font-weight:600; font-size:.92rem}
+.place-meta{display:block; font-size:.72rem; color:var(--ink-faint); margin-top:.2rem}
+.place-receipt{border:1px solid var(--hair); background:var(--paper-2); padding:var(--s2) var(--s3); margin-top:var(--s2)}
+.place-receipt dl{display:grid; grid-template-columns:11rem 1fr; gap:.3rem var(--s2); margin-top:.6rem}
+.place-receipt dt{font-size:.78rem; color:var(--ink-faint)}
+.place-receipt dd{font-family:var(--mono); font-size:.78rem; word-break:break-word}
+.place-receipt .caveat{font-size:.82rem; color:var(--ink-dim); margin-top:var(--s2); border-left:2px solid var(--accent); padding-left:.8rem}
+.manual-place{margin-top:var(--s3); border-top:1px solid var(--hair-soft); padding-top:var(--s2)}
+.manual-place summary{cursor:pointer; font-size:.88rem; color:var(--ink-dim)}
+.manual-place[open] summary{margin-bottom:var(--s2)}
+
+/* ═══ 選項：層 → 群組摺疊 → 相依子項 ═══════════════════ */
+/* 這裡原本有兩個宣告區塊與一個選擇器，但它們自 a80c6aa 建檔起就是壞的：
+   兩個區塊沒有選擇器，第三行的選擇器沒有 `{`。CSS 解析器遇到沒有 `{` 的
+   選擇器會一直往後吃到下一個 `{`，因此它把下面的 `.section-copy{margin-left:auto}`
+   當成自己的區塊，整條規則隨著這個無效選擇器一起被丟棄——實測 1280px 下
+   `.section-copy` 的 margin-left 是 0px 而不是 auto。
+   已移除無效構造以停止連帶損害。**兩個孤兒區塊原本要套用到哪個選擇器已無法
+   從原始碼判定**（看起來像群組摺疊標題列與計數徽章），需要前端設計裁決後補回；
+   在那之前它們本來也從未生效，移除不改變任何已呈現的樣式。 */
+/* ═══ section copy 與清除 ══════════════════════════════ */
+.section-copy{margin-left:auto}
+.clear-zone{border-top:1px solid var(--ink); margin-top:var(--s3); padding-top:var(--s3)}
+.clear-zone .row{margin:var(--s2) 0}
+button.danger{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+button.danger:hover{background:var(--ink); border-color:var(--ink)}
+
+@media (max-width:900px){
+  /* 這個區塊原本的兩條規則都已移除：
+     一條是 `select.option-control,input[type="number"]  .place-receipt dl`——
+     `input[type="number"] .place-receipt dl` 是後代選擇器，而 input 是空元素，
+     永遠選不到任何東西；其中真正需要的 `.place-receipt dl{grid-template-columns:1fr}`
+     在本檔後段的同一個中斷點已有一條正確的規則，故不重複。
+     另一條 `.presets` 對應的是已移除的 presets 死碼。 */
+}
+
+/* ═══ 進階選項：單層摺疊，內部全部攤平 ═══════════════════ */
+.advanced{border:1px solid var(--hair); background:var(--paper)}
+.advanced summary{
+  padding:.8rem 1rem; cursor:pointer; list-style:none;
+  font-family:var(--mono); font-size:.8rem; letter-spacing:.06em; color:var(--ink-dim);
+}
+.advanced summary::-webkit-details-marker{display:none}
+.advanced summary::before{content:"＋　"; color:var(--ink-faint)}
+.advanced[open] summary::before{content:"−　"}
+.advanced[open] summary{border-bottom:1px solid var(--hair); background:var(--paper-2)}
+#advanced-summary[data-state="changed"]{color:var(--accent)}
+.advanced-body{padding:var(--s2) 1rem var(--s3)}
+.options-actions{display:flex; justify-content:flex-end; padding-bottom:var(--s1)}
+
+/* 分組只是視覺分隔線，不是容器 */
+.option-block{margin-top:var(--s3)}
+.option-block:first-child{margin-top:0}
+.option-block h3{
+  font-family:var(--serif); font-weight:400; font-size:1rem; letter-spacing:.02em;
+  border-bottom:1px solid var(--hair); padding-bottom:.35rem; margin-bottom:.2rem;
+}
+
+/* 主表單裡的宮位控制項 */
+.inline-control{display:flex; align-items:center; min-height:2.6rem}
+.inline-control .inline-control input[type="checkbox"]{width:1.05rem; height:1.05rem}
+.inline-control select{min-width:0; width:100%}
+
+.grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:900px){ .grid.four{grid-template-columns:1fr 1fr} }
+
+/* ═══ 選項列：呼吸空間與可按的目標 ═══════════════════════ */
+.option-row{
+  display:grid; grid-template-columns:1fr minmax(0,20rem);
+  gap:.35rem var(--s3); align-items:center;
+  padding:1rem 0; border-top:1px solid var(--hair-soft);
+}
+.option-block h3 + .option-row{border-top:0}
+.option-row.is-changed{box-shadow:inset 3px 0 0 var(--accent); padding-left:.9rem}
+.option-label{
+  font-size:.98rem; color:var(--ink); line-height:1.6;
+  display:flex; align-items:baseline; flex-wrap:wrap; gap:.1rem .5rem;
+  cursor:pointer; padding:.35rem 0;
+}
+.option-label .en{margin-left:0}
+.option-help{
+  grid-column:1 / 2; font-size:.82rem; color:var(--ink-faint);
+  line-height:1.75; max-width:var(--measure); margin-top:-.1rem;
+}
+.option-children{
+  grid-column:1 / -1; margin-top:.6rem; margin-left:var(--s2);
+  border-left:2px solid var(--hair); padding-left:var(--s3);
+}
+.option-children .option-row{padding-top:.75rem; padding-bottom:.75rem}
+
+/* 下拉：與輸入框同一套，不用系統預設外觀 */
+/* 箭頭以兩段漸層畫成，不用 data: URI —— CSP 的 default-src 'self' 會擋掉
+   data: 圖片（img-src 未另設），結果是箭頭整個不顯示。select 不能掛偽元素，
+   所以用兩個 6×6 的斜線色帶拼出髮絲級的 v，與全站的髮絲線同一個語彙。 */
+select.option-control{
+  appearance:none; width:100%;
+  background-color:var(--paper-2);
+  /* 45deg 的色帶垂直於漸層方向，畫出來是「＼」；135deg 是「／」。
+     左段在前、右段在後，合起來才是向下的 v。 */
+  background-image:
+    linear-gradient(45deg, transparent calc(50% - .7px), var(--ink-faint) calc(50% - .7px),
+                    var(--ink-faint) calc(50% + .7px), transparent calc(50% + .7px)),
+    linear-gradient(135deg, transparent calc(50% - .7px), var(--ink-faint) calc(50% - .7px),
+                    var(--ink-faint) calc(50% + .7px), transparent calc(50% + .7px));
+  background-size:6px 6px;
+  background-position:right 1.15rem center, right .7rem center;
+  background-repeat:no-repeat;
+  padding-right:2.2rem;
+}
+input[type="number"].option-control{width:100%}
+.house-control select{width:100%}
+
+/* ═══ 勾選框：畫成儀器上的刻記，不是系統預設方塊 ═══════════
+   目標是「看得出被選中」而不是「看起來像網頁表單」：
+   關閉時是一個空的刻痕方框，開啟時填墨並打勾。 */
+input[type="checkbox"].option-control{
+  appearance:none; -webkit-appearance:none;
+  width:1.35rem; height:1.35rem; flex:0 0 auto;
+  border:1px solid var(--ink-faint); border-radius:1px;
+  background:var(--paper); cursor:pointer; position:relative;
+  justify-self:end; transition:background .12s ease, border-color .12s ease;
+}
+input[type="checkbox"].option-control:hover{border-color:var(--ink)}
+input[type="checkbox"].option-control:checked{
+  background:var(--ink); border-color:var(--ink);
+}
+input[type="checkbox"].option-control:checked::after{
+  content:""; position:absolute; left:.42rem; top:.16rem;
+  width:.32rem; height:.66rem; border:solid var(--paper);
+  border-width:0 1.5px 1.5px 0; transform:rotate(42deg);
+}
+input[type="checkbox"].option-control:disabled{
+  border-color:var(--hair); background:var(--paper-2); cursor:not-allowed;
+}
+.option-control{justify-self:end}
+
+@media (max-width:900px){
+  .option-row{grid-template-columns:1fr auto; gap:.3rem var(--s2)}
+  .option-help{grid-column:1 / -1}
+  select.option-control,input[type="number"].option-control{grid-column:1 / -1; justify-self:stretch}
+}
+
+/* 互斥被停用的列：看得見、但按不下去，且就地說明是誰停用它 */
+.option-row.is-blocked .option-label{color:var(--ink-faint)}
+.conflict-note{
+  grid-column:1 / -1; font-size:.8rem; color:var(--accent);
+  border-left:2px solid var(--accent); padding-left:.7rem; margin-top:.3rem; line-height:1.7;
+}
+
+/* ═══ 結果索引：二十一個區塊需要錨點導覽 ═══════════════════ */
+.section-index-wrap{border:1px solid var(--hair); background:var(--paper-2); padding:var(--s2) var(--s3); margin:var(--s3) 0}
+.section-index{list-style:none; display:grid; grid-template-columns:repeat(auto-fill,minmax(13rem,1fr)); gap:.15rem var(--s2); margin-top:.6rem}
+.index-link{
+  display:flex; align-items:baseline; gap:.5rem; text-decoration:none;
+  color:var(--ink); font-size:.88rem; padding:.3rem 0 .3rem .7rem;
+  border-left:3px solid var(--ring-v);
+}
+.index-link[data-ring="ring-1"]{border-left-color:var(--ring-1)}
+.index-link[data-ring="ring-2"]{border-left-color:var(--ring-2)}
+.index-link[data-ring="ring-3"]{border-left-color:var(--ring-3)}
+.index-link:hover{background:var(--paper); color:var(--accent)}
+.index-state{font-family:var(--mono); font-size:.66rem; letter-spacing:.06em; color:var(--state-absent); margin-left:auto}
+.index-state[data-state="refused"]{color:var(--state-refused)}
+.index-state[data-state="executed_unavailable"]{color:var(--state-unavailable)}
+.index-state[data-state="defaulted"]{color:var(--state-defaulted)}
+
+/* 區塊之間要有明顯的呼吸，否則二十一個區塊會糊成一片 */
+section.result-section{ border-bottom:1px solid var(--hair-soft);padding:var(--s4) 0 var(--s3); scroll-margin-top:var(--s2)}
+section.result-section > .head{display:flex; flex-wrap:wrap; align-items:baseline;gap:.6rem var(--s2); padding-bottom:.6rem; border-bottom:1px solid var(--hair)}
+section.result-section h3{font-family:var(--serif); font-weight:400; letter-spacing:.02em;font-size:1.45rem}
+
+/* ═══ 長區塊摺疊 ═══════════════════════════════════════ */
+.long-section{margin-top:var(--s2)}
+.long-section > summary{
+  cursor:pointer; list-style:none; display:inline-block;
+  font-family:var(--mono); font-size:.78rem; letter-spacing:.06em;
+  color:var(--ink-dim); border:1px solid var(--hair);
+  background:var(--paper-2); padding:.45rem 1rem;
+}
+.long-section > summary::-webkit-details-marker{display:none}
+.long-section > summary::before{content:"＋　"; color:var(--ink-faint)}
+.long-section[open] > summary::before{content:"−　"}
+.long-section > summary:hover{border-color:var(--ink); color:var(--ink)}
+.long-section[open] > summary{margin-bottom:var(--s2)}
+
+/* ═══ 逐步軌跡：換行而不是往右長 ═══════════════════════
+   td 預設 nowrap 是為了讓座標數值不被折斷；軌跡的算式與輸入是長文字，
+   同一條規則會讓整張表寬到必須一路往右拉。這裡改為換行並限制欄寬。 */
+table[data-section="trace"]{table-layout:fixed; width:100%}
+table[data-section="trace"] td,
+table[data-section="trace"] th{white-space:normal; vertical-align:top; word-break:break-word}
+table[data-section="trace"] td{line-height:1.7; padding-right:.8rem}
+table[data-section="trace"] th:nth-child(1),
+table[data-section="trace"] td:nth-child(1){width:3rem}
+table[data-section="trace"] th:nth-child(2),
+table[data-section="trace"] td:nth-child(2){width:9rem}
+table[data-section="trace"] th:nth-child(3),
+table[data-section="trace"] td:nth-child(3){width:14rem}
+table[data-section="trace"] th:nth-child(6),
+table[data-section="trace"] td:nth-child(6){width:7rem}
+
+/* 生效選項也是長文字，同樣不該橫向捲 */
+table[data-section="requested_options"]{table-layout:fixed; width:100%}
+table[data-section="requested_options"] td{white-space:normal; word-break:break-word}
+
+/* ═══ 表格密度與欄寬：逐類調整 ═════════════════════════
+   座標表維持不換行（數值折斷更難讀），但只在自己的容器內橫捲，
+   不讓整頁溢出；文字型表格一律換行。 */
+table{width:100%; border-collapse:collapse; font-family:var(--mono); font-variant-numeric:tabular-nums;font-size:.78rem}
+th{
+  text-align:left; font-weight:400; font-size:.66rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-faint);
+  border-bottom:1px solid var(--hair); white-space:nowrap;padding:.55rem .85rem; background:var(--paper-2); position:sticky; top:0; z-index:1}
+td{ border-bottom:1px solid var(--hair-soft); color:var(--ink-dim); white-space:nowrap;padding:.5rem .85rem}
+tbody tr:nth-child(even) td{background:var(--zebra)}
+tbody tr:hover td{background:var(--paper-2)}
+caption{
+  text-align:left; font-family:var(--mono); font-size:.66rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--ink-faint); padding:.55rem .85rem; background:var(--paper-2); border-bottom:1px solid var(--hair)}
+
+/* 數值欄靠右並用等寬對齊小數點 */
+table td:not(:first-child){font-variant-numeric:tabular-nums}
+
+/* 文字型表格：換行、不橫捲 */
+table[data-section="requested_options"],
+table[data-section="trace"],
+table[data-section="contract"],
+table[data-section="receipt"],
+table[data-section="lunar_events"],
+table[data-section="horizon_events"]{table-layout:fixed; width:100%}
+table[data-section="contract"] td,
+table[data-section="receipt"] td,
+table[data-section="lunar_events"] td,
+table[data-section="horizon_events"] td{white-space:normal; word-break:break-word; vertical-align:top}
+table[data-section="receipt"] th:first-child,
+table[data-section="receipt"] td:first-child{width:16rem}
+table[data-section="contract"] th:first-child,
+table[data-section="contract"] td:first-child{width:12rem}
+table[data-section="requested_options"] th:first-child,
+table[data-section="requested_options"] td:first-child{width:22rem}
+
+/* 座標表：第一欄固定，往右捲時天體名不會消失 */
+table[data-section="bodies"] td:first-child,
+table[data-section="nodes"] td:first-child,
+table[data-section="lunar_apsides"] td:first-child,
+table[data-section="fixed_stars"] td:first-child{
+  position:sticky; left:0; background:var(--paper); z-index:1;
+}
+
+/* ═══ 行動版 ═══════════════════════════════════════════ */
+@media (max-width:900px){
+  .section-index{grid-template-columns:1fr}
+  .index-link{padding:.45rem 0 .45rem .7rem}
+  section.result-section{padding:var(--s3) 0 var(--s2)}
+  section.result-section h3{font-size:1.2rem}
+  section.result-section > .head{flex-wrap:wrap}
+  .section-copy{margin-left:0; margin-top:.4rem}
+  .toolbar{gap:.4rem}
+  .toolbar button{flex:1 1 46%}
+  table{font-size:.72rem}
+  th,td{padding:.45rem .6rem}
+  /* 固定欄在窄螢幕會吃掉太多寬度，關掉 */
+  table td:first-child{position:static !important}
+  /* 文字型表格在窄螢幕改為單欄堆疊，避免兩欄都被壓扁 */
+  table[data-section="receipt"] th:first-child,
+  table[data-section="receipt"] td:first-child,
+  table[data-section="contract"] th:first-child,
+  table[data-section="contract"] td:first-child,
+  table[data-section="requested_options"] th:first-child,
+  table[data-section="requested_options"] td:first-child{width:40%}
+  table[data-section="trace"]{table-layout:auto}
+  table[data-section="trace"] th:nth-child(3),
+  table[data-section="trace"] td:nth-child(3){width:auto}
+  .place-receipt dl{grid-template-columns:1fr}
+  .result-head{flex-direction:column; align-items:flex-start}
+  .versions{margin-left:0}
+}
+
+/* 表格逃出捲動容器造成整頁水平溢出（2026-08-05 於 390px 實測）。
+   根因是祖先的預設 min-width:auto 讓容器被內容撐開，
+   overflow-x:auto 因此永遠不會生效。 */
+.result-section,
+.long-section,
+.advanced-body,
+.option-block,
+main.wrap{min-width:0}
+.table-wrap{ margin-top:var(--s2);border:1px solid var(--hair-soft); border-radius:var(--radius);max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch}
+.long-section > *{min-width:0}
+
+/* 全站識別：與其餘十二頁共用同一枚環組標記與頁尾色帶 */
+a.brand{display:inline-flex; align-items:center; gap:.7rem; color:inherit; text-decoration:none}
+.mark{width:2rem; height:2rem; flex:0 0 auto; overflow:visible}
+.mark circle,.mark ellipse,.mark line{fill:none; stroke:var(--plate-dim); stroke-width:1}
+.mark .mark-ecliptic{stroke:var(--accent-rev); stroke-width:1.2}
+a.brand:hover .mark circle,a.brand:hover .mark ellipse,a.brand:hover .mark line{stroke:var(--plate-fg)}
+.footer-rule{padding-bottom:var(--s2)}
+.ring-strip{display:block; height:2px; width:100%;
+  background:linear-gradient(to right, var(--ring-1) 0 25%, var(--ring-2) 25% 50%,
+    var(--ring-3) 50% 75%, var(--ring-v) 75% 100%)}
+
+/* ═══ 導覽與網站地圖：十三個介面都要到得了 ═══════════════ */
+.site-nav{margin-left:auto; display:flex; gap:1.25rem; flex-wrap:wrap}
+.site-nav a{color:var(--plate-dim); text-decoration:none; font-size:.88rem; white-space:nowrap}
+.site-nav a:hover{color:var(--plate-fg)}
+.sitemap{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
+  gap:var(--s3); padding-top:var(--s4); padding-bottom:var(--s3)}
+.sitemap-col{display:flex; flex-direction:column; gap:.4rem}
+.sitemap-col h2{font-family:var(--mono); font-size:.68rem; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--ink-faint); margin:0 0 .3rem; font-weight:400}
+.sitemap-col a{color:var(--ink-dim); text-decoration:none; font-size:.9rem}
+.sitemap-col a:hover{color:var(--accent)}
+@media (max-width:900px){
+  .site-nav{margin-left:0; gap:.9rem}
+  .site-nav a{font-size:.82rem}
+  .sitemap{grid-template-columns:1fr 1fr}
+}

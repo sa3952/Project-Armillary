@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>功能｜渾儀 Armillary</title>
+<link rel="icon" href="/zh-TW/favicon.svg">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/zh-TW/">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="16"/>
+        <ellipse cx="20" cy="20" rx="16" ry="4.5"/>
+        <ellipse cx="20" cy="20" rx="16" ry="8" transform="rotate(-32 20 20)" class="mark-ecliptic"/>
+        <ellipse cx="20" cy="20" rx="5" ry="16"/>
+        <line x1="20" y1="4" x2="20" y2="36" transform="rotate(-18 20 20)"/>
+      </svg>
+      <span>渾儀<small>ARMILLARY</small></span>
+    </a>
+    <nav class="site-nav" aria-label="主要導覽">
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/about">關於</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap page-body">
+  <div class="eyebrow">功能 · FEATURES</div>
+  <h1>我們不要求你相信任何一個數字。<br>我們要求你有能力去查。</h1>
+  <p class="lede">底下九件事，每一件都是為了同一個目的：<strong>讓你能自己核對。</strong></p>
+
+  <section>
+    <h2>你能驗證：這個數字是怎麼算出來的</h2>
+    <p><strong>逐步計算軌跡，整份攤開。</strong></p>
+    <p>不是「我們用了 Swiss Ephemeris」這種說法。是<strong>每一步的函式名稱、實際傳入的參數、使用的旗標、回傳的值，以及當時做了什麼假設。</strong></p>
+    <p>步數隨你啟用的模組而變，實際步數印在該次卷宗裡。整份可複製、可下載。</p>
+    <p>你在星曆軟體裡看到不一樣的數字時，可以一路查到分岔點——<strong>不必猜，也不必寫信問我們。</strong></p>
+  </section>
+
+  <section>
+    <h2>你能驗證：這份結果沒有被動過</h2>
+    <p><strong>每份卷宗附 SHA-256 收據。</strong></p>
+    <p>三年後你翻出一份舊卷宗，可以核對它跟產生當時是不是同一份。</p>
+    <p>卷宗裡有本次的完整口徑、引擎版本、星曆來源與方法版本，<strong>另一個人拿著它可以重建等價請求。</strong>這是可重現性，不是截圖。</p>
+  </section>
+
+  <section>
+    <h2>你能驗證：兩套軟體為什麼算出不同答案</h2>
+    <p><strong>口徑印在每一個結果旁。</strong></p>
+    <p>這是本產品的核心。兩個網站算出兩個上升星座，通常兩邊都沒算錯——它們用了不同的口徑，只是沒告訴你。</p>
+    <table class="log">
+      <thead><tr><th>選項</th><th>可選</th></tr></thead>
+      <tbody>
+        <tr><td>黃道系統</td><td>回歸／恆星（四種 ayanamsa）</td></tr>
+        <tr><td>計算中心</td><td>地心／站心／日心／質心</td></tr>
+        <tr><td>位置模式</td><td>視位置／真位置</td></tr>
+        <tr><td>黃道框架</td><td>當日／J2000</td></tr>
+        <tr><td>宮位制</td><td>整宮／Alcabitius／Regiomontanus／Placidus／<strong>不算宮位</strong></td></tr>
+        <tr><td>月亮</td><td>跟隨全域模式，或單獨改用出生地站心</td></tr>
+      </tbody>
+    </table>
+    <p class="after">換一個口徑，哪些數字會動、動多少，當場看得見。</p>
+  </section>
+
+  <section>
+    <h2>你能驗證：你用的是誰的那張表</h2>
+    <p><strong>界、面、三分性——具名到版本，而且沒有預設。</strong></p>
+    <p>大多數軟體給你一個「界」欄位，不告訴你那是誰的界。</p>
+    <p>我們給你<strong>四套界表、兩套面、三套三分性</strong>，每一套都具名到來源與版本，<strong>沒有任何一套是預設</strong>——選一套當預設，等於替你做了方法裁決。</p>
+    <p>幾個具體的處理方式：</p>
+    <ul>
+      <li>其中一套界表的土星／水星次序<strong>依日夜盤切換</strong>。日夜盤未知時，<strong>並列日夜兩組候選，不偽造一個單一主宰星</strong>。</li>
+      <li>面的兩套<strong>不可混名</strong>：一套每段由行星主宰，一套每段由星座主宰。它們不是同一回事。</li>
+      <li>三分性的其中一套<strong>忠實保留原文的共同主宰結構</strong>，不壓成單一主宰星。</li>
+    </ul>
+    <p><strong>不同作者不會被壓成一個欄位。</strong>壓平之後，你就再也看不出你在用誰的說法。</p>
+  </section>
+
+  <section>
+    <h2>你能驗證：這是天文事實，還是某個人的主張</h2>
+    <p><strong>三層分開輸出。</strong></p>
+    <table class="log">
+      <thead><tr><th>層</th><th>內容</th></tr></thead>
+      <tbody>
+        <tr><td>天文事實</td><td>星曆位置、時間尺度、座標轉換、觀測幾何</td></tr>
+        <tr><td>幾何推導</td><td>只需明示公式的確定性轉換</td></tr>
+        <tr><td>方法判斷</td><td>需要選定流派、集合、容許度或門檻的結果</td></tr>
+      </tbody>
+    </table>
+    <p>第三層的每一項都印著它的規則版本與來源狀態。</p>
+    <p>相位的容許度<strong>沒有預設表</strong>。你不指定時，角距離照常給你，但「是否成相」留空並說明原因——<strong>因為選一張容許度表，就是替你做方法裁決。</strong></p>
+  </section>
+
+  <section>
+    <h2>你能驗證：同一顆星在三套座標裡的位置</h2>
+    <p><strong>黃道、赤道、地平並列。</strong></p>
+    <p>每顆天體同時給黃經黃緯、赤經赤緯、方位角高度角，數值與度分秒格式都有。</p>
+    <p>大多數占星軟體只給黃經。<strong>赤道與地平座標可以直接拿去對天文軟體</strong>——我們刻意保留這條驗證管道。</p>
+  </section>
+
+  <section>
+    <h2>你能驗證：出生時間不準到底影響了什麼</h2>
+    <p><strong>出生時刻敏感度分析。</strong></p>
+    <p>只記得大約幾點？不必猜一個分鐘數然後假裝它是真的。</p>
+    <p>我們對整個小時取樣，<strong>誠實列出哪些判定穩定、哪些會隨分鐘改變</strong>：角點與宮頭的變動範圍、星座與落宮的分類、分類在哪一分鐘翻轉。</p>
+    <p>只知道日期？<strong>不會給你上升點、中天、宮位或日夜盤</strong>——那些東西沒有時間就不存在。我們給你全日的位置範圍。</p>
+    <p><strong>我們不會給你一張假裝知道時間的盤。</strong></p>
+  </section>
+
+  <section>
+    <h2>你能驗證：我們真的沒留你的資料</h2>
+    <p><strong>0 追蹤器　0 cookie　0 第三方請求　免註冊</strong></p>
+    <p>應用程式裡<strong>沒有可以存放出生資料的地方</strong>——沒有帳號資料庫、沒有命盤資料庫、沒有工作階段儲存、沒有請求快取、沒有背景佇列。</p>
+    <p>前端不載入外部字型、CDN 腳本或第三方 JavaScript。地名搜尋讀內建的離線資料庫，<strong>不使用瀏覽器或 IP 定位</strong>。匯出檔名固定，<strong>不嵌入出生日期、時間、姓名或座標</strong>。</p>
+    <p>完整說明在<a href="/zh-TW/trust">〈信任中心〉</a>與<a href="/zh-TW/security">〈安全〉</a>。</p>
+  </section>
+
+  <section>
+    <h2>你能驗證：這個程式到底在做什麼</h2>
+    <p><strong>GNU AGPL v3，原始碼公開。</strong></p>
+    <p>你正在使用的這一版，完整對應原始碼可以取得，版本識別碼印在每份卷宗裡。</p>
+    <p><strong>你不必相信我們對程式行為的描述，你可以去讀。</strong></p>
+  </section>
+
+  <section>
+    <h2>規格</h2>
+    <table class="log">
+      <thead><tr><th>項目</th><th>值</th></tr></thead>
+      <tbody>
+        <tr><td>可計算年份</td><td>1900–2399</td></tr>
+        <tr><td>計算引擎</td><td>Swiss Ephemeris 2.10.03</td></tr>
+        <tr><td>內建星曆</td><td>基於 JPL DE441</td></tr>
+        <tr><td>古典七政</td><td>太陽、月亮、水星、金星、火星、木星、土星</td></tr>
+        <tr><td>恆星</td><td>34 顆（選用）</td></tr>
+        <tr><td>宮位制</td><td>4 種</td></tr>
+        <tr><td>界表／面／三分性</td><td>4 套／2 套／3 套</td></tr>
+        <tr><td>相位集合</td><td>4 套（托勒密五大相位、常用現代小相位、五分相家族、聯合集合）</td></tr>
+        <tr><td>座標系</td><td>黃道、赤道、地平並列</td></tr>
+        <tr><td>匯出</td><td>JSON、Markdown、純文字、CSV</td></tr>
+        <tr><td>費用</td><td><strong>目前全部免費</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="after">單次計算通常在數十毫秒完成——快到可以「開卷即時算出此刻的天空」。</p>
+  </section>
+
+  <section>
+    <h2>我們目前不做的事</h2>
+    <p>為了讓上面那些話有意義，這一段必須存在：</p>
+    <ul>
+      <li><strong>不解盤、不預測、不描述性格、不給運勢。</strong>這不是還沒做，是產品憲法禁止。</li>
+      <li><strong>不給尊貴分數或總分。</strong>把不同作者的表加總成一個數字，等於宣稱它們可以通約——我們不做這個宣稱。</li>
+      <li><strong>不做競品比較頁。</strong>對競品的宣稱需要證據，而競品隨時改版，證據會腐爛。我們改做方法比較：整宮制與 Placidus 差在哪、平均交點與密切交點差在哪。</li>
+      <li><strong>不加追蹤器、不加廣告、不加第三方分析。</strong></li>
+    </ul>
+    <p>為什麼不先做？因為<strong>在能做對並證明做對之前，我們不提供。</strong>不因為別的工具有就加進來。</p>
+  </section>
+
+  <section>
+    <h2>不用註冊。不用 email。填四個欄位就能算。</h2>
+    <p><a class="cta" href="/zh-TW/calculate">開始計算</a></p>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap sitemap">
+    <div class="sitemap-col">
+      <h2>產品</h2>
+      <a href="/zh-TW/">首頁</a>
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/roadmap">路線</a>
+      <a href="/zh-TW/blog">文章</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>可查證性</h2>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>法律與聯絡</h2>
+      <a href="/zh-TW/legal/privacy">隱私政策</a>
+      <a href="/zh-TW/legal/terms">使用條款</a>
+      <a href="/zh-TW/legal/copyright">著作權與原始碼</a>
+      <a href="/zh-TW/contact">聯絡方式</a>
+      <a href="/zh-TW/about">關於</a>
+    </div>
+  </div>
+
+  <div class="wrap footer-rule"><span class="ring-strip" aria-hidden="true"></span></div>
+  <div class="wrap">
+    <span>渾儀 ARMILLARY</span>
+    <span>只計算，不解盤，不預測</span>
+    <span>/zh-TW/features · L2 ＋ L3</span>
+  </div>
+</footer>
+
+</body>
+</html>

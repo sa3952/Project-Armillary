@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>首頁｜渾儀 Armillary</title>
+<link rel="icon" href="/zh-TW/favicon.svg">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/zh-TW/">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="16"/>
+        <ellipse cx="20" cy="20" rx="16" ry="4.5"/>
+        <ellipse cx="20" cy="20" rx="16" ry="8" transform="rotate(-32 20 20)" class="mark-ecliptic"/>
+        <ellipse cx="20" cy="20" rx="5" ry="16"/>
+        <line x1="20" y1="4" x2="20" y2="36" transform="rotate(-18 20 20)"/>
+      </svg>
+      <span>渾儀<small>ARMILLARY</small></span>
+    </a>
+    <nav class="site-nav" aria-label="主要導覽">
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/about">關於</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <div class="eyebrow">古典西洋占星計算儀 · <b>只計算，不解盤</b></div>
+    <h1>星盤不是一張圖。<br>是<em>一步一步</em>算出來的。</h1>
+    <p class="lede">民用時刻 → 儒略日 → 地方恆星時 → 黃道座標 → 十二宮。每一步都攤開給你，可以拿去跟任何一台星曆機對帳。</p>
+  </div>
+</div>
+
+<div class="ticker">
+  <div class="wrap">
+    <span>ASC <b>20°48′45″</b></span><span>MC 20°33′20″</span><span>δ +18°49′03.8″</span>
+    <span>Az 268.9°</span><span>JD 2448026.77083</span><span>LST 6.119709h</span>
+    <span>ε <b>23°26′25.1″</b></span><span>ΔT 57.105s</span><span>整宮 · 回歸黃道 · 視位置</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="intro">
+    <h2>每一部分都有名字，<br>每一步都有出處。</h2>
+    <p class="lede">十八世紀的天文圖版把儀器的每一個環標上名字與尺寸，讓讀者能自己複製一台。渾儀承接這個規矩：輸出的每一個數字，旁邊都寫著它從哪一條算式來。</p>
+  </div>
+
+  <section id="fig1">
+    <div class="eyebrow">FIG 1.1 — 同一顆星，三種說法</div>
+    <h2>一次計算，三套座標一起輸出。</h2>
+    <p>黃道座標問「它在十二宮的哪裡」，赤道座標問「它在天球的哪裡」，地平座標問「此時此地你要抬頭往哪看」。三者互相可換算，但用途完全不同。</p>
+
+    <div class="plate">
+      <svg viewBox="0 0 640 520" role="img" aria-label="渾儀環組圖版，編號標示黃道環、赤道環、極軸、地平環與子午環">
+        <!-- 儀器本體 -->
+        <g>
+          <circle class="s-ring" cx="248" cy="260" r="196"/>
+          <ellipse class="s-ring dim" cx="248" cy="260" rx="196" ry="44" transform="rotate(-9 248 260)"/>
+          <ellipse class="s-ring hot" cx="248" cy="260" rx="196" ry="68" transform="rotate(-32 248 260)"/>
+          <ellipse class="s-ring dim" cx="248" cy="260" rx="196" ry="84" transform="rotate(16 248 260)"/>
+          <ellipse class="s-ring" cx="248" cy="260" rx="62" ry="196" transform="rotate(-6 248 260)"/>
+          <line class="s-ring" x1="248" y1="64" x2="248" y2="456" transform="rotate(-18 248 260)"/>
+          <circle class="s-dot" cx="187" cy="72" r="3"/>
+          <circle class="s-dot" cx="309" cy="448" r="3"/>
+        </g>
+        <!-- 引線：終點 y＝52/156/260/364/468，即右欄五個等分列的垂直中心。
+             起點各自落在對應的環上，順序與圖例一致。 -->
+        <g class="s-lead" fill="none">
+          <path d="M398,166 L505,52  H598"/>
+          <path d="M440,228 L525,156 H598"/>
+          <path d="M281,362 L470,260 H598"/>
+          <path d="M452,302 L530,364 H598"/>
+          <path d="M300,432 L482,468 H598"/>
+        </g>
+        <g class="s-dot">
+          <circle cx="398" cy="166" r="2.2"/><circle cx="440" cy="228" r="2.2"/>
+          <circle cx="281" cy="362" r="2.2"/><circle cx="452" cy="302" r="2.2"/>
+          <circle cx="300" cy="432" r="2.2"/>
+        </g>
+        <g class="s-num">
+          <text x="610" y="56">1</text>
+          <text x="610" y="160">2</text>
+          <text x="610" y="264">3</text>
+          <text x="610" y="368">4</text>
+          <text x="610" y="472">5</text>
+        </g>
+      </svg>
+
+      <ul class="legend">
+        <li><b>黃道環 <i>Ecliptic</i></b><span>太陽視行的大圓。傾角 ε＝23°26′25″，取真黃赤交角，非固定值。</span></li>
+        <li><b>赤道環 <i>Æquator</i></b><span>地球自轉的投影。赤緯由此量起，換黃道口徑也不會動。</span></li>
+        <li><b>極軸 <i>Axis</i></b><span>指向天極。地方恆星時決定它此刻轉到哪裡。</span></li>
+        <li><b>地平環 <i>Horizon</i></b><span>觀測地決定的圈。方位角與高度自此量起。</span></li>
+        <li><b>子午環 <i>Meridian</i></b><span>上中天所在。中天 MC 即黃道與此環之交。</span></li>
+      </ul>
+
+      <div class="caption">圖版採合成範例值繪製；比例為示意，傾角為真值。</div>
+    </div>
+  </section>
+
+  <section id="fig2">
+    <div class="eyebrow">FIG 1.2 — 尺不同，讀數就不同</div>
+    <div class="cols">
+      <div>
+        <h2>兩個網站算出兩個不一樣的上升星座，通常不是誰錯了。</h2>
+        <p>是黃道的原點取法不同——兩把尺此刻錯開約 25°。渾儀把用的是哪一把尺印在每個結果旁邊；換一把，你看得見哪個數字跟著移。</p>
+      </div>
+      <div>
+        <svg viewBox="0 0 560 130" role="img" aria-label="黃道正弦曲線與其上的天體位置">
+          <line class="s-lead" x1="0" y1="72" x2="560" y2="72"/>
+          <path class="s-ring hot" d="M0,72 Q70,16 140,72 T280,72 T420,72 T560,72" fill="none"/>
+          <circle class="s-dot" cx="96"  cy="36" r="2.8"/><text class="s-label" x="90"  y="26">☉</text>
+          <circle class="s-dot" cx="188" cy="50" r="2.8"/><text class="s-label" x="182" y="40">☽</text>
+          <circle class="s-dot" cx="322" cy="104" r="2.8"/><text class="s-label" x="316" y="122">♄</text>
+          <circle class="s-dot" cx="452" cy="44" r="2.8"/><text class="s-label" x="446" y="34">♃</text>
+        </svg>
+        <div class="rules">
+          <div class="rule-row">
+            <span class="name">尺甲 · TROPICVM</span>
+            <span class="readout">上升 ASC　<b>天秤 20°48′45″</b>　回歸黃道 · 春分點為原點</span>
+          </div>
+          <div class="rule-row">
+            <span class="name">尺乙 · SIDEREVM</span>
+            <span class="readout">上升 ASC　<b>處女 27°06′12″</b>　恆星黃道 · 歲差 25°42′33″</span>
+          </div>
+          <div class="rule-row">
+            <span class="name">同一個天空</span>
+            <span class="readout">兩個讀數，都對。差的是尺，不是天。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="log">
+    <div class="eyebrow">表 · 量測記錄 MEASVREMENT LOG</div>
+    <h2>你拿到的不是一張圖，<br>是一份逐步可重算的記錄。</h2>
+    <p>從民用時刻到儒略日、恆星時、每一顆星的三套座標——每一步都輸出，可重算、可核對。</p>
+    <table class="log">
+      <thead><tr><th>STEP</th><th>QVANTITAS</th><th>VALOR</th><th>FONS</th><th>NOTA</th></tr></thead>
+      <tbody>
+        <tr><td>003</td><td>儒略日 JD(UT1)</td><td>2448026.770834</td><td>民用時刻 → UT1 → JD</td><td>曆法</td></tr>
+        <tr><td>007</td><td>地方恆星時 LST</td><td>6.119709 h</td><td>GMST ＋ 觀測地經度</td><td>地球自轉</td></tr>
+        <tr><td>012</td><td>真黃赤交角 ε</td><td>23°26′25.1″</td><td>IAU2006 ＋ 章動</td><td>非固定值</td></tr>
+        <tr><td>031</td><td>太陽 黃經 λ</td><td>54°10′30.48″</td><td>Swiss Ephemeris</td><td>三套座標並列</td></tr>
+        <tr class="mark"><td>078</td><td>上升 ASC</td><td>20°48′45.0″ 天秤</td><td>黃道 ∩ 地平（東）</td><td>整宮 · 待方法審閱</td></tr>
+      </tbody>
+    </table>
+    <div class="after">⋯ 其餘各步全數輸出；整份可離線核對。</div>
+  </section>
+
+  <section id="sens">
+    <div class="eyebrow">FIG 1.3 — 不確定，就標成不確定</div>
+    <h2>渾儀不會假裝你的出生時刻是準的。</h2>
+    <p>只記得大約幾點？對整個小時取樣，逐項告訴你哪些判定在這一小時內完全不動、哪些會在某一分鐘翻面，並標出翻面的時刻。</p>
+    <div class="track">
+      <div class="line"></div>
+      <div class="frame"></div>
+      <span class="cap cap-start">14:00</span>
+      <span class="cap cap-flip">翻面 14:22</span>
+      <span class="cap cap-end">15:00</span>
+      <i></i><i></i><i></i><i></i>
+      <i></i><i class="flip"></i><i></i>
+      <i></i><i></i><i></i>
+    </div>
+    <div class="readout">上升 ASC　處女 24°48′ → 天秤 8°26′　擺動 13.62°　　日夜盤　小時內穩定</div>
+  </section>
+</div>
+
+<div class="wrap">
+  <div class="stance">
+    <div class="eyebrow">DE NOSTRA RATIONE · 我們的立場</div>
+    <p class="body">在一個什麼都要你先註冊、先給生日、先開啟通知的年代，我們選擇反過來：不要帳號，不要你的資料，算完就丟。你的出生時刻只在這一次計算裡存在。這不是隱私功能，這是產品的形狀——因為我們賣的是計算，不是你。</p>
+    <hr>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="take" class="no-rule">
+    <div class="eyebrow">整份可帶走 · PORTABILE</div>
+    <h2>離開這個網站以後，<br>這份計算仍然完整。</h2>
+    <p>畫面與匯出讀同一份資料，不從畫面反推。每一份都附完整逐步軌跡與計算收據，日後拿同樣的輸入再算一次，應當一致。</p>
+    <div class="formats">
+      <div><b>JSON</b><span>完整結構</span></div>
+      <div><b>Markdown</b><span>可讀卷宗</span></div>
+      <div><b>CSV</b><span>表格核對</span></div>
+      <div><b>PDF</b><span>列印圖版</span></div>
+    </div>
+  </section>
+
+  <div class="cta">
+    <div>
+      <h2>要一份自己的圖版嗎？</h2>
+      <p>免註冊。出生資料只用於本次計算。</p>
+    </div>
+    <div>
+      <a class="btn ghost" href="/zh-TW/validation">先看範例卷宗</a>
+      <a class="btn" href="/zh-TW/calculate">排一張盤 →</a>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap sitemap">
+    <div class="sitemap-col">
+      <h2>產品</h2>
+      <a href="/zh-TW/">首頁</a>
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/roadmap">路線</a>
+      <a href="/zh-TW/blog">文章</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>可查證性</h2>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>法律與聯絡</h2>
+      <a href="/zh-TW/legal/privacy">隱私政策</a>
+      <a href="/zh-TW/legal/terms">使用條款</a>
+      <a href="/zh-TW/legal/copyright">著作權與原始碼</a>
+      <a href="/zh-TW/contact">聯絡方式</a>
+      <a href="/zh-TW/about">關於</a>
+    </div>
+  </div>
+
+  <div class="wrap footer-rule"><span class="ring-strip" aria-hidden="true"></span></div>
+  <div class="wrap">
+    <span>渾儀 ARMILLARY</span>
+    <span>只計算，不解盤，不預測</span>
+    <span>/zh-TW/ · L2 ＋ L3</span>
+  </div>
+</footer>
+
+</body>
+</html>

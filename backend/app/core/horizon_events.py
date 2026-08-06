@@ -1,4 +1,27 @@
-"""Rise, set, upper-transit, and lower-transit events for major bodies."""
+"""Rise, set, upper-transit, and lower-transit events for major bodies.
+
+## 本模組使用自己的固定座標框架，不跟隨 `computation_mode`
+
+`compute_horizon_events()` 刻意不接收 `ComputationContext`。它一律以
+視位置（apparent）＋站心（topocentric）計算，無論請求選了 `heliocentric`、
+`j2000`、`nutation=false` 或 `position_mode="true"`。
+
+理由是升降本身的定義：一顆星體「升起」的時刻，指的是它**經過大氣折射後的
+上緣**穿過地平的那一刻。把折射拿掉，「升起」就沒有對應的物理事件了。
+因此本模組不能套用 MTH-Q-009 對 `altitude_apparent` 的抑制——那條裁決處理的是
+「幾何方向」與「大氣折射」混用會產生無法解讀的數值，而在這裡折射不是附加的
+修正，是事件定義的一部分。
+
+**這造成一個確實存在的不一致，且已被紅隊指出（RT-BACKEND-9-E-009）：**
+`position_mode="true"` 時，`astronomical_data.bodies[].altitude_apparent` 為 null，
+但 `horizon_events` 的可見性證據仍含 97 筆站心視上緣高度取樣。
+數值本身沒有錯，錯的是契約沒有說出這個邊界。本模組現在於輸出中明確宣告自身框架
+與該邊界；**MTH-Q-018 已裁決（Sebastian 2026-08-03）：採甲案——MTH-Q-009 的抑制只涵蓋
+星體／恆星的 `altitude_apparent` 欄位，本模組維持自己的框架——並加上觸發式說明：
+當 `position_mode="true"` 與 `include_rise_set_transits` 同時出現時，Dossier 會
+主動發出 `horizon_events_keep_apparent_frame_under_true_position` 通知解釋原因，
+而不是只寫在契約文件裡等使用者自己去查。
+"""
 
 import datetime as dt
 import math
@@ -15,6 +38,22 @@ EVENT_FLAGS = {
     "lower_transit": swe.CALC_ITRANSIT,
 }
 EPHEMERIS_FLAGS = swe.FLG_SWIEPH
+
+# 與輸出一起回報的框架宣告。消費端不必反推本模組吃不吃 computation_mode。
+FRAME_DECLARATION = {
+    "follows_computation_mode": False,
+    "position_mode": "apparent_always",
+    "center": "topocentric_always",
+    "refraction": "applied_by_definition_of_rise_and_set",
+    "mth_q_009_apparent_altitude_suppression_applies": False,
+    "reason": (
+        "A rise is the instant the refracted upper limb crosses the horizon; "
+        "removing refraction would remove the event being reported, not merely "
+        "change its precision."
+    ),
+    "ruling": "MTH-Q-018, Sebastian 2026-08-03: scope A plus a triggered explanation",
+    "finding": "RT-BACKEND-9-E-009",
+}
 
 
 def _jd_ut_to_iso_utc(jd_ut: float) -> str:
@@ -228,6 +267,7 @@ def compute_horizon_events(
             "directions": ["previous", "next"],
             "disc_position": "upper_limb",
             "refraction": "enabled",
+            "frame": dict(FRAME_DECLARATION),
             "pressure_hpa": atmosphere.pressure_hpa,
             "pressure_mode": (
                 "user_supplied" if atmosphere.pressure_hpa is not None

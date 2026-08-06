@@ -1,0 +1,361 @@
+/* 內容頁樣式。取自 2026-08-05 定案的首頁候選 V2；token 一律來自 tokens.css。 */
+/* ─── token ─────────────────────────────────────────────
+   設計探索稿 V2。V1 的深色立場帶已移除：M 全篇同一材質，
+   材質切換正是 V1 比 M 吵的原因。所有值集中於此，其下不就地寫死。
+   ──────────────────────────────────────────────────────── */
+*{box-sizing:border-box; margin:0; padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.9;
+  font-feature-settings:"palt" 1;
+}
+.wrap{max-width:var(--wrap); margin:0 auto; padding:0 var(--pad)}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+/* ─── 銘牌 ─── */
+.eyebrow{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--ink-faint);
+}
+
+/* ─── 頁首：黑底招牌段的一部分 ─── */
+header{background:var(--plate); color:var(--plate-fg); border-bottom:1px solid var(--plate-hair)}
+header .wrap{display:flex; align-items:baseline; height:78px}
+.brand{font-family:var(--serif); font-size:1.45rem; letter-spacing:.18em}
+.brand small{
+  font-family:var(--serif); font-size:.82rem; letter-spacing:.3em;
+  color:var(--plate-dim); margin-left:.7rem;
+}
+.folio{margin-left:auto; font-family:var(--mono); font-size:.7rem; letter-spacing:.2em; color:var(--plate-dim)}
+.folio b{color:var(--accent-rev); font-weight:400}
+
+/* ─── 首屏：黑底招牌（借候選 X 的音量）─────────────────────
+   全站唯一的深色段。它負責吸睛，其下全部交給紙面負責可信。
+   聲部也隨之分工：招牌用黑體，圖版用襯線。
+   ──────────────────────────────────────────────────────── */
+.hero{background:var(--plate); color:var(--plate-fg); padding:var(--s6) 0 var(--s5)}
+.hero .eyebrow{color:var(--plate-dim)}
+.hero .eyebrow b{color:var(--accent-rev); font-weight:400}
+.hero h1{
+  font-family:var(--sans); font-weight:700;
+  font-size:clamp(2.3rem,6vw,4.5rem); line-height:1.2;
+  letter-spacing:.004em; margin:var(--s3) 0;
+}
+.hero h1 em{font-style:normal; color:var(--accent-rev)}
+.hero .lede{max-width:var(--measure); color:var(--plate-dim); font-size:1.02rem}
+
+/* ─── 接縫：黑與紙之間的刻度條（借候選 X）─── */
+.ticker{
+  background:var(--paper-2); border-bottom:1px solid var(--hair);
+  font-family:var(--mono); font-size:.71rem; letter-spacing:.1em;
+  font-variant-numeric:tabular-nums; padding:.8rem 0;
+  white-space:nowrap; overflow:hidden;
+}
+.ticker .wrap{display:flex; gap:2.4rem}
+.ticker span{color:var(--ink-faint)}
+.ticker b{color:var(--ink); font-weight:400}
+
+/* ─── 紙面開場：M 的那句話，換到黑底之後說 ─── */
+.intro{padding:var(--s6) 0 var(--s5)}
+.intro h2{
+  font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.38; margin:0 0 var(--s3);
+}
+.intro .lede{max-width:var(--measure); color:var(--ink-dim); font-size:1.04rem}
+
+/* ─── 分節 ─── */
+section{padding:var(--s5) 0; border-top:1px solid var(--hair-soft)}
+h2{
+  font-family:var(--serif); font-weight:400;
+  font-size:clamp(1.65rem,3vw,2.55rem); line-height:1.5;
+  letter-spacing:.015em; margin:var(--s2) 0 var(--s3);
+}
+p{max-width:var(--measure); color:var(--ink-dim)}
+.cols{display:grid; grid-template-columns:1fr 1fr; gap:var(--s5); align-items:start}
+
+/* ─── 圖版：引線真的接到編號 ─────────────────────────────
+   SVG 高度＝5 × --row，引線終點落在 10/30/50/70/90%，
+   與右欄五個等高圖例列的垂直中心對齊。
+   ──────────────────────────────────────────────────────── */
+.plate{display:grid; grid-template-columns:1.15fr 1fr; gap:0; margin-top:var(--s4); align-items:stretch}
+.plate svg{display:block; width:100%; height:auto; overflow:visible}
+/* 圖例與 SVG 同高、五列等分，因此每列中心恰為 10/30/50/70/90%，
+   與 viewBox 內引線終點 y＝52/156/260/364/468 精確對齊。 */
+.legend{list-style:none; display:flex; flex-direction:column; height:100%}
+.legend li{
+  flex:1; display:flex; flex-direction:column; justify-content:center;
+  border-bottom:1px solid var(--hair-soft); padding-left:var(--s3);
+}
+.legend li:first-child{border-top:1px solid var(--hair-soft)}
+.legend b{
+  font-family:var(--serif); font-weight:400; font-size:1.12rem;
+  letter-spacing:.02em; display:block; margin-bottom:.1rem;
+}
+.legend b i{font-style:normal; font-family:var(--serif); color:var(--ink-faint); margin-left:.5rem; font-size:.95rem}
+.legend span{font-size:.86rem; color:var(--ink-dim); line-height:1.75}
+.caption{
+  grid-column:1 / -1; font-family:var(--mono); font-size:.68rem;
+  letter-spacing:.1em; color:var(--ink-faint); margin-top:var(--s3);
+}
+.s-ring{fill:none; stroke:var(--ink); stroke-width:.85}
+.s-ring.dim{stroke:var(--hair)}
+.s-ring.hot{stroke:var(--accent); stroke-width:1}   /* 全頁唯一的紅，其二：黃道環 */
+.s-lead{stroke:var(--hair); stroke-width:.55}
+.s-num{font-family:var(--mono); font-size:11px; fill:var(--ink-faint)}
+.s-dot{fill:var(--ink)}
+.s-label{font-family:var(--mono); font-size:10px; fill:var(--ink-faint)}
+
+/* ─── 兩把尺 ─── */
+.rules{margin-top:var(--s3); border-top:1px solid var(--hair); border-bottom:1px solid var(--hair)}
+.rule-row{display:grid; grid-template-columns:9.5rem 1fr; gap:var(--s2); align-items:baseline; padding:var(--s2) 0}
+.rule-row + .rule-row{border-top:1px solid var(--hair-soft)}
+.rule-row .name{font-family:var(--mono); font-size:.7rem; letter-spacing:.16em; color:var(--ink-faint)}
+.readout{font-family:var(--mono); font-size:.84rem; color:var(--ink-dim); font-variant-numeric:tabular-nums}
+.readout b{color:var(--ink); font-weight:400}
+
+/* ─── 量測記錄：只有髮絲線，沒有反白列 ─── */
+.log{width:100%; border-collapse:collapse; margin-top:var(--s4); font-family:var(--mono); font-size:.8rem; font-variant-numeric:tabular-nums}
+.log th{
+  text-align:left; font-weight:400; letter-spacing:.18em; font-size:.65rem;
+  text-transform:uppercase; color:var(--ink-faint);
+  border-bottom:1px solid var(--hair); padding:.6rem 1.1rem .6rem 0;
+}
+.log td{padding:.85rem 1.1rem .85rem 0; border-bottom:1px solid var(--hair-soft); color:var(--ink-dim)}
+.log td:nth-child(3){color:var(--ink)}
+.log tr.mark td{border-bottom-color:var(--hair)}
+.log tr.mark td:first-child{position:relative}
+.log tr.mark td:first-child::before{
+  content:""; position:absolute; left:-1.1rem; top:50%; width:.45rem; height:1px; background:var(--accent);
+}
+.log tr.mark td:nth-child(3){color:var(--ink); border-bottom:1px solid var(--ink)}
+.after{font-family:var(--mono); font-size:.7rem; color:var(--ink-faint); padding-top:var(--s2); letter-spacing:.06em}
+
+/* ─── 敏感度 ─── */
+.track{position:relative; height:52px; margin:var(--s3) 0 var(--s2)}
+.track .line{position:absolute; top:26px; left:0; right:0; height:1px; background:var(--hair)}
+.track i{position:absolute; top:22px; width:6px; height:6px; border-radius:50%; background:var(--ink-faint)}
+.track i.flip{background:var(--accent); width:8px; height:8px; top:21px}
+.track .cap{position:absolute; top:-6px; font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; color:var(--ink-faint)}
+/* 刻點與框線的座標原本寫成 style 屬性，被 CSP 的 style-src 'self' 擋掉，
+   十個刻點因此全部疊在最左端。改成具名位置，值與原稿完全相同。 */
+.track .frame{position:absolute; top:10px; height:32px; border-left:1px solid var(--ink-faint); border-right:1px solid var(--ink-faint);left:52%; width:9%}
+.track .cap-start{left:0}
+.track .cap-flip{left:52%}
+.track .cap-end{right:0}
+.track i:nth-of-type(1){left:2%}
+.track i:nth-of-type(2){left:12%}
+.track i:nth-of-type(3){left:22%}
+.track i:nth-of-type(4){left:32%}
+.track i:nth-of-type(5){left:42%}
+.track i:nth-of-type(6){left:55%}
+.track i:nth-of-type(7){left:66%}
+.track i:nth-of-type(8){left:76%}
+.track i:nth-of-type(9){left:86%}
+.track i:nth-of-type(10){left:96%}
+section.no-rule{border-top:0}
+
+/* ═══ /validation 的內嵌範例卷宗（SD-24：須點選才展開）═══════
+   零 JS：用 <details> 原生收合。內容於 commit 時由 view-model.js 產生，
+   見 scripts/frontend/render_example_dossier.cjs。 */
+.dossier{border-top:1px solid var(--hair); margin-top:var(--s3)}
+.dossier > summary{
+  cursor:pointer; list-style:none; padding:var(--s2) 0;
+  font-family:var(--mono); font-size:.82rem; letter-spacing:.06em; color:var(--ink);
+  display:flex; align-items:center; gap:.7rem;
+}
+.dossier > summary::-webkit-details-marker{display:none}
+.dossier > summary::before{
+  content:"＋"; color:var(--accent); font-size:.9rem; line-height:1;
+}
+.dossier[open] > summary::before{content:"－"}
+.dossier > summary:hover{color:var(--accent)}
+.dossier-body{padding-bottom:var(--s3)}
+.dossier-lede{font-size:.9rem; color:var(--ink-dim); max-width:var(--measure)}
+.dossier-meta{grid-template-columns:10rem 1fr; margin-bottom:var(--s3)}
+.dossier-warnings-title{font-family:var(--mono); font-size:.7rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-faint); margin:var(--s2) 0 .6rem; font-weight:400}
+.dossier-warnings{list-style:none; padding-left:0; margin-bottom:var(--s3)}
+.dossier-warnings li{font-size:.85rem; color:var(--ink-dim)}
+
+/* 每一節帶著它的環——三環各有其色的邏輯在這裡也要看得見。 */
+.dossier-section{
+  border-top:1px solid var(--hair-soft); border-left:2px solid var(--hair);
+  padding:var(--s3) 0 var(--s3) var(--s2); margin-left:0;
+}
+.dossier-section[data-ring="ring-1"]{border-left-color:var(--ring-1)}
+.dossier-section[data-ring="ring-2"]{border-left-color:var(--ring-2)}
+.dossier-section[data-ring="ring-3"]{border-left-color:var(--ring-3)}
+.dossier-section[data-ring="ring-v"]{border-left-color:var(--ring-v)}
+.dossier-section h3{
+  font-family:var(--serif); font-weight:400; font-size:1.15rem;
+  letter-spacing:.02em; margin-bottom:.3rem;
+  display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap;
+}
+.dossier-layer{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.16em;
+  color:var(--ink-faint); text-transform:uppercase; margin-bottom:var(--s2);
+}
+/* 「明確拒絕」與「使用者沒要求」必須看得出不同——同色會把兩件事混成一件。 */
+.dossier-status{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.1em;
+  font-weight:400; padding:.15rem .5rem; border:1px solid var(--hair);
+  color:var(--ink-faint); white-space:nowrap;
+}
+.dossier-status[data-state="present"]{border-color:var(--hair-soft); color:var(--ink-dim)}
+.dossier-status[data-state="defaulted"]{border-style:dashed}
+.dossier-status[data-state="refused"]{border-color:var(--accent); color:var(--accent)}
+.dossier-status[data-state="not_requested"]{border-style:dotted}
+.dossier-status[data-state="executed_unavailable"]{border-color:var(--ink-faint)}
+.dossier-note{font-size:.85rem; color:var(--ink-dim); margin-bottom:var(--s2)}
+/* 寬表格在自己的容器裡捲，頁面本身不得橫向捲動。 */
+.dossier-table-wrap{overflow-x:auto; margin-bottom:var(--s2)}
+.dossier-table{font-family:var(--mono); font-size:.72rem; min-width:100%}
+.dossier-table caption{
+  text-align:left; font-family:var(--mono); font-size:.66rem;
+  letter-spacing:.12em; color:var(--ink-faint); padding-bottom:.5rem;
+}
+.dossier-table th,.dossier-table td{padding:.4rem .9rem .4rem 0; white-space:nowrap}
+
+/* ─── 立場：同一材質，只用規線分隔 ─── */
+.stance{padding:var(--s5) 0; text-align:center}
+.stance .body{
+  max-width:44rem; margin:var(--s3) auto 0; font-family:var(--serif);
+  font-size:clamp(1.18rem,2.1vw,1.6rem); line-height:2.05; color:var(--ink);
+}
+.stance hr{border:0; border-top:1px solid var(--hair); width:5rem; margin:var(--s3) auto 0}
+
+/* ─── 輸出格式 ─── */
+.formats{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--hair); margin-top:var(--s4)}
+.formats div{padding:var(--s3) var(--s2) var(--s3) 0; border-bottom:1px solid var(--hair)}
+.formats div + div{padding-left:var(--s2)}
+.formats b{display:block; font-family:var(--mono); font-size:1rem; letter-spacing:.1em; font-weight:400}
+.formats span{font-size:.78rem; color:var(--ink-faint)}
+
+/* ─── CTA ─── */
+.cta{padding:var(--s5) 0 var(--s6); display:grid; grid-template-columns:1fr auto; gap:var(--s4); align-items:end}
+.cta h2{margin-bottom:var(--s1); max-width:24rem}
+.btn{
+  display:inline-block; font-family:var(--sans); font-size:.95rem;
+  background:var(--ink); color:var(--paper); padding:1.05rem 2.4rem; text-decoration:none;
+}
+.btn:hover{background:var(--accent)}
+.btn.ghost{background:transparent; color:var(--ink); border-bottom:1px solid var(--ink); padding:.2rem 0; margin-right:var(--s3)}
+.btn.ghost:hover{background:transparent; color:var(--accent); border-bottom-color:var(--accent)}
+
+footer{border-top:1px solid var(--ink); padding:var(--s3) 0 var(--s5)}
+footer .wrap{display:flex; gap:var(--s3); flex-wrap:wrap}
+footer span{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); letter-spacing:.12em}
+
+@media (max-width:900px){
+  :root{--pad:1.6rem; --s5:3.75rem; --s6:5rem; --row:auto}
+  .cols{grid-template-columns:1fr; gap:var(--s3)}
+  .plate{grid-template-columns:1fr; gap:var(--s3)}
+  .plate svg{max-width:26rem; margin:0 auto}
+  .legend li{height:auto; padding:var(--s2) 0 var(--s2) 0}
+  .formats{grid-template-columns:1fr 1fr}
+  .formats div + div{padding-left:0}
+  .rule-row{grid-template-columns:1fr; gap:.2rem}
+  .cta{grid-template-columns:1fr; align-items:start}
+  .log{font-size:.7rem}
+  .log th,.log td{padding-right:.55rem}
+}
+
+/* ── 內容頁通用（首頁以外的十一頁沿用同一套材質）───────── */
+main{display:block}
+/* .page-body 與 .wrap 在同一個元素上；用 padding 簡寫會把 .wrap 的左右內距
+   清成 0，內容因此貼齊視窗邊緣。只設上下。 */
+.page-body{padding-top:var(--s5); padding-bottom:var(--s6)}
+.page-body h1{font-family:var(--serif); font-weight:400;
+  font-size:clamp(2rem,4.4vw,3.2rem); line-height:1.35; letter-spacing:.02em;
+  margin:var(--s2) 0 var(--s3)}
+.page-body h2{font-family:var(--serif); font-weight:400; font-size:1.5rem;
+  letter-spacing:.02em; margin:var(--s2) 0 var(--s2)}
+.page-body p{margin-bottom:var(--s2)}
+.page-body section{padding:var(--s4) 0; border-top:1px solid var(--hair-soft)}
+.lede{font-size:1.05rem; color:var(--ink-dim); max-width:var(--measure)}
+/* 2026-08-06：這兩條原本是無範圍的 `.cta`，而首頁上方已經有一個 `.cta`
+   版面容器（第 236 行的 grid）。同名、同分數、後者在後 —— 於是首頁那個
+   容器被塗成墨底，裡面的 `.btn.ghost`（color: var(--ink)）變成墨底墨字，
+   完全看不見。加上 `.page-body` 限定範圍即可，兩邊都不必改 class。 */
+.page-body .cta{display:inline-block; background:var(--ink); color:var(--paper);
+  padding:.95rem 2.4rem; text-decoration:none; margin-top:var(--s2)}
+.page-body .cta:hover{background:var(--accent)}
+.draft-flag{max-width:var(--measure); border-left:3px solid var(--accent);
+  padding:.6rem 0 .6rem .9rem; color:var(--ink-dim); font-size:.9rem}
+.todo{color:var(--accent); font-family:var(--mono); font-size:.86em}
+/* 內容稿大量使用清單與資料流圖；沒有這幾條，項目符號會落到 .wrap 的內距之外。 */
+.page-body ul,.page-body ol{max-width:var(--measure); color:var(--ink-dim);
+  margin:0 0 var(--s2); padding-left:1.35rem}
+.page-body li{margin-bottom:.5rem}
+.page-body li::marker{color:var(--ink-faint)}
+.page-body a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--hair)}
+.page-body a:hover{color:var(--accent); border-bottom-color:var(--accent)}
+.page-body a.cta{border-bottom:0; color:var(--paper)}
+.page-body pre.flow{font-family:var(--mono); font-size:.78rem; line-height:1.9;
+  color:var(--ink-dim); border-left:1px solid var(--hair); padding:var(--s2) 0 var(--s2) var(--s2);
+  margin-bottom:var(--s2); overflow-x:auto}
+/* 內容頁的表格常有整句敘述；.log 的等寬字在這裡太窄，且欄位不是數值。 */
+.page-body .log{font-family:var(--sans); font-size:.9rem; line-height:1.75}
+.page-body .log td{vertical-align:top}
+section.intent{border-left:3px solid var(--accent); padding-left:var(--s2)}
+.legal-terms{display:grid; grid-template-columns:12rem 1fr; gap:.9rem var(--s3); margin-top:var(--s2)}
+.legal-terms dt{font-weight:600; color:var(--ink); font-family:var(--sans)}
+.legal-terms dd{color:var(--ink-dim); max-width:var(--measure)}
+code{font-family:var(--mono); font-size:.88em}
+@media (max-width:900px){
+  .legal-terms{grid-template-columns:1fr; gap:.3rem var(--s2)}
+  .legal-terms dd{margin-bottom:.7rem}
+  .site-nav{margin-left:0}
+}
+
+/* 外殼把品牌字做成連結，而候選稿裡它是 div；不還原顏色會變成預設的藍色底線。 */
+a.brand:hover{color:var(--plate-fg)}
+
+/* ═══ 全站識別：渾儀環組 ════════════════════════════════
+   每一頁的頁首都帶同一枚環組標記，頁尾帶同一條四環色帶。
+   三環各有其色的邏輯因此在十三個介面上都看得見，而不只在首頁。 */
+a.brand{color:inherit; text-decoration:none;display:inline-flex; align-items:center; gap:.7rem}
+.mark{width:2rem; height:2rem; flex:0 0 auto; overflow:visible}
+.mark circle,.mark ellipse,.mark line{fill:none; stroke:var(--plate-dim); stroke-width:1}
+.mark .mark-ecliptic{stroke:var(--accent-rev); stroke-width:1.2}
+a.brand:hover .mark circle,
+a.brand:hover .mark ellipse,
+a.brand:hover .mark line{stroke:var(--plate-fg)}
+.footer-rule{padding-bottom:var(--s2)}
+.ring-strip{display:block; height:2px; width:100%;
+  background:linear-gradient(to right,
+    var(--ring-1) 0 25%, var(--ring-2) 25% 50%,
+    var(--ring-3) 50% 75%, var(--ring-v) 75% 100%);
+}
+
+/* ═══ 導覽與網站地圖：十三個介面都要到得了 ═══════════════ */
+.site-nav{margin-left:auto; display:flex; gap:1.25rem; flex-wrap:wrap}
+.site-nav a{color:var(--plate-dim); text-decoration:none; font-size:.88rem; white-space:nowrap}
+.site-nav a:hover{color:var(--plate-fg)}
+.sitemap{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
+  gap:var(--s3); padding-top:var(--s4); padding-bottom:var(--s3)}
+.sitemap-col{display:flex; flex-direction:column; gap:.4rem}
+.sitemap-col h2{font-family:var(--mono); font-size:.68rem; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--ink-faint); margin:0 0 .3rem; font-weight:400}
+.sitemap-col a{color:var(--ink-dim); text-decoration:none; font-size:.9rem}
+.sitemap-col a:hover{color:var(--accent)}
+@media (max-width:900px){
+  .site-nav{margin-left:0; gap:.9rem}
+  .site-nav a{font-size:.82rem}
+  .sitemap{grid-template-columns:1fr 1fr}
+}
+/* 窄螢幕：頁首的 height:78px 是為單行導覽設定的；導覽換行後那個固定高度
+   反而讓頁首吃掉三成視窗高度。改為由內容決定，並收緊行距。 */
+@media (max-width:640px){
+  header .wrap{
+    height:auto; min-height:auto; flex-wrap:wrap; align-items:center;
+    padding-top:.9rem; padding-bottom:.9rem; row-gap:.6rem;
+  }
+  .brand{font-size:1.2rem; letter-spacing:.12em}
+  .brand small{font-size:.7rem; letter-spacing:.22em; margin-left:.5rem}
+  .mark{width:1.6rem; height:1.6rem}
+  .site-nav{width:100%; gap:.85rem}
+  .site-nav a{font-size:.8rem}
+  .dossier-table{font-size:.66rem}
+  .dossier-section{padding-left:.7rem}
+}

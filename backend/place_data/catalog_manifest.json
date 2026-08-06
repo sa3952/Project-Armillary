@@ -13,7 +13,7 @@
   },
   "release_policy": "low_frequency_intentional_dataset_release",
   "rebuild": {
-    "command": "backend/.venv/bin/python -m scripts.validation.build_place_catalog --geonames-zip <cities500.zip> --taiwan-admin-csv <taiwan-admin.csv> --taiwan-settlement-csv <taiwan-settlement.csv> --output backend/place_data/places.sqlite3 --manifest backend/place_data/catalog_manifest.json --source-date 2026-07-29",
+    "command": "python -m scripts.validation.build_place_catalog --geonames-zip <cities500.zip> --taiwan-admin-csv <taiwan-admin.csv> --taiwan-settlement-csv <taiwan-settlement.csv> --output backend/place_data/places.sqlite3 --manifest backend/place_data/catalog_manifest.json --source-date 2026-07-29",
     "exact_inputs_required": true,
     "input_identity": "source_sha256"
   },

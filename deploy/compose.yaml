@@ -16,7 +16,31 @@ services:
       - "ALL"
     security_opt:
       - "no-new-privileges:true"
-    pids_limit: 64
+    # FPI-2026-08-06-E-014. 64 was below what this service's own declared
+    # capacity requires. The pids cgroup counts tasks, and a thread is a task:
+    # every endpoint is a sync `def`, so FastAPI runs them on the AnyIO thread
+    # pool, and static assets share that pool. Measured with the production
+    # flags (2 workers, 40 charts + 200 health concurrently) the tree peaked at
+    # 70 tasks with each worker reaching AnyIO's default 40-thread ceiling —
+    # above the app's own 32 + 4 boundary, because threads are reused and not
+    # returned immediately. Add the parent, the resource tracker, `init: true`
+    # and the 5-second HEALTHCHECK subprocess and the worst case is ~85.
+    #
+    # Reaching it needs no attack: a page bootstrap issues 12 parallel asset
+    # GETs, so roughly five people opening the page together is enough. Twenty
+    # invitees arriving in the same evening is the ordinary case, and the
+    # failure is bad — `RuntimeError: can't start new thread` surfaces as 500s
+    # while the worker stays alive, the healthcheck fails too, and
+    # `restart: unless-stopped` does not restart an unhealthy container.
+    #
+    # 192 is 2 x (40 + 1) per worker plus supervisor, tracker, init and probe
+    # processes, with roughly 2x headroom. It is still a real fork-bomb bound;
+    # the Docker default is unlimited. The alternative Sebastian may prefer is
+    # to lower MAX_HOSTED_REQUESTS_PER_WORKER instead and keep the tighter cap,
+    # which trades capacity for containment. tests/deployment/
+    # test_resource_limits.py pins the arithmetic either way, so the two
+    # numbers can no longer drift apart silently.
+    pids_limit: 192
     mem_limit: 512m
     memswap_limit: 512m
     cpus: 1.0
@@ -25,10 +49,25 @@ services:
       options:
         max-size: "5m"
         max-file: "2"
+    # 2026-08-07: raised from 1024 as a MITIGATION for IMG-2026-08-08-E-001,
+    # not a fix. Swiss Ephemeris opens three files per worker thread and does
+    # not return them when the thread exits, so the count tracks how many
+    # threads have ever been created, which has no ceiling. Measured on the
+    # candidate image: descriptors moved in lockstep with distinct thread ids,
+    # three per thread, and did not fall when threads expired
+    # (receipts/IMG_E_001_FD_SATURATION_18391DE_AMD64.json).
+    #
+    # Exhaustion does not self-heal. Per the note above, a worker out of
+    # resources keeps serving 500s while staying alive, the healthcheck fails,
+    # and `restart: unless-stopped` does not restart an unhealthy container.
+    #
+    # 65536 buys 64x the headroom and nothing else. The leak is unchanged, so
+    # this value must not be read as the finding having been handled — the fix
+    # is blocking at the next image build (DEFERRED_OPPORTUNITIES D-FIX-07).
     ulimits:
       nofile:
-        soft: 1024
-        hard: 1024
+        soft: 65536
+        hard: 65536
     networks:
       - "private-alpha-internal"
     stop_grace_period: 30s

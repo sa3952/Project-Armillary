@@ -30,10 +30,18 @@ presentation and interaction; they do not override backend contracts or Sebastia
 Use lowercase hyphenated asset/module names and stable semantic vocabulary from the contracts.
 Cache keys for changed assets are one dependency graph.
 
+Browser runtime assets are grouped below a BCP 47 locale directory. The initial Traditional
+Chinese site lives in `zh-TW/`; `/` redirects deterministically to `/zh-TW/` and the application
+does not infer a locale from browser headers. API routes remain language-neutral under `/api/`.
+
 ## Retention
 
 Track maintained assets and focused fixtures. Do not retain birth inputs, precise coordinates,
 downloaded charts, browser state, build artifacts, or captured user data in the repository.
+
+Armillary design-vote candidates left the runtime tree on 2026-08-06. Their byte-for-byte private
+archive is routed from `docs/archive/README.md`; do not restore that archive under a locale directory
+or admit it to a frontend release without a new explicit product selection and browser review.
 
 ## Tests and gates
 

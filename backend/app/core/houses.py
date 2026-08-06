@@ -6,8 +6,10 @@ Sidereal Whole Sign 必須讓 Swiss 直接以 ``FLG_SIDEREAL`` 建立恆星黃�
 黃道經度類的值上；ARMC 是恆星時性質的角度，不做 ayanamsa 平移）。
 
 Vertex、Equatorial Ascendant、Co-Ascendant(Koch/Munkasey)、Polar Ascendant 是
-swe_houses_ex 附帶回傳的現代/技術性角點，非古典占星角點，因此不進入主要輸出，
-只寫進 calculation_trace 供有興趣者核對。
+swe_houses_ex 附帶回傳的現代/技術性角點，非古典占星角點，因此不進入 `angles`
+主要輸出。2026-08-03 起改為在 `options.include_extra_angles` 開啟時另闢
+`astronomical_data.extra_angles` 輸出，每一項附上其定義來源與「非古典角點」標記；
+`angles` 的鍵集合維持 asc/mc/desc/ic/armc 不變，既有消費端不受影響。
 
 宮位／ASC／MC／地平系統本質上是「觀測者站在地表看天空」定義出來的概念，恆為地心
 （或站心）視角，不受 computation_mode.center 影響——即使使用者把星體位置切成
@@ -20,6 +22,59 @@ import swisseph as swe
 
 from ..config import HOUSE_SYSTEMS
 from .trace import Trace
+
+
+# 四分宮制（Placidus/Regiomontanus/Alcabitius）在高緯度會嚴重變形：宮位大小差距
+# 拉大，Placidus 在超過黃赤交角補角（90° − ε ≈ 66.56°，即極圈）之外根本無法定義，
+# 因為該處存在永不升起或永不落下的黃道度數。以下兩個門檻用於發出結構化警告，
+# 不用於阻擋計算——阻擋的條件另由 _has_duplicate_cusps() 與 swe.Error 決定。
+#
+# 66.5°：極圈。此緯度以上 Placidus 的時間三分法對部分黃道度數無解。
+# 60.0°：經驗上宮位大小已明顯不均、落宮對出生時刻誤差高度敏感的起點。
+POLAR_CIRCLE_LATITUDE_DEGREES = 66.5
+HIGH_LATITUDE_WARNING_DEGREES = 60.0
+QUADRANT_HOUSE_SYSTEM_CODES = frozenset({"P", "R", "B"})
+
+# 非古典角點的定義來源，隨值一起輸出，避免使用者把它們誤認為古典四角。
+EXTRA_ANGLE_PROVENANCE = {
+    "vertex": {
+        "zh": "宿命點",
+        # 初版誤寫成「黃道與地平大圓在西方的交點」——那是**下降點**的定義，
+        # 不是 Vertex（RT-BACKEND-9-E-010）。Vertex 用的是卯酉圈
+        # (prime vertical)：通過天頂、正東與正西的大圓，與地平圈垂直。
+        # 數值計算本身取自 swe.houses_ex，未受此文字錯誤影響。
+        "definition": "黃道與卯酉圈（prime vertical，過天頂與正東西的大圓）在西方的交點",
+        "not_to_be_confused_with": "下降點（黃道與地平圈在西方的交點）",
+        "provenance": "modern_20th_century_l_edward_johndro_and_charles_jayne",
+    },
+    "equatorial_ascendant": {
+        "zh": "赤道上升點",
+        "definition": "地理緯度視為 0 時的上升點（East Point）",
+        "provenance": "technical_construction_not_a_classical_angle",
+    },
+    "co_ascendant_koch": {
+        "zh": "共同上升點(Koch)",
+        "definition": "Walter Koch 定義的共同上升點",
+        "provenance": "modern_20th_century_walter_koch",
+    },
+    "co_ascendant_munkasey": {
+        "zh": "共同上升點(Munkasey)",
+        "definition": "Michael Munkasey 定義的共同上升點",
+        "provenance": "modern_20th_century_michael_munkasey",
+    },
+    "polar_ascendant": {
+        "zh": "極地上升點",
+        "definition": "Munkasey 定義的極地上升點",
+        "provenance": "modern_20th_century_michael_munkasey",
+    },
+    "anti_vertex": {
+        "zh": "反宿命點",
+        "definition": "Vertex 黃道經度的精確對蹠點（Vertex + 180° mod 360）",
+        "provenance": "modern_20th_century_technical_angle",
+        "calculation_source": "vertex_longitude_antipode",
+        "derived_from": "vertex",
+    },
+}
 
 
 class HouseSystemUnavailableError(Exception):
@@ -169,6 +224,14 @@ def compute_houses(house_system_code: str, jd_ut: float, location, ctx, trace: T
                                         co_ascendant_munkasey, polar_ascendant),
     )
 
+    extra_angles = {
+        "vertex": vertex,
+        "equatorial_ascendant": equatorial_ascendant,
+        "co_ascendant_koch": co_ascendant_koch,
+        "co_ascendant_munkasey": co_ascendant_munkasey,
+        "polar_ascendant": polar_ascendant,
+    }
+
     return {
         "system_name": name,
         "cusps": cusps_shifted,
@@ -177,4 +240,31 @@ def compute_houses(house_system_code: str, jd_ut: float, location, ctx, trace: T
         "desc": desc,
         "ic": ic,
         "armc": armc,
+        "extra_angles": extra_angles,
+        "latitude_regime": latitude_regime(location.latitude, code),
+    }
+
+
+def latitude_regime(latitude: float, house_system_code: str) -> dict:
+    """描述本次計算的緯度處於哪一個「宮位制可信度」區間。
+
+    這是純粹的幾何事實陳述（緯度是否超過極圈、所選宮位制是否為四分宮制），
+    不含任何「應該改用哪一種宮位制」的建議——那屬於方法裁決。
+    """
+
+    magnitude = abs(latitude)
+    is_quadrant = house_system_code in QUADRANT_HOUSE_SYSTEM_CODES
+    if magnitude >= POLAR_CIRCLE_LATITUDE_DEGREES:
+        band = "beyond_polar_circle"
+    elif magnitude >= HIGH_LATITUDE_WARNING_DEGREES:
+        band = "high_latitude"
+    else:
+        band = "ordinary"
+    return {
+        "latitude": latitude,
+        "band": band,
+        "polar_circle_threshold_degrees": POLAR_CIRCLE_LATITUDE_DEGREES,
+        "high_latitude_threshold_degrees": HIGH_LATITUDE_WARNING_DEGREES,
+        "house_system_is_quadrant": is_quadrant,
+        "quadrant_distortion_expected": is_quadrant and band != "ordinary",
     }

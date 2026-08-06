@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>關於｜渾儀 Armillary</title>
+<link rel="icon" href="/zh-TW/favicon.svg">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/zh-TW/">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="16"/>
+        <ellipse cx="20" cy="20" rx="16" ry="4.5"/>
+        <ellipse cx="20" cy="20" rx="16" ry="8" transform="rotate(-32 20 20)" class="mark-ecliptic"/>
+        <ellipse cx="20" cy="20" rx="5" ry="16"/>
+        <line x1="20" y1="4" x2="20" y2="36" transform="rotate(-18 20 20)"/>
+      </svg>
+      <span>渾儀<small>ARMILLARY</small></span>
+    </a>
+    <nav class="site-nav" aria-label="主要導覽">
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/about">關於</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap page-body">
+  <div class="eyebrow">關於 · ABOUT</div>
+  <h1>我們只做前半段。</h1>
+  <p class="lede">從星曆到數字，我們負責。從數字到意義，你負責。</p>
+
+  <section>
+    <h2>這是什麼</h2>
+    <p>渾儀是古典西洋占星的<strong>計算工作台</strong>。</p>
+    <p>它輸出天文位置、三套座標系的並列數值、幾何推導，以及需要選定技法的判定——<strong>每一項都印著它用了誰的說法。</strong></p>
+    <p><strong>它不解盤、不預測、不描述性格、不提供運勢。</strong></p>
+    <p>支援 1900 到 2399 年。目前全部功能免費使用。</p>
+  </section>
+
+  <section>
+    <h2>為什麼要有這個東西</h2>
+    <p>兩個網站，同一組出生資料，算出兩個不一樣的上升星座。</p>
+    <p>通常兩邊都沒算錯。它們用了不同的黃道系統、不同的位置模式、不同的宮位制——<strong>只是沒告訴你用了哪一種。</strong></p>
+    <p>於是你沒辦法判斷該相信誰，也沒辦法把差異追到原因。<strong>這不是精度問題，是揭露問題。</strong></p>
+    <p>渾儀把口徑寫進每一次計算的收據裡。你可以拿著這份收據去對任何一套軟體，<strong>而且知道自己在對什麼。</strong></p>
+  </section>
+
+  <section>
+    <h2>給誰用</h2>
+    <p>給已經會看盤的人。</p>
+    <p>進階學習者、實務占星師、教師、研究者——會問「你這個上升點是用什麼算的」的那種人。</p>
+    <p><strong>如果你剛開始學占星，這個工具大概不適合你。</strong>它不會告訴你任何一個數字代表什麼意思，那不在它的能力範圍內。</p>
+  </section>
+
+  <section>
+    <h2>我們怎麼決定要不要做一件事</h2>
+    <p>有三條規則，寫在產品的內部憲法裡，不是行銷語言：</p>
+    <dl class="legal-terms">
+      <dt>一、在能做對之前，不先提供</dt>
+      <dd>市場明確期待、但方法考據還沒完成的功能，不提供。不因為別的工具有就加進來。</dd>
+
+      <dt>二、上一階沒達標，不開發下一階</dt>
+      <dd>準確的天文資料 → 準確的判定 → 準確的解盤，是三個階段。第二階還沒達標，所以第三階<strong>連開發都不做</strong>。</dd>
+
+      <dt>三、任何「已驗證」都必須附帶範圍</dt>
+      <dd>說某件事已驗證，就要說清楚證據在哪一層、涵蓋到哪裡。做不到就降級措辭，不是省略。</dd>
+    </dl>
+    <p>這三條的實際後果，你在<a href="/zh-TW/validation">〈驗證證據〉</a>上看得到：有些欄位寫著「待方法審閱」，有一項天文異常寫著「尚未完全歸因」，有一條規則寫著「連它的歷史歸屬都還沒定論」。</p>
+    <p><strong>那些不是還沒寫完的地方，那是這三條規則的輸出。</strong></p>
+  </section>
+
+  <section>
+    <h2>隱私不是政策，是結構</h2>
+    <p>我們不保存你的出生資料。這句話很多產品都會寫，所以要說清楚它在這裡是什麼意思：</p>
+    <p><strong>不是「除非你要求，否則我們不留」，是應用程式裡沒有可以留的地方。</strong>沒有帳號資料庫、沒有命盤資料庫、沒有工作階段儲存、沒有請求快取、沒有背景佇列。計算期間如果有任何程式碼嘗試寫檔，測試會直接失敗。</p>
+    <p>這個保護的價值來自它的二元性。<strong>一旦變成「可以選擇保存」，它就跟所有競品的說法一樣了。</strong></p>
+    <p>完整的分層說明在<a href="/zh-TW/trust">〈信任中心〉</a>。</p>
+  </section>
+
+  <section>
+    <h2>開源</h2>
+    <p>採 GNU AGPL v3。你正在使用的這一版，完整對應原始碼可以取得，版本識別碼印在每一份計算卷宗裡。</p>
+    <p>這不是姿態。<strong>AGPL 的意思是：你不必相信我們對程式行為的描述，你可以去讀。</strong></p>
+    <p><a href="/zh-TW/legal/copyright">著作權與原始碼取得方式 →</a></p>
+  </section>
+
+  <section>
+    <h2>誰做的</h2>
+    <p class="todo">〔待 Sebastian 裁決〕本節牽涉營運者識別與署名方式。</p>
+  </section>
+
+  <section>
+    <h2>這個名字</h2>
+    <p><strong>渾儀</strong>是渾天儀、也就是 armillary sphere 的中文名稱。</p>
+    <p>那是一件用同心圓環表示天球座標系的觀測儀器：赤道環、黃道環、地平環，環環相扣，讓你能同時看見同一顆星在幾套座標系裡的位置。</p>
+    <p><strong>我們做的事情本質上一樣：同一顆星，三套座標，並排放著。</strong></p>
+  </section>
+
+  <section>
+    <h2>現在的階段</h2>
+    <p>Private Alpha，少數受邀者使用，<strong>目前全部免費</strong>。我們不承諾永久免費。</p>
+    <p>沒有第三方安全認證，沒有通過外部紅隊，沒有法規合規認證。卷宗裡的隱私聲明標為「暫定，待外部審查」，在外部審查完成前不會改。</p>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap sitemap">
+    <div class="sitemap-col">
+      <h2>產品</h2>
+      <a href="/zh-TW/">首頁</a>
+      <a href="/zh-TW/calculate">計算</a>
+      <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/roadmap">路線</a>
+      <a href="/zh-TW/blog">文章</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>可查證性</h2>
+      <a href="/zh-TW/validation">驗證</a>
+      <a href="/zh-TW/trust">信任</a>
+      <a href="/zh-TW/security">安全</a>
+    </div>
+    <div class="sitemap-col">
+      <h2>法律與聯絡</h2>
+      <a href="/zh-TW/legal/privacy">隱私政策</a>
+      <a href="/zh-TW/legal/terms">使用條款</a>
+      <a href="/zh-TW/legal/copyright">著作權與原始碼</a>
+      <a href="/zh-TW/contact">聯絡方式</a>
+      <a href="/zh-TW/about">關於</a>
+    </div>
+  </div>
+
+  <div class="wrap footer-rule"><span class="ring-strip" aria-hidden="true"></span></div>
+  <div class="wrap">
+    <span>渾儀 ARMILLARY</span>
+    <span>只計算，不解盤，不預測</span>
+    <span>/zh-TW/about · L2 ＋ L3</span>
+  </div>
+</footer>
+
+</body>
+</html>

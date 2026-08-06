@@ -41,7 +41,7 @@ def test_hosted_openapi_describes_sanitized_validation_errors_and_timezone_requi
     assert set(issue["required"]) == {"loc", "type"}
     assert "msg" not in issue["properties"]
 
-    for status_code in ("400", "413", "415"):
+    for status_code in ("400", "413", "415", "431", "503"):
         boundary_response = schema["paths"]["/api/chart"]["post"][
             "responses"
         ][status_code]["content"]["application/json"]["schema"]
@@ -53,7 +53,7 @@ def test_hosted_openapi_describes_sanitized_validation_errors_and_timezone_requi
     assert place_search["requestBody"]["content"]["application/json"][
         "schema"
     ] == {"$ref": "#/components/schemas/PlaceSearchRequest"}
-    for status_code in ("400", "413", "415"):
+    for status_code in ("400", "413", "415", "431", "503"):
         assert place_search["responses"][status_code]["content"][
             "application/json"
         ]["schema"] == {
@@ -85,7 +85,8 @@ def test_hosted_openapi_describes_sanitized_validation_errors_and_timezone_requi
                     "maximum": 14.0,
                     "minimum": -14.0,
                     "type": "number",
-                }
+                },
+                "fold": {"const": 0},
             },
             "required": ["utc_offset_hours"],
         },

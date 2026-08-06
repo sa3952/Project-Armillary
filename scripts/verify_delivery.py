@@ -10,6 +10,18 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 
 
+# These tests assert private-repository layout that is not part of the exported
+# Corresponding Source candidate.  The same nodes remain mandatory in the
+# private delivery gate; public delivery excludes only the explicitly named
+# nodes instead of suppressing the whole module.
+PRIVATE_REPOSITORY_TEST_NODES = (
+    "tests/deployment/test_production_runtime_contract.py::"
+    "test_image_carries_licence_notices_and_both_dataset_verifiers",
+    "tests/deployment/test_production_runtime_contract.py::"
+    "test_staging_site_bounds_place_search_and_hides_the_upstream_server_header",
+)
+
+
 COMMANDS = (
     [
         sys.executable,
@@ -33,13 +45,18 @@ COMMANDS = (
         "-q",
         "-p",
         "no:cacheprovider",
+        *[
+            argument
+            for node in PRIVATE_REPOSITORY_TEST_NODES
+            for argument in ("--deselect", node)
+        ],
     ],
     [
         "node",
         "--test",
         *[
             path.as_posix()
-            for path in sorted(Path("frontend/tests").glob("*.test.cjs"))
+            for path in sorted(Path("frontend/zh-TW/tests").glob("*.test.cjs"))
         ],
     ],
     [

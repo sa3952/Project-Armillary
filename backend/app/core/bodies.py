@@ -22,6 +22,22 @@ from .trace import Trace
 
 AU_TO_KM = 149597870.7
 
+# MTH-Q-009 裁決（Sebastian 2026-08-03，A1）：`position_mode="true"` 時不輸出視高度。
+# true position 已移除光行時與光行差，得到的是幾何方向；再對該方向套用大氣折射，
+# 會讓同一個數值同時假設「光瞬時到達」與「光穿過大氣」兩個互斥前提。這個數字
+# 無法被正確解讀，也無法被第三方複算，故不輸出優於輸出。
+TRUE_POSITION_APPARENT_ALTITUDE_REASON = (
+    "suppressed_true_position_refraction_semantics_incompatible"
+)
+
+
+def apparent_altitude_policy(ctx) -> tuple[bool, str | None]:
+    """回傳 (是否輸出視高度, 不輸出時的 reason_code)。恆星模組共用同一條規則。"""
+
+    if ctx.mode.position_mode == "true":
+        return False, TRUE_POSITION_APPARENT_ALTITUDE_REASON
+    return True, None
+
 
 def _motion_sign(speed: float) -> str:
     if speed > 0:
@@ -51,6 +67,8 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
         or (moon_relative and ctx.mode.center in ("heliocentric", "barycentric"))
     )
 
+    emit_apparent_altitude, apparent_altitude_reason = apparent_altitude_policy(ctx)
+
     if degenerate:
         result = {
             "key": key, "name": zh_name,
@@ -60,6 +78,7 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
             "right_ascension": None, "declination": None, "speed_ra": None, "speed_dec": None,
             "longitude_dms": None, "latitude_dms": None, "right_ascension_hms": None, "declination_dms": None,
             "azimuth": None, "azimuth_swiss_raw": None, "altitude_true": None, "altitude_apparent": None,
+            "altitude_apparent_reason_code": "not_applicable_for_display_center",
             "phase_angle": None, "illuminated_fraction": None, "elongation": None,
             "apparent_diameter": None, "apparent_magnitude": None,
             "retflag_ecliptic": retflag_ecl, "retflag_equatorial": retflag_eq,
@@ -105,6 +124,8 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
             (horizontal_ecl[0], horizontal_ecl[1], horizontal_ecl[2]),
         )
         az = swiss_azimuth_to_standard(az_raw)
+        if not emit_apparent_altitude:
+            app_alt = None
 
     phase_angle = illum_fraction = elongation = app_diameter = app_mag = None
     if physical:
@@ -136,10 +157,20 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
             "黃經速度(度/日)": speed_lon, "motion_sign": motion_sign,
             "赤經": ra, "赤緯": dec,
             **({"方位角Az(北=0,順時針)": az, "方位角Az(Swiss原始,南=0,向西)": az_raw,
-                "真高度Alt": true_alt, "視高度(含蒙氣差)": app_alt} if ctx.horizon_meaningful else {}),
+                "真高度Alt": true_alt,
+                **({"視高度(含蒙氣差)": app_alt} if emit_apparent_altitude else {})}
+               if ctx.horizon_meaningful else {}),
         },
-        note=("" if used_full_ephemeris else "⚠ 此星體退回 Moshier 半分析模型，精度較低")
-             if ctx.horizon_meaningful else "地平座標於 heliocentric/barycentric 模式下無物理意義，故不計算",
+        note=(
+            ("" if used_full_ephemeris else "⚠ 此星體退回 Moshier 半分析模型，精度較低")
+            + (
+                ""
+                if emit_apparent_altitude
+                else "position_mode=true 下不輸出視高度：幾何方向與大氣折射是互斥前提，"
+                     "混合後的數值無法被正確解讀或複算（MTH-Q-009 A1）。"
+            )
+        ) if ctx.horizon_meaningful
+        else "地平座標於 heliocentric/barycentric 模式下無物理意義，故不計算",
     )
 
     return {
@@ -165,6 +196,15 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
         "azimuth_swiss_raw": az_raw,
         "altitude_true": true_alt,
         "altitude_apparent": app_alt,
+        "altitude_apparent_reason_code": (
+            None
+            if app_alt is not None
+            else (
+                apparent_altitude_reason
+                if not emit_apparent_altitude
+                else "not_applicable_for_display_center"
+            )
+        ),
         "phase_angle": phase_angle,
         "illuminated_fraction": illum_fraction,
         "elongation": elongation,
@@ -177,10 +217,189 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
     }
 
 
+def make_longitude_sampler(ctx, *, moon_ctx=None, moon_id: int = swe.MOON):
+    """回傳 (body_id, jd_ut) -> 黃經 的取樣函式，供求根器在時間軸上重複查星曆。
+
+    刻意沿用 `ctx.base_flags`，讓求根結果與主要輸出處在同一個黃道系統與參考框架：
+    若這裡改用別組旗標，sidereal 模式下算出的「成相時刻」會對應到另一套星座界線。
+    速度旗標(FLG_SPEED)已包含在 base_flags 內，額外成本可忽略，故不另外拆一組旗標。
+    """
+
+    flags = ctx.base_flags
+    moon_flags = moon_ctx.base_flags if moon_ctx is not None else None
+
+    def longitude_at(body_id: int, jd_ut: float) -> float:
+        effective_flags = (
+            moon_flags
+            if moon_flags is not None and body_id == moon_id
+            else flags
+        )
+        values, _retflag = swe.calc_ut(jd_ut, body_id, effective_flags)
+        return values[0]
+
+    return longitude_at
+
+
 def compute_bodies(body_defs: list, jd_ut: float, ctx, atmosphere, trace: Trace,
                     physical: bool = True, moon_relative: bool = False) -> list:
-    return [
-        compute_body(b["id"], b["key"], b["zh"], jd_ut, ctx, atmosphere, trace,
-                     physical=physical, moon_relative=moon_relative)
-        for b in body_defs
-    ]
+    results = []
+    for definition in body_defs:
+        result = compute_body(
+            definition["id"],
+            definition["key"],
+            definition["zh"],
+            jd_ut,
+            ctx,
+            atmosphere,
+            trace,
+            physical=physical,
+            moon_relative=moon_relative,
+        )
+        for metadata_key in (
+            "calculation_source",
+            "method_classification",
+            "naming_note",
+        ):
+            if metadata_key in definition:
+                result[metadata_key] = definition[metadata_key]
+        if definition.get("expose_swiss_body_id"):
+            result["swiss_body_id"] = definition["id"]
+        results.append(result)
+    return results
+
+
+def derive_node_antipode(
+    north: dict,
+    *,
+    key: str,
+    name: str,
+    body_id: int,
+    jd_ut: float,
+    ctx,
+    atmosphere,
+    trace: Trace,
+) -> dict:
+    """Derive a descending lunar node as the directional antipode of a north node.
+
+    The adopted product contract is intentionally directional: longitude/latitude and
+    equatorial direction are antipodal, while distance is left null because adding 180°
+    to a node direction does not independently determine a physical radial distance.
+    """
+
+    derivation = {
+        "derived_from": north["key"],
+        "calculation_source": "north_node_direction_antipode",
+        "derivation_formula": (
+            "ecliptic_longitude=(north+180) mod 360; ecliptic_latitude=-north; "
+            "right_ascension=(north+180) mod 360; declination=-north"
+        ),
+    }
+    if north.get("longitude") is None:
+        result = dict(north)
+        result.update({"key": key, "name": name, **derivation})
+        result["distance_au"] = None
+        result["distance_km"] = None
+        result["speed_distance"] = None
+        trace.add(
+            f"{name} 導出",
+            formula="北交點方向的黃道／赤道對蹠點",
+            note="來源北交點不可用，故南交點同樣不可用。",
+        )
+        return result
+
+    longitude = (north["longitude"] + 180.0) % 360.0
+    latitude = -north["latitude"]
+    right_ascension = (north["right_ascension"] + 180.0) % 360.0
+    declination = -north["declination"]
+    speed_latitude = (
+        -north["speed_latitude"]
+        if north.get("speed_latitude") is not None
+        else None
+    )
+    speed_dec = (
+        -north["speed_dec"] if north.get("speed_dec") is not None else None
+    )
+
+    azimuth = azimuth_raw = altitude_true = altitude_apparent = None
+    horizontal_retflag = None
+    emit_apparent, apparent_reason = apparent_altitude_policy(ctx)
+    used_full_ephemeris = north.get("used_full_ephemeris")
+    if ctx.horizon_meaningful:
+        horizontal_values, horizontal_retflag = swe.calc_ut(
+            jd_ut, body_id, ctx.horizontal_source_flags
+        )
+        south_horizontal = (
+            (horizontal_values[0] + 180.0) % 360.0,
+            -horizontal_values[1],
+            horizontal_values[2],
+        )
+        pressure_hpa = (
+            atmosphere.pressure_hpa
+            if atmosphere.pressure_hpa is not None
+            else 0.0
+        )
+        azimuth_raw, altitude_true, altitude_apparent = swe.azalt(
+            jd_ut,
+            swe.ECL2HOR,
+            (ctx.location.longitude, ctx.location.latitude, ctx.location.altitude_m),
+            pressure_hpa,
+            atmosphere.temperature_c,
+            south_horizontal,
+        )
+        azimuth = swiss_azimuth_to_standard(azimuth_raw)
+        if not emit_apparent:
+            altitude_apparent = None
+        used_full_ephemeris = bool(used_full_ephemeris) and bool(
+            horizontal_retflag & swe.FLG_SWIEPH
+        ) and not bool(horizontal_retflag & swe.FLG_MOSEPH)
+
+    trace.add(
+        f"{name} 導出",
+        formula=derivation["derivation_formula"],
+        inputs={"來源": north["key"], "來源黃經": north["longitude"]},
+        result={"黃經": longitude, "赤經": right_ascension, "赤緯": declination},
+        note="這是北交點方向的幾何對蹠點，不是另一個獨立 Swiss body。",
+    )
+    return {
+        "key": key,
+        "name": name,
+        "longitude": longitude,
+        "latitude": latitude,
+        "distance_au": None,
+        "distance_km": None,
+        "speed_longitude": north["speed_longitude"],
+        "speed_latitude": speed_latitude,
+        "speed_distance": None,
+        "motion_sign": north["motion_sign"],
+        "right_ascension": right_ascension,
+        "declination": declination,
+        "speed_ra": north["speed_ra"],
+        "speed_dec": speed_dec,
+        "longitude_dms": to_dms(longitude, wrap_360=True),
+        "latitude_dms": to_dms(latitude, signed=True),
+        "right_ascension_hms": to_hms(right_ascension),
+        "declination_dms": to_dms(declination, signed=True),
+        "azimuth": azimuth,
+        "azimuth_swiss_raw": azimuth_raw,
+        "altitude_true": altitude_true,
+        "altitude_apparent": altitude_apparent,
+        "altitude_apparent_reason_code": (
+            None
+            if altitude_apparent is not None
+            else (
+                apparent_reason
+                if not emit_apparent
+                else "not_applicable_for_display_center"
+            )
+        ),
+        "phase_angle": None,
+        "illuminated_fraction": None,
+        "elongation": None,
+        "apparent_diameter": None,
+        "apparent_magnitude": None,
+        "retflag_ecliptic": north.get("retflag_ecliptic"),
+        "retflag_equatorial": north.get("retflag_equatorial"),
+        "retflag_horizontal_source": horizontal_retflag,
+        "used_full_ephemeris": used_full_ephemeris,
+        **derivation,
+    }

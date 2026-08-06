@@ -14,3 +14,49 @@ container build:
 This project does not yet claim bit-for-bit reproducible container images
 across independent builders. Timestamps, package repository state, and build
 platform differences remain possible sources of byte-level variance.
+
+## Supported dependency reconstruction modes
+
+The publication candidate supports two fresh-environment modes. Neither mode
+copies an existing virtual environment.
+
+Both modes are defined for `linux/amd64` and use this digest-pinned builder,
+which contains the C compiler required to build `pyswisseph` from its retained
+source distribution:
+
+```text
+python:3.13.14-trixie@sha256:153e964bee18ef816ff55c8b026a345c62d4ccf05ad119ce5d7c10dee79574d7
+```
+
+- `online-clean`: a new CPython 3.13 virtual environment installs the exact
+  hash-pinned development lock from an HTTPS package index.
+- `offline candidate-only`: the consumer has no network. It installs PEP 517
+  bootstrap and dependency wheels only when their hashes occur in the same
+  committed locks, while building `pyswisseph` from the retained sdist.
+
+All exact production, build, and development sdists remain in
+`third_party/sources/` for inspection. Some upstream Rust-backed sdists are
+not self-contained and attempt to fetch crates or Git dependencies during a
+literal all-sdist build; the verified wheel index is the supported offline
+path for those packages. `third_party/SOURCE_MANIFEST.json` records the exact
+roles, archive hashes, index target, and which package is source-built.
+
+The generated `docs/DEPENDENCY_LICENSES.md` is a human view of that manifest.
+Manual edits are rejected by candidate verification.
+
+From the candidate root, replay either supported mode without copying an
+existing virtual environment:
+
+```bash
+python -m scripts.publication.verify_publication_candidate \
+  --root . \
+  --reconstruction-mode offline-source-only
+
+python -m scripts.publication.verify_publication_candidate \
+  --root . \
+  --reconstruction-mode online-clean
+```
+
+The verifier passes `--platform linux/amd64` to Docker explicitly. A different
+`--builder-image` is an investigative override, not evidence for the documented
+reconstruction contract.

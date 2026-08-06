@@ -18,9 +18,11 @@ COMPOSE = DEPLOY_DIR / "compose.yaml"
 LOCK = DEPLOY_DIR / "requirements.lock"
 LOCK_INPUT = DEPLOY_DIR / "requirements.in"
 BUILD_LOCK = DEPLOY_DIR / "build-requirements.lock"
+BUILD_LOCK_INPUT = DEPLOY_DIR / "build-requirements.in"
 EPHEMERIS_MANIFEST = DEPLOY_DIR / "ephemeris.sha256"
 ENTRYPOINT = DEPLOY_DIR / "entrypoint.sh"
 HEALTHCHECK = DEPLOY_DIR / "container_healthcheck.py"
+FRONTEND_CONTRACT = DEPLOY_DIR / "frontend-contract.json"
 SOURCE_BUILD_VERIFIER = PROJECT_ROOT / "scripts" / "publication" / "verify_linux_source_build.py"
 EPHEMERIS_VERIFIER = PROJECT_ROOT / "scripts" / "verification" / "verify_ephemeris_integrity.py"
 PLACE_CATALOG_VERIFIER = (
@@ -57,7 +59,7 @@ DELIVERY_GATE = (
 
 PYTHON_IMAGE = (
     "python:3.13.14-slim-trixie"
-    "@sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91"
+    "@sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251"
 )
 
 
@@ -80,6 +82,7 @@ def _load_script(name: str, path: Path):
         EPHEMERIS_MANIFEST,
         ENTRYPOINT,
         HEALTHCHECK,
+        FRONTEND_CONTRACT,
         SOURCE_BUILD_VERIFIER,
         EPHEMERIS_VERIFIER,
         CONTAINER_GATE,
@@ -152,8 +155,8 @@ def test_production_lock_input_is_minimal_and_auditable():
     }
 
     assert requirements == {
-        "fastapi==0.139.2",
-        "uvicorn==0.51.0",
+        "fastapi==0.141.1",
+        "uvicorn==0.52.1",
         "pyswisseph==2.10.3.2",
     }
 
@@ -183,6 +186,10 @@ def test_dockerfile_pins_python_builds_pyswisseph_from_source_and_is_non_root():
     assert "slim-bookworm" not in dockerfile
     assert "HEALTHCHECK" in dockerfile
     assert "container_healthcheck.py" in dockerfile
+    assert "COPY frontend /app/frontend" not in dockerfile
+    assert 'org.classical-astrology.frontend.mode="external-release-v1"' in dockerfile
+    assert "COPY deploy/frontend-contract.json" in dockerfile
+    assert "frontend-runtime-assets.json" not in dockerfile
 
 
 def test_compose_enforces_read_only_tmpfs_and_no_direct_host_publication():
@@ -314,7 +321,7 @@ def test_container_build_identity_matches_the_oci_revision_label():
     )
     assert "_assert_container_build_identity" in gate
     assert "$.calculation_dossier.build_identity" in gate
-    assert "does not match the OCI image revision" in gate
+    assert "does not match the OCI and mounted frontend release" in gate
 
 
 def test_dockerignore_excludes_local_build_review_and_secret_material():
@@ -348,13 +355,14 @@ def test_dockerignore_excludes_local_build_review_and_secret_material():
         "!backend/ephe/**",
         "!backend/place_data/**",
         "!deploy/Dockerfile",
-        "!frontend/app.js",
+        "!deploy/frontend-contract.json",
         "!third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz",
         "!third_party/pyswisseph/LICENSE.txt",
         "!scripts/verification/verify_ephemeris_integrity.py",
         "!scripts/publication/verify_linux_source_build.py",
     ):
         assert required in ignored
+    assert "!frontend/zh-TW/calculate.js" not in ignored
 
     policy_lines = [
         line
@@ -505,13 +513,28 @@ def test_amd64_ci_is_native_read_only_and_does_not_upload_artifacts():
 
 
 def test_build_dependency_lock_is_complete_and_hashed():
+    requested = _logical_requirements(
+        BUILD_LOCK_INPUT.read_text(encoding="utf-8")
+    )
     requirements = _logical_requirements(
         BUILD_LOCK.read_text(encoding="utf-8")
     )
-    assert {
+    locked_names = {
         re.match(r"([A-Za-z0-9_.-]+)", requirement).group(1).lower()
         for requirement in requirements
-    } == {"setuptools", "wheel"}
+    }
+    requested_names = {
+        re.match(r"([A-Za-z0-9_.-]+)", requirement).group(1).lower()
+        for requirement in requested
+    }
+    assert requested_names <= locked_names
+    assert {
+        "setuptools",
+        "wheel",
+        "pdm-backend",
+        "hatchling",
+        "maturin",
+    } <= locked_names
     assert all(
         "==" in requirement and "--hash=sha256:" in requirement
         for requirement in requirements
@@ -556,6 +579,50 @@ def test_parity_tolerances_separate_cross_platform_from_same_runtime():
         module._assert_parity(fixed_star_expected, fixed_star_actual)
 
 
+def test_cross_runtime_tz_receipt_ignores_resolver_label_but_not_version():
+    module = _load_script(
+        "verify_container_runtime_tz_receipt",
+        CONTAINER_GATE,
+    )
+    expected = {
+        "library_info": {
+            "tz_database": {
+                "version": "2026b",
+                "source": "zoneinfo_file:+VERSION",
+            },
+        },
+        "calculation_dossier": {
+            "engine": {
+                "tz_database": {
+                    "version": "2026b",
+                    "source": "zoneinfo_file:+VERSION",
+                },
+            },
+        },
+    }
+    actual = {
+        "library_info": {
+            "tz_database": {
+                "version": "2026b",
+                "source": "zoneinfo_file:tzdata.zi",
+            },
+        },
+        "calculation_dossier": {
+            "engine": {
+                "tz_database": {
+                    "version": "2026b",
+                    "source": "zoneinfo_file:tzdata.zi",
+                },
+            },
+        },
+    }
+
+    module._assert_parity(expected, actual, parity_scope="cross_platform")
+    actual["library_info"]["tz_database"]["version"] = "2026c"
+    with pytest.raises(module.GateFailure, match="parity mismatch"):
+        module._assert_parity(expected, actual, parity_scope="cross_platform")
+
+
 def test_committed_parity_baseline_matches_current_response_contract():
     module = _load_script(
         "verify_container_runtime_baseline_contract",
@@ -566,7 +633,14 @@ def test_committed_parity_baseline_matches_current_response_contract():
 
     assert result["status"] == "compatible"
     assert result["cases"] == 4
-    assert result["response_schema_version"] == "0.10.0"
+    # 2026-08-07: the baseline was regenerated from a target-platform container
+    # at `9abe412` (`PIA-2026-08-06-008`). It had been frozen at `b2be06b`,
+    # which predates the API contract moving 0.10.0 -> 0.13.0, so this literal
+    # was pinning the staleness rather than the contract. Read it from the
+    # committed contract instead, so the two cannot drift apart again.
+    from app.main import SCHEMA_VERSION
+
+    assert result["response_schema_version"] == SCHEMA_VERSION
 
     baseline = json.loads(PARITY_BASELINE.read_text(encoding="utf-8"))
     assert (

@@ -7,8 +7,10 @@ import argparse
 import email.policy
 import hashlib
 import json
+import os
 import re
 import shutil
+import subprocess
 import sys
 import tarfile
 import urllib.error
@@ -19,7 +21,9 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_LINE = re.compile(r"^([A-Za-z0-9_.-]+)==([^\s\\]+)")
+PACKAGE_LINE = re.compile(
+    r"^([A-Za-z0-9_.-]+)(?:\[[^\]]+\])?==([^\s\\]+)"
+)
 HASH_LINE = re.compile(r"--hash=sha256:([0-9a-f]{64})")
 PYPI_JSON = "https://pypi.org/pypi/{name}/{version}/json"
 USER_AGENT = "classical-astrology-corresponding-source/1"
@@ -27,6 +31,13 @@ USER_AGENT = "classical-astrology-corresponding-source/1"
 
 class SourcePreparationError(RuntimeError):
     """Raised when exact third-party source cannot be proven."""
+
+
+ROLE_LABELS = {
+    "production": "production",
+    "build": "build",
+    "development": "development",
+}
 
 
 def _sha256(path: Path) -> str:
@@ -37,7 +48,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def parse_lock(path: Path, purpose: str) -> list[dict[str, Any]]:
+def parse_lock(path: Path, role: str) -> list[dict[str, Any]]:
     packages: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -46,7 +57,7 @@ def parse_lock(path: Path, purpose: str) -> list[dict[str, Any]]:
             current = {
                 "name": package_match.group(1),
                 "version": package_match.group(2),
-                "purpose": purpose,
+                "roles": [role],
                 "allowed_sha256": [],
             }
             packages.append(current)
@@ -218,6 +229,128 @@ def _license_evidence_complete(package: dict[str, Any]) -> bool:
     )
 
 
+def _license_identity(package: dict[str, Any]) -> str:
+    expression = package.get("license_expression")
+    if isinstance(expression, str) and expression.strip():
+        return expression.strip()
+    classifiers = package.get("license_classifiers")
+    if isinstance(classifiers, list) and classifiers:
+        normalized = []
+        classifier_identities = {
+            "License :: OSI Approved :: MIT License": "MIT",
+            "License :: OSI Approved :: Apache Software License": "Apache-2.0",
+            "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)": "MPL-2.0",
+            "License :: OSI Approved :: ISC License (ISCL)": "ISC",
+            "License :: OSI Approved :: Python Software Foundation License": "PSF-2.0",
+            "License :: OSI Approved :: GNU Affero General Public License v3": "AGPL-3.0-only",
+            "License :: OSI Approved :: BSD License": (
+                "BSD License (Trove classifier; variant unspecified)"
+            ),
+        }
+        for item in classifiers:
+            rendered = str(item).strip()
+            normalized.append(classifier_identities.get(rendered, rendered))
+        return "; ".join(normalized)
+    metadata = package.get("license_metadata")
+    if isinstance(metadata, str) and metadata.strip():
+        rendered = " ".join(metadata.split())
+        if len(rendered) > 200:
+            raise SourcePreparationError(
+                "dependency license metadata is too long for the human table: "
+                f"{package.get('name')}=={package.get('version')}"
+            )
+        return rendered
+    raise SourcePreparationError(
+        f"dependency has no human-readable license identity: "
+        f"{package.get('name')}=={package.get('version')}"
+    )
+
+
+def render_dependency_license_table(manifest: dict[str, Any]) -> str:
+    """Render the human view strictly from the machine source manifest."""
+    packages = manifest.get("packages")
+    if manifest.get("complete") is not True or not isinstance(packages, list):
+        raise SourcePreparationError(
+            "license table requires a complete source manifest"
+        )
+    lines = [
+        "# Dependency licenses",
+        "",
+        "This file is generated from `third_party/SOURCE_MANIFEST.json`; "
+        "manual edits are not accepted.",
+        "",
+        "| Package | Version | Roles | License | Source archive | Manifest entry |",
+        "|---|---:|---|---|---|---|",
+    ]
+    for index, package in enumerate(packages):
+        if not _license_evidence_complete(package):
+            raise SourcePreparationError(
+                "dependency license evidence is incomplete: "
+                f"{package.get('name')}=={package.get('version')}"
+            )
+        roles = package.get("roles")
+        if (
+            not isinstance(roles, list)
+            or not roles
+            or any(role not in ROLE_LABELS for role in roles)
+        ):
+            raise SourcePreparationError(
+                f"dependency roles are invalid: {package.get('name')}"
+            )
+        values = (
+            str(package.get("name", "")),
+            str(package.get("version", "")),
+            ", ".join(ROLE_LABELS[role] for role in roles),
+            _license_identity(package),
+            f"`third_party/sources/{package.get('filename', '')}`",
+            f"`third_party/SOURCE_MANIFEST.json#/packages/{index}`",
+        )
+        escaped = [value.replace("|", "\\|") for value in values]
+        lines.append("| " + " | ".join(escaped) + " |")
+    lines.extend(
+        [
+            "",
+            "Each row requires archive-level license files and hashes in the "
+            "machine manifest. The publication verifier regenerates this table "
+            "and fails on drift or missing evidence.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def verify_manifest_lock_inputs(
+    manifest: dict[str, Any],
+    lock_paths: dict[str, Path],
+) -> None:
+    """Fail closed when locks and the bundled source inventory diverge."""
+    declared_inputs = manifest.get("lock_inputs")
+    if manifest.get("schema_version") != 2 or not isinstance(
+        declared_inputs, dict
+    ):
+        raise SourcePreparationError("source manifest has no governed lock inputs")
+    expected: dict[tuple[str, str], set[str]] = {}
+    for role, path in sorted(lock_paths.items()):
+        declared = declared_inputs.get(role)
+        if not isinstance(declared, dict):
+            raise SourcePreparationError(f"source manifest omits {role} lock")
+        if declared.get("filename") != path.name or declared.get(
+            "sha256"
+        ) != _sha256(path):
+            raise SourcePreparationError(f"{role} dependency lock has drifted")
+        for package in parse_lock(path, role):
+            key = (package["name"].lower(), package["version"])
+            expected.setdefault(key, set()).add(role)
+    actual: dict[tuple[str, str], set[str]] = {}
+    for package in manifest.get("packages", []):
+        key = (str(package.get("name", "")).lower(), str(package.get("version", "")))
+        actual[key] = set(package.get("roles", []))
+    if actual != expected:
+        raise SourcePreparationError(
+            "source manifest package versions or roles differ from dependency locks"
+        )
+
+
 def _prepare_package(
     package: dict[str, Any],
     sources_dir: Path,
@@ -262,7 +395,7 @@ def _prepare_package(
     return {
         "name": name,
         "version": version,
-        "purpose": package["purpose"],
+        "roles": package["roles"],
         "filename": filename,
         "sha256": actual_hash,
         "hash_basis": hash_basis,
@@ -286,11 +419,173 @@ def _prepare_package(
     }
 
 
+def _prepare_build_wheel_index(
+    build_lock: Path,
+    destination: Path,
+    *,
+    platforms: list[str],
+    python_version: str,
+    abi: str,
+) -> dict[str, Any]:
+    """Download one hash-locked Linux wheel per build requirement."""
+    wheel_dir = destination / "build_wheels"
+    wheel_dir.mkdir()
+    command = [
+        sys.executable,
+        "-m",
+        "pip",
+        "download",
+        "--disable-pip-version-check",
+        "--require-hashes",
+        "--only-binary=:all:",
+    ]
+    for platform_name in platforms:
+        command.extend(["--platform", platform_name])
+    command.extend([
+        "--implementation",
+        "cp",
+        "--python-version",
+        python_version,
+        "--abi",
+        abi,
+        "--dest",
+        str(wheel_dir),
+        "--requirement",
+        str(build_lock),
+    ])
+    environment = os.environ.copy()
+    environment["PIP_NO_CACHE_DIR"] = "1"
+    subprocess.run(command, check=True, env=environment)
+    allowed_hashes = {
+        digest
+        for package in parse_lock(build_lock, "build")
+        for digest in package["allowed_sha256"]
+    }
+    wheels = []
+    for path in sorted(wheel_dir.glob("*.whl")):
+        digest = _sha256(path)
+        if digest not in allowed_hashes:
+            raise SourcePreparationError(
+                f"build wheel is not authorized by lock: {path.name}"
+            )
+        wheels.append(
+            {"filename": path.name, "sha256": digest}
+        )
+    expected_count = len(parse_lock(build_lock, "build"))
+    if len(wheels) != expected_count:
+        raise SourcePreparationError(
+            "build wheel index does not contain exactly one artifact per lock entry"
+        )
+    return {
+        "complete": True,
+        "target": {
+            "implementation": "cp",
+            "python_version": python_version,
+            "abi": abi,
+            "platforms": platforms,
+        },
+        "artifacts": wheels,
+    }
+
+
+def _prepare_dependency_wheel_index(
+    development_lock: Path,
+    destination: Path,
+    *,
+    platforms: list[str],
+    python_version: str,
+    abi: str,
+) -> dict[str, Any]:
+    """Create a verified offline index for non-source-built dependencies."""
+    source_build_packages = {"pyswisseph"}
+    packages = [
+        package
+        for package in parse_lock(development_lock, "development")
+        if package["name"].lower() not in source_build_packages
+    ]
+    wheel_dir = destination / "dependency_wheels"
+    wheel_dir.mkdir()
+    filtered_lock = destination / ".dependency-wheels.lock"
+    filtered_lock.write_text(
+        "".join(
+            f"{package['name']}=={package['version']} \\\n"
+            + "".join(
+                f"    --hash=sha256:{digest} \\\n"
+                for digest in package["allowed_sha256"][:-1]
+            )
+            + f"    --hash=sha256:{package['allowed_sha256'][-1]}\n"
+            for package in packages
+        ),
+        encoding="utf-8",
+    )
+    command = [
+        sys.executable,
+        "-m",
+        "pip",
+        "download",
+        "--disable-pip-version-check",
+        "--no-deps",
+        "--require-hashes",
+        "--only-binary=:all:",
+    ]
+    for platform_name in platforms:
+        command.extend(["--platform", platform_name])
+    command.extend([
+        "--implementation",
+        "cp",
+        "--python-version",
+        python_version,
+        "--abi",
+        abi,
+        "--dest",
+        str(wheel_dir),
+        "--requirement",
+        str(filtered_lock),
+    ])
+    environment = os.environ.copy()
+    environment["PIP_NO_CACHE_DIR"] = "1"
+    try:
+        subprocess.run(command, check=True, env=environment)
+    finally:
+        filtered_lock.unlink(missing_ok=True)
+    allowed_hashes = {
+        digest for package in packages for digest in package["allowed_sha256"]
+    }
+    wheels = []
+    for path in sorted(wheel_dir.glob("*.whl")):
+        digest = _sha256(path)
+        if digest not in allowed_hashes:
+            raise SourcePreparationError(
+                f"dependency wheel is not authorized by lock: {path.name}"
+            )
+        wheels.append({"filename": path.name, "sha256": digest})
+    if len(wheels) != len(packages):
+        raise SourcePreparationError(
+            "dependency wheel index does not contain exactly one artifact "
+            "per non-source-built development lock entry"
+        )
+    return {
+        "complete": True,
+        "source_build_packages": sorted(source_build_packages),
+        "target": {
+            "implementation": "cp",
+            "python_version": python_version,
+            "abi": abi,
+            "platforms": platforms,
+        },
+        "artifacts": wheels,
+    }
+
+
 def prepare_sources(
     runtime_lock: Path,
     build_lock: Path,
     destination: Path,
     source_lock_path: Path | None,
+    development_lock: Path | None = None,
+    build_wheel_platforms: list[str] | None = None,
+    build_python_version: str = "3.13",
+    build_abi: str = "cp313",
 ) -> dict[str, Any]:
     if destination.exists():
         raise SourcePreparationError(
@@ -308,14 +603,24 @@ def prepare_sources(
                 for item in payload["packages"]
             }
         combined: dict[tuple[str, str], dict[str, Any]] = {}
-        for package in (
-            parse_lock(runtime_lock, "runtime")
-            + parse_lock(build_lock, "build")
-        ):
+        lock_inputs = {
+            "production": runtime_lock,
+            "build": build_lock,
+        }
+        if development_lock is not None:
+            lock_inputs["development"] = development_lock
+        parsed_packages = [
+            package
+            for role, lock_path in lock_inputs.items()
+            for package in parse_lock(lock_path, role)
+        ]
+        for package in parsed_packages:
             key = (package["name"].lower(), package["version"])
             if key in combined:
                 existing = combined[key]
-                existing["purpose"] = "runtime_and_build"
+                existing["roles"] = sorted(
+                    set(existing["roles"]) | set(package["roles"])
+                )
                 existing["allowed_sha256"] = sorted(
                     set(existing["allowed_sha256"])
                     | set(package["allowed_sha256"])
@@ -336,12 +641,46 @@ def prepare_sources(
             _license_evidence_complete(item) for item in inventory
         )
         complete = source_hashes_complete and license_evidence_complete
+        build_wheel_index = None
+        dependency_wheel_index = None
+        if build_wheel_platforms:
+            build_wheel_index = _prepare_build_wheel_index(
+                build_lock,
+                destination,
+                platforms=build_wheel_platforms,
+                python_version=build_python_version,
+                abi=build_abi,
+            )
+            if development_lock is not None:
+                dependency_wheel_index = _prepare_dependency_wheel_index(
+                    development_lock,
+                    destination,
+                    platforms=build_wheel_platforms,
+                    python_version=build_python_version,
+                    abi=build_abi,
+                )
         payload = {
-            "schema_version": 1,
+            "schema_version": 2,
             "complete": complete,
             "source_hashes_complete": source_hashes_complete,
             "license_evidence_complete": license_evidence_complete,
             "source": "PyPI version metadata plus locked SHA-256 verification",
+            "lock_inputs": {
+                role: {
+                    "filename": lock_path.name,
+                    "sha256": _sha256(lock_path),
+                }
+                for role, lock_path in sorted(lock_inputs.items())
+            },
+            "reconstruction_complete": bool(
+                complete
+                and build_wheel_index
+                and build_wheel_index.get("complete") is True
+                and dependency_wheel_index
+                and dependency_wheel_index.get("complete") is True
+            ),
+            "build_wheel_index": build_wheel_index,
+            "dependency_wheel_index": dependency_wheel_index,
             "packages": inventory,
         }
         (destination / "SOURCE_MANIFEST.json").write_text(
@@ -358,6 +697,16 @@ def prepare_sources(
             f"{item['sha256']}  sources/{item['filename']}\n"
             for item in inventory
         )
+        if build_wheel_index:
+            sums += "".join(
+                f"{item['sha256']}  build_wheels/{item['filename']}\n"
+                for item in build_wheel_index["artifacts"]
+            )
+        if dependency_wheel_index:
+            sums += "".join(
+                f"{item['sha256']}  dependency_wheels/{item['filename']}\n"
+                for item in dependency_wheel_index["artifacts"]
+            )
         (destination / "SHA256SUMS").write_text(sums, encoding="ascii")
         source_lock_candidate = {
             "schema_version": 1,
@@ -390,6 +739,14 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runtime-lock", type=Path, required=True)
     parser.add_argument("--build-lock", type=Path, required=True)
+    parser.add_argument("--development-lock", type=Path)
+    parser.add_argument(
+        "--build-wheel-platform",
+        action="append",
+        dest="build_wheel_platforms",
+    )
+    parser.add_argument("--build-python-version", default="3.13")
+    parser.add_argument("--build-abi", default="cp313")
     parser.add_argument("--destination", type=Path, required=True)
     parser.add_argument("--source-lock", type=Path)
     return parser.parse_args()
@@ -407,6 +764,10 @@ def main() -> int:
             args.build_lock,
             args.destination,
             args.source_lock,
+            args.development_lock,
+            args.build_wheel_platforms,
+            args.build_python_version,
+            args.build_abi,
         )
     except (OSError, SourcePreparationError, urllib.error.URLError) as exc:
         print(f"THIRD-PARTY SOURCE PREPARATION FAILED: {exc}", file=sys.stderr)

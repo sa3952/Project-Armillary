@@ -1,0 +1,3746 @@
+{
+ "astronomical_data": {
+  "angles": {
+   "applicable": false,
+   "armc": null,
+   "asc": null,
+   "available": false,
+   "desc": null,
+   "executed": false,
+   "ic": null,
+   "mc": null,
+   "reason_code": "house_calculation_disabled",
+   "requested": false,
+   "source": null,
+   "status": "not_requested"
+  },
+  "atmosphere": {
+   "applies_to": "altitude_apparent",
+   "pressure_hpa": null,
+   "pressure_mode": "swiss_estimate_from_altitude",
+   "refraction": "swiss_ephemeris_standard_model",
+   "temperature_c": 15.0
+  },
+  "bodies": [
+   {
+    "altitude_apparent": 84.4436264966704,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": 84.4420885185153,
+    "apparent_diameter": 0.527425750899176,
+    "apparent_magnitude": -26.836616537264955,
+    "azimuth": 195.8482039061845,
+    "azimuth_swiss_raw": 15.848203906184494,
+    "declination": 18.79298029206119,
+    "declination_dms": "+18°47'34.73\"",
+    "distance_au": 1.01082659363358,
+    "distance_km": 151217506.05451775,
+    "elongation": null,
+    "illuminated_fraction": null,
+    "key": "sun",
+    "latitude": -3.065676881880914e-05,
+    "latitude_dms": "-0°00'00.11\"",
+    "longitude": 54.07468337877212,
+    "longitude_dms": "54°04'28.86\"",
+    "motion_sign": "positive",
+    "name": "太陽",
+    "phase_angle": null,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 51.70058650266904,
+    "right_ascension_hms": "03h26m48.14s",
+    "speed_dec": 0.2378011448697761,
+    "speed_distance": 0.00022118817248626782,
+    "speed_latitude": 3.6546006167635174e-05,
+    "speed_longitude": 0.9643350755521559,
+    "speed_ra": 0.9871828062661824,
+    "used_full_ephemeris": true
+   },
+   {
+    "altitude_apparent": -33.76706169880888,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": -33.76706169880888,
+    "apparent_diameter": 0.5018396571670677,
+    "apparent_magnitude": -11.046061857992672,
+    "azimuth": 257.6309078180295,
+    "azimuth_swiss_raw": 77.63090781802953,
+    "declination": -22.946385955460766,
+    "declination_dms": "-22°56'46.99\"",
+    "distance_au": 0.002652091109492561,
+    "distance_km": 396747.18288248766,
+    "elongation": 121.00659691153919,
+    "illuminated_fraction": 0.7585293898944659,
+    "key": "moon",
+    "latitude": -1.495807645677524,
+    "latitude_dms": "-1°29'44.91\"",
+    "longitude": 293.0563464017741,
+    "longitude_dms": "293°03'22.85\"",
+    "motion_sign": "positive",
+    "name": "月亮",
+    "phase_angle": 58.864833756879705,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 295.1598025552592,
+    "right_ascension_hms": "19h40m38.35s",
+    "speed_dec": 3.096775849884041,
+    "speed_distance": -2.6109963852579012e-05,
+    "speed_latitude": 1.0345686495969781,
+    "speed_longitude": 12.281051226780825,
+    "speed_ra": 12.949533488169822,
+    "used_full_ephemeris": true
+   },
+   {
+    "altitude_apparent": 69.89148698218706,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": 69.88569947356706,
+    "apparent_diameter": 0.003119709160230046,
+    "apparent_magnitude": 2.4203382005769676,
+    "azimuth": 235.34987539615355,
+    "azimuth_swiss_raw": 55.34987539615355,
+    "declination": 11.87184020921645,
+    "declination_dms": "+11°52'18.62\"",
+    "distance_au": 0.5989576655335905,
+    "distance_km": 89602791.40326792,
+    "elongation": 16.199998912658145,
+    "illuminated_fraction": 0.10164950182405735,
+    "key": "mercury",
+    "latitude": -2.454203013393917,
+    "latitude_dms": "-2°27'15.13\"",
+    "longitude": 38.05673207848914,
+    "longitude_dms": "38°03'24.24\"",
+    "motion_sign": "negative",
+    "name": "水星",
+    "phase_angle": 142.81621552820872,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 36.498425035037904,
+    "right_ascension_hms": "02h25m59.62s",
+    "speed_dec": -0.23465186174900868,
+    "speed_distance": 0.008895817243066923,
+    "speed_latitude": -0.1986487340269966,
+    "speed_longitude": -0.145262342620705,
+    "speed_ra": -0.07552265223270971,
+    "used_full_ephemeris": true
+   },
+   {
+    "altitude_apparent": 45.18282588838086,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": 45.16712238242169,
+    "apparent_diameter": 0.004476655464717807,
+    "apparent_magnitude": -4.0706015884402,
+    "azimuth": 248.75918864546156,
+    "azimuth_swiss_raw": 68.75918864546156,
+    "declination": 3.2697068022892144,
+    "declination_dms": "+3°16'10.94\"",
+    "distance_au": 1.0355190955599036,
+    "distance_km": 154911451.7649514,
+    "elongation": 41.667820502035354,
+    "illuminated_fraction": 0.6925369177692297,
+    "key": "venus",
+    "latitude": -1.7868557596122152,
+    "latitude_dms": "-1°47'12.68\"",
+    "longitude": 12.438191777914717,
+    "longitude_dms": "12°26'17.49\"",
+    "motion_sign": "positive",
+    "name": "金星",
+    "phase_angle": 67.35167586089375,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 12.137570059320995,
+    "right_ascension_hms": "00h48m33.02s",
+    "speed_dec": 0.4149992402136908,
+    "speed_distance": 0.007409479298490998,
+    "speed_latitude": -0.030850020524139335,
+    "speed_longitude": 1.1400968155779998,
+    "speed_ra": 1.0634676654356954,
+    "used_full_ephemeris": true
+   },
+   {
+    "altitude_apparent": 21.060933470324304,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": 21.019918148769555,
+    "apparent_diameter": 0.0017800430601802922,
+    "apparent_magnitude": 0.6591737305237289,
+    "azimuth": 252.47626578180484,
+    "azimuth_swiss_raw": 72.47626578180484,
+    "declination": -6.29986001214654,
+    "declination_dms": "-6°17'59.50\"",
+    "distance_au": 1.4585870253550837,
+    "distance_km": 218201513.2237674,
+    "elongation": 66.00001124299705,
+    "illuminated_fraction": 0.8750465387343818,
+    "key": "mars",
+    "latitude": -1.726575620989794,
+    "latitude_dms": "-1°43'35.67\"",
+    "longitude": 348.0862585080767,
+    "longitude_dms": "348°05'10.53\"",
+    "motion_sign": "positive",
+    "name": "火星",
+    "phase_angle": 41.401558809206,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 349.7231403554311,
+    "right_ascension_hms": "23h18m53.55s",
+    "speed_dec": 0.2811692188952105,
+    "speed_distance": -0.005907944767984797,
+    "speed_latitude": -0.010444813952823971,
+    "speed_longitude": 0.7428445973897613,
+    "speed_ra": 0.6914674878336304,
+    "used_full_ephemeris": true
+   },
+   {
+    "altitude_apparent": 47.15367214989983,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": 47.13901332013559,
+    "apparent_diameter": 0.009139915712586627,
+    "apparent_magnitude": -1.9400009976372503,
+    "azimuth": 81.21469256761782,
+    "azimuth_swiss_raw": 261.2146925676178,
+    "declination": 23.24517508199691,
+    "declination_dms": "+23°14'42.63\"",
+    "distance_au": 5.859095003688154,
+    "distance_km": 876508136.7807564,
+    "elongation": 45.404242047946795,
+    "illuminated_fraction": 0.9951842991652169,
+    "key": "jupiter",
+    "latitude": 0.1421453447281532,
+    "latitude_dms": "+0°08'31.72\"",
+    "longitude": 99.4787514653712,
+    "longitude_dms": "99°28'43.51\"",
+    "motion_sign": "positive",
+    "name": "木星",
+    "phase_angle": 7.958506347341647,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 100.32493875542903,
+    "right_ascension_hms": "06h41m17.99s",
+    "speed_dec": -0.012058568644601256,
+    "speed_distance": 0.011592313467528615,
+    "speed_latitude": 0.0014051766148775926,
+    "speed_longitude": 0.18877682442404511,
+    "speed_ra": 0.2050402059473214,
+    "used_full_ephemeris": true
+   },
+   {
+    "altitude_apparent": -31.425495337379306,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": -31.425495337379306,
+    "apparent_diameter": 0.004700507038044007,
+    "apparent_magnitude": 0.3950697492523134,
+    "azimuth": 259.3416819967046,
+    "azimuth_swiss_raw": 79.34168199670461,
+    "declination": -20.934942801841835,
+    "declination_dms": "-20°56'05.79\"",
+    "distance_au": 9.48951933980827,
+    "distance_km": 1419611887.2017868,
+    "elongation": 118.81961184173107,
+    "illuminated_fraction": 0.9980385541171645,
+    "key": "saturn",
+    "latitude": 0.1554707028397212,
+    "latitude_dms": "+0°09'19.69\"",
+    "longitude": 295.254955576134,
+    "longitude_dms": "295°15'17.84\"",
+    "motion_sign": "negative",
+    "name": "土星",
+    "phase_angle": 5.076716007968696,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 297.1808267851026,
+    "right_ascension_hms": "19h48m43.40s",
+    "speed_dec": -0.004101723399366806,
+    "speed_distance": -0.014642130522567963,
+    "speed_latitude": -0.0011456835260493614,
+    "speed_longitude": -0.01637146648836713,
+    "speed_ra": -0.01701373966353797,
+    "used_full_ephemeris": true
+   }
+  ],
+  "extra_angles": null,
+  "fixed_star_policy": {
+   "catalog_size": 34,
+   "classification_ruling": "MTH-Q-006 A1 (2026-08-03)",
+   "excluded": [
+    "conjunction_verdicts",
+    "orb_policy",
+    "precession_policy",
+    "per_star_source_attribution"
+   ],
+   "method_classification": "research_only",
+   "note": "座標為天文計算結果；本產品尚未採用任何恆星使用方法，故不輸出合相判定。逐星來源考據延後，見 MTH-Q-006。",
+   "outputs": "position_and_magnitude_only",
+   "requested": false
+  },
+  "fixed_stars": [],
+  "horizon_events": {},
+  "lunar_apsides": null,
+  "lunar_events": {},
+  "nodes": [
+   {
+    "altitude_apparent": -16.493121824651855,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": -16.493121824651855,
+    "apparent_diameter": null,
+    "apparent_magnitude": null,
+    "azimuth": 257.63147932246085,
+    "azimuth_swiss_raw": 77.63147932246085,
+    "declination": -17.671166482898276,
+    "declination_dms": "-17°40'16.20\"",
+    "distance_au": 0.0026118016988647057,
+    "distance_km": 390719.97284080257,
+    "elongation": null,
+    "illuminated_fraction": null,
+    "key": "true_node",
+    "latitude": 0.0,
+    "latitude_dms": "+0°00'00.00\"",
+    "longitude": 310.2673680819017,
+    "longitude_dms": "310°16'02.53\"",
+    "motion_sign": "negative",
+    "name": "北交點(密切)",
+    "phase_angle": null,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 312.7159605164418,
+    "right_ascension_hms": "20h50m51.83s",
+    "speed_dec": -0.009161102297593069,
+    "speed_distance": -6.038860777046549e-07,
+    "speed_latitude": 0.0,
+    "speed_longitude": -0.033946473742825174,
+    "speed_ra": -0.034305695034562655,
+    "used_full_ephemeris": true
+   },
+   {
+    "altitude_apparent": -15.407889395723787,
+    "altitude_apparent_reason_code": null,
+    "altitude_true": -15.407889395723787,
+    "apparent_diameter": null,
+    "apparent_magnitude": null,
+    "azimuth": 257.5321758589347,
+    "azimuth_swiss_raw": 77.53217585893469,
+    "declination": -17.374126691584,
+    "declination_dms": "-17°22'26.86\"",
+    "distance_au": 0.00256955528979999,
+    "distance_km": 384399.9999999999,
+    "elongation": null,
+    "illuminated_fraction": null,
+    "key": "mean_node",
+    "latitude": 0.0,
+    "latitude_dms": "+0°00'00.00\"",
+    "longitude": 311.3567924981125,
+    "longitude_dms": "311°21'24.45\"",
+    "motion_sign": "negative",
+    "name": "北交點(平均)",
+    "phase_angle": null,
+    "retflag_ecliptic": 258,
+    "retflag_equatorial": 2306,
+    "retflag_horizontal_source": 258,
+    "right_ascension": 313.8151137607888,
+    "right_ascension_hms": "20h55m15.63s",
+    "speed_dec": -0.014581683291111959,
+    "speed_distance": 0.0,
+    "speed_latitude": 0.0,
+    "speed_longitude": -0.05293221888363914,
+    "speed_ra": -0.05331668574201806,
+    "used_full_ephemeris": true
+   }
+  ],
+  "parallax_moon": null,
+  "time": {
+   "apparent_solar_time": "1990-05-15 12:06:24",
+   "ayanamsa": null,
+   "delta_t_seconds": 57.10498094558716,
+   "dst_warning": null,
+   "ecl_nut_retflag": 2,
+   "equation_of_time_minutes": 3.7081885249830293,
+   "gast_hours": 19.5085308546128,
+   "gmst_hours": 19.508331946488905,
+   "gst_hours": 19.5085308546128,
+   "input_local_time": "1990-05-15 12:00:00.00",
+   "input_semantics": "representative_computational_anchor_not_birth_time",
+   "jd_et": 2448026.6673285183,
+   "jd_ut": 2448026.666667581,
+   "last_hours": 3.5534375212794664,
+   "lmst_hours": 3.553238613155571,
+   "lst_hours": 3.5534375212794664,
+   "mean_obliquity": 23.44053267417123,
+   "nutation_longitude": 0.0032520381801893297,
+   "nutation_obliquity": 0.001630047148156628,
+   "timezone_label": "Asia/Taipei",
+   "true_obliquity": 23.442162721319388,
+   "utc_offset_hours": 8.0,
+   "utc_time": "1990-05-15 04:00:00.000"
+  }
+ },
+ "birth_time_sensitivity": {
+  "civil_day_duration_hours": 24.0,
+  "interval_end_exclusive_local": "1990-05-16T00:00:00",
+  "interval_end_exclusive_utc": "1990-05-15T16:00:00Z",
+  "interval_start_local": "1990-05-15T00:00:00",
+  "interval_start_utc": "1990-05-14T16:00:00Z",
+  "limitations": [
+   "Hourly samples plus the final second can reveal sampled sign changes but cannot prove continuous extrema or stability.",
+   "The local-noon chart is a reproducible computational anchor, not a statement that the birth occurred at noon."
+  ],
+  "moon_boundary_assessment": {
+   "could_cross_sign_boundary": false,
+   "could_cross_zero_degrees": false,
+   "minimum_sampled_distance_to_sign_boundary_degrees": 0.7757957062015066,
+   "possible_sign_indices": [
+    9
+   ],
+   "sampled_longitude_envelope": {
+    "crosses_zero": false,
+    "end_degrees": 299.2242042937985,
+    "sampled_values": [
+     286.9404403489842,
+     287.4483134370054,
+     287.95649547033975,
+     288.46499118520575,
+     288.9738053426996,
+     289.4829424106946,
+     289.99240730780014,
+     290.50220467793287,
+     291.01233927688565,
+     291.52281590471824,
+     292.0336393882985,
+     292.5448145636377,
+     293.0563464017741,
+     293.5682396216113,
+     294.0804993180301,
+     294.5931303522465,
+     295.1061377012765,
+     295.6195263481026,
+     296.13330131548196,
+     296.64746764816056,
+     297.16203039502903,
+     297.6769947241529,
+     298.1923655788543,
+     298.7081482294246,
+     299.2242042937985
+    ],
+    "span_degrees": 12.283763944814268,
+    "start_degrees": 286.9404403489842
+   },
+   "sampled_sign_boundary_transitions": []
+  },
+  "not_evaluated_paths": [
+   "astronomical_data.fixed_stars",
+   "astronomical_data.lunar_events",
+   "astronomical_data.horizon_events",
+   "derived_geometry.antiscia",
+   "derived_methods.house_division",
+   "derived_methods.planet_in_house",
+   "derived_methods.sect",
+   "derived_methods.lots",
+   "derived_methods.void_of_course",
+   "derived_methods.aspects",
+   "derived_methods.declination_aspects",
+   "derived_methods.essential_dignities"
+  ],
+  "position_ranges": [
+   {
+    "key": "jupiter",
+    "name": "木星",
+    "possible_sign_indices": [
+     3
+    ],
+    "representative_longitude": 99.4787514653712,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 99.57329357133077,
+     "sampled_values": [
+      99.38452002285042,
+      99.39236061396923,
+      99.40020339849174,
+      99.40804837458349,
+      99.41589554044783,
+      99.42374489396013,
+      99.43159643329665,
+      99.43945015663745,
+      99.447306061903,
+      99.45516414731517,
+      99.46302441103134,
+      99.4708868509835,
+      99.4787514653712,
+      99.48661825239817,
+      99.49448721004278,
+      99.50235833648284,
+      99.5102316299348,
+      99.51810708835546,
+      99.52598470996999,
+      99.53386449304224,
+      99.5417464355081,
+      99.54963053560624,
+      99.55751679161445,
+      99.56540520144807,
+      99.57329357133077
+     ],
+     "span_degrees": 0.18877354848034145,
+     "start_degrees": 99.38452002285042
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "mars",
+    "name": "火星",
+    "possible_sign_indices": [
+     11
+    ],
+    "representative_longitude": 348.0862585080767,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 348.4576232766259,
+     "sampled_values": [
+      347.7147888526101,
+      347.74574825205383,
+      347.77670700395987,
+      347.80766510715836,
+      347.8386225596142,
+      347.86957935868105,
+      347.90053550317765,
+      347.9314909910572,
+      347.9624458198778,
+      347.9933999878006,
+      348.0243534936299,
+      348.05530633426656,
+      348.0862585080767,
+      348.11721001385433,
+      348.14816084848997,
+      348.1791110105556,
+      348.21006049840383,
+      348.24100930913136,
+      348.27195744130034,
+      348.3029048932544,
+      348.3338516622964,
+      348.3647977465484,
+      348.39574314477613,
+      348.4266878536269,
+      348.4576232766259
+     ],
+     "span_degrees": 0.7428344240157685,
+     "start_degrees": 347.7147888526101
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "mean_node",
+    "name": "北交點(平均)",
+    "possible_sign_indices": [
+     10
+    ],
+    "representative_longitude": 311.3567924981125,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 311.3832576530468,
+     "sampled_values": [
+      311.3303259006392,
+      311.33253097827856,
+      311.334736651529,
+      311.33694230797397,
+      311.3391479477818,
+      311.3413535712326,
+      311.34355917858585,
+      311.34576477003867,
+      311.34797034586666,
+      311.35017590634914,
+      311.3523814516869,
+      311.3545869821833,
+      311.3567924981125,
+      311.3589979997192,
+      311.3612034872762,
+      311.363408961093,
+      311.36561442139964,
+      311.3678198684876,
+      311.37002530270064,
+      311.37223072426224,
+      311.3744361334896,
+      311.3766415306945,
+      311.37884691615034,
+      311.38105229014997,
+      311.3832576530468
+     ],
+     "span_degrees": 0.052931752407630484,
+     "start_degrees": 311.3303259006392
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "mercury",
+    "name": "水星",
+    "possible_sign_indices": [
+     1
+    ],
+    "representative_longitude": 38.05673207848914,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 38.138643579827765,
+     "sampled_values": [
+      37.993455220612205,
+      37.998010419498776,
+      38.00269753235234,
+      38.007515212149215,
+      38.01246335470165,
+      38.01754185665168,
+      38.02275060983406,
+      38.028089504207024,
+      38.03355842819843,
+      38.03915726615452,
+      38.044885900497206,
+      38.05074421209699,
+      38.05673207848914,
+      38.0628493736426,
+      38.06909596994556,
+      38.07547173881354,
+      38.08197654562965,
+      38.08861025578706,
+      38.09537273043946,
+      38.102263829489985,
+      38.109283410420346,
+      38.116431325603145,
+      38.12370742693266,
+      38.131111563033315,
+      38.138643579827765
+     ],
+     "span_degrees": 0.14518835921555961,
+     "start_degrees": 37.993455220612205
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "moon",
+    "name": "月亮",
+    "possible_sign_indices": [
+     9
+    ],
+    "representative_longitude": 293.0563464017741,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 299.2242042937985,
+     "sampled_values": [
+      286.9404403489842,
+      287.4483134370054,
+      287.95649547033975,
+      288.46499118520575,
+      288.9738053426996,
+      289.4829424106946,
+      289.99240730780014,
+      290.50220467793287,
+      291.01233927688565,
+      291.52281590471824,
+      292.0336393882985,
+      292.5448145636377,
+      293.0563464017741,
+      293.5682396216113,
+      294.0804993180301,
+      294.5931303522465,
+      295.1061377012765,
+      295.6195263481026,
+      296.13330131548196,
+      296.64746764816056,
+      297.16203039502903,
+      297.6769947241529,
+      298.1923655788543,
+      298.7081482294246,
+      299.2242042937985
+     ],
+     "span_degrees": 12.283763944814268,
+     "start_degrees": 286.9404403489842
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "saturn",
+    "name": "土星",
+    "possible_sign_indices": [
+     9
+    ],
+    "representative_longitude": 295.254955576134,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 295.2629425440792,
+     "sampled_values": [
+      295.2465713692505,
+      295.2472850427758,
+      295.2479961572248,
+      295.248704513689,
+      295.249410111923,
+      295.2501129517106,
+      295.25081303284134,
+      295.2515103551014,
+      295.2522049182616,
+      295.25289672214245,
+      295.2535857665464,
+      295.25427205126,
+      295.254955576134,
+      295.25563634094203,
+      295.25631434554487,
+      295.2569895897636,
+      295.2576620734163,
+      295.25833179634844,
+      295.2589987584099,
+      295.25966295943283,
+      295.26032439927616,
+      295.2609830778032,
+      295.2616389948741,
+      295.262292150331,
+      295.2629425440792
+     ],
+     "span_degrees": 0.016371174828691437,
+     "start_degrees": 295.2465713692505
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "sun",
+    "name": "太陽",
+    "possible_sign_indices": [
+     1
+    ],
+    "representative_longitude": 54.07468337877212,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 54.55679543774609,
+     "sampled_values": [
+      53.59247146631833,
+      53.63265921627236,
+      53.67284634043069,
+      53.71303284010709,
+      53.75321871661376,
+      53.793403969914095,
+      53.83358860131727,
+      53.87377261213081,
+      53.91395600231379,
+      53.954138773170875,
+      53.99432092600552,
+      54.034502460772316,
+      54.07468337877212,
+      54.114863681303945,
+      54.15504336831873,
+      54.19522244111312,
+      54.235400900982455,
+      54.27557874787382,
+      54.31575598308004,
+      54.35593260789275,
+      54.39610862225537,
+      54.43628402745703,
+      54.47645882478583,
+      54.51663301418164,
+      54.55679543774609
+     ],
+     "span_degrees": 0.9643239714277598,
+     "start_degrees": 53.59247146631833
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "true_node",
+    "name": "北交點(密切)",
+    "possible_sign_indices": [
+     10
+    ],
+    "representative_longitude": 310.2673680819017,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 310.28903189556667,
+     "sampled_values": [
+      310.2545321698633,
+      310.2553069922413,
+      310.25613192612036,
+      310.2570078986672,
+      310.25793603047947,
+      310.2589174267943,
+      310.2599531772161,
+      310.2610443553315,
+      310.26219201848323,
+      310.2633972074426,
+      310.264660946073,
+      310.2659842411248,
+      310.2673680819017,
+      310.26881343999963,
+      310.2703212690202,
+      310.27189250437675,
+      310.27352806291753,
+      310.2752288427955,
+      310.2769957231745,
+      310.2788295639283,
+      310.28073120550397,
+      310.28270146872575,
+      310.28474115435336,
+      310.28685104315406,
+      310.28903189556667
+     ],
+     "span_degrees": 0.03449972570336968,
+     "start_degrees": 310.2545321698633
+    },
+    "status": "sampled_stable"
+   },
+   {
+    "key": "venus",
+    "name": "金星",
+    "possible_sign_indices": [
+     0
+    ],
+    "representative_longitude": 12.438191777914717,
+    "sampled_longitude_envelope": {
+     "crosses_zero": false,
+     "end_degrees": 13.008430718805641,
+     "sampled_values": [
+      11.868349642768978,
+      11.915820686799368,
+      11.963294614428156,
+      12.01077142264473,
+      12.05825110883588,
+      12.1057336684,
+      12.153219098526405,
+      12.2007073968028,
+      12.24819855823144,
+      12.295692580401514,
+      12.34318946030644,
+      12.390689193746105,
+      12.438191777914717,
+      12.485697209608643,
+      12.533205485029352,
+      12.58071660077535,
+      12.628230554643567,
+      12.675747341641069,
+      12.723266959367537,
+      12.770789405024747,
+      12.818314674021991,
+      12.865842763763268,
+      12.91337367125371,
+      12.960907392106083,
+      13.008430718805641
+     ],
+     "span_degrees": 1.1400810760366635,
+     "start_degrees": 11.868349642768978
+    },
+    "status": "sampled_stable"
+   }
+  ],
+  "precision": "date_only",
+  "representative_local_time": "1990-05-15 12:00:00.00",
+  "representative_semantics": "local_noon_computational_anchor_not_birth_time",
+  "samples": [
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T00:00:00",
+    "utc_time": "1990-05-14T16:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T01:00:00",
+    "utc_time": "1990-05-14T17:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T02:00:00",
+    "utc_time": "1990-05-14T18:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T03:00:00",
+    "utc_time": "1990-05-14T19:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T04:00:00",
+    "utc_time": "1990-05-14T20:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T05:00:00",
+    "utc_time": "1990-05-14T21:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T06:00:00",
+    "utc_time": "1990-05-14T22:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T07:00:00",
+    "utc_time": "1990-05-14T23:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T08:00:00",
+    "utc_time": "1990-05-15T00:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T09:00:00",
+    "utc_time": "1990-05-15T01:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T10:00:00",
+    "utc_time": "1990-05-15T02:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T11:00:00",
+    "utc_time": "1990-05-15T03:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T12:00:00",
+    "utc_time": "1990-05-15T04:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T13:00:00",
+    "utc_time": "1990-05-15T05:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T14:00:00",
+    "utc_time": "1990-05-15T06:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T15:00:00",
+    "utc_time": "1990-05-15T07:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T16:00:00",
+    "utc_time": "1990-05-15T08:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T17:00:00",
+    "utc_time": "1990-05-15T09:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T18:00:00",
+    "utc_time": "1990-05-15T10:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T19:00:00",
+    "utc_time": "1990-05-15T11:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T20:00:00",
+    "utc_time": "1990-05-15T12:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T21:00:00",
+    "utc_time": "1990-05-15T13:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T22:00:00",
+    "utc_time": "1990-05-15T14:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T23:00:00",
+    "utc_time": "1990-05-15T15:00:00Z"
+   },
+   {
+    "fold": 0,
+    "local_time": "1990-05-15T23:59:59",
+    "utc_time": "1990-05-15T15:59:59Z"
+   }
+  ],
+  "sampling_semantics": "hourly_local_clock_samples_plus_day_end_not_continuous_extrema_proof",
+  "status": "sampled_stable"
+ },
+ "calculation_dossier": {
+  "authority": "backend_effective_runtime",
+  "birth_time": {
+   "birth_time_known": false,
+   "input_birth_date": "1990-05-15",
+   "input_civil_hour": null,
+   "precision": "date_only",
+   "representative_is_birth_time": false,
+   "representative_local_time": "1990-05-15 12:00:00.00",
+   "representative_policy": "local_noon_computational_anchor_not_birth_time",
+   "sensitivity_response_path": "birth_time_sensitivity",
+   "sensitivity_status": "sampled_stable"
+  },
+  "build_identity": {
+   "revision_source": null,
+   "source_revision": null,
+   "status": "unavailable"
+  },
+  "calculation_policy": {
+   "aspect_configuration": {
+    "angle_pair_orb_degrees": null,
+    "angle_reason_code": "house_calculation_not_executed",
+    "angles_applicable": false,
+    "angles_available": false,
+    "angles_executed": false,
+    "angles_requested": false,
+    "applicable": true,
+    "aspect_set_profile": "ptolemaic_major_v1",
+    "available": true,
+    "declination_orb_degrees": 1.0,
+    "executed": true,
+    "fixed_pair_threshold_degrees": null,
+    "orb_configuration_mode": "none",
+    "profile_scale_percent": null,
+    "requested": true,
+    "source": "normalized_request_and_effective_aspect_receipt"
+   },
+   "atmosphere": {
+    "applies_to": "altitude_apparent",
+    "pressure_hpa": null,
+    "pressure_mode": "swiss_estimate_from_altitude",
+    "refraction": "swiss_ephemeris_standard_model",
+    "temperature_c": 15.0
+   },
+   "body_selection": {
+    "anti_vertex": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "requested": false,
+     "source": "vertex_longitude_antipode",
+     "source_vertex_longitude_degrees": null
+    },
+    "applicable": true,
+    "available": true,
+    "chiron": {
+     "applicable": true,
+     "available": false,
+     "executed": false,
+     "requested": false,
+     "source": "swiss_ephemeris_minor_planet"
+    },
+    "classical_body_keys": [
+     "sun",
+     "moon",
+     "mercury",
+     "venus",
+     "mars",
+     "jupiter",
+     "saturn"
+    ],
+    "excluded_optional_body_groups": [],
+    "executed": "custom",
+    "lunar_apsides": {
+     "applicable": true,
+     "available": false,
+     "classification": "modern_research_additional_points",
+     "executed": false,
+     "requested": false,
+     "response_path": "astronomical_data.lunar_apsides",
+     "source": null
+    },
+    "requested": "custom",
+    "source": "sebastian_product_preset_2026_08_03",
+    "south_nodes": {
+     "applicable": true,
+     "available": false,
+     "executed": false,
+     "requested": false,
+     "source": "derived_from_requested_north_node_antipodes"
+    },
+    "unaffected_point_groups": [
+     "lunar_nodes",
+     "lots",
+     "extra_angles"
+    ]
+   },
+   "computation_mode": {
+    "ayanamsa": "fagan_bradley",
+    "center": "geocentric",
+    "ecliptic_frame": "of_date",
+    "nutation": true,
+    "position_mode": "apparent",
+    "zodiac": "tropical"
+   },
+   "coordinate_conventions": {
+    "altitudes": {
+     "apparent": "with_swiss_standard_refraction",
+     "true": "without_refraction"
+    },
+    "angles": "degrees",
+    "azimuth": "north_0_degrees_clockwise_east",
+    "azimuth_swiss_raw": "south_0_degrees_clockwise_west",
+    "geographic_latitude": "north_positive",
+    "geographic_longitude": "east_positive",
+    "not_applicable_value": null,
+    "right_ascension_numeric": "degrees",
+    "sidereal_time": "hours"
+   },
+   "effective_datetime": {
+    "day": 15,
+    "hour": 12,
+    "minute": 0,
+    "month": 5,
+    "second": 0.0,
+    "year": 1990
+   },
+   "essential_dignity_profiles": {
+    "bounds": null,
+    "domicile_exaltation": "traditional_seven_domicile_exaltation_signs_v1",
+    "face_decan": null,
+    "source": "derived_methods.essential_dignities.profile_results",
+    "triplicity": null,
+    "triplicity_research_comparison": false
+   },
+   "fixed_module_frames": {
+    "horizontal_coordinates": "physical_tropical_of_date",
+    "houses_and_angles": "not_requested",
+    "lunar_events": "not_requested",
+    "rise_set_transits": "not_requested"
+   },
+   "flag_policy": {
+    "base_position_flags": {
+     "names": [
+      "FLG_SWIEPH",
+      "FLG_SPEED"
+     ],
+     "value": 258
+    },
+    "equatorial_source_flags": {
+     "names": [
+      "FLG_SWIEPH",
+      "FLG_SPEED",
+      "FLG_EQUATORIAL"
+     ],
+     "value": 2306
+    },
+    "horizontal_source_flags": {
+     "names": [
+      "FLG_SWIEPH",
+      "FLG_SPEED"
+     ],
+     "value": 258
+    },
+    "semantics": "policy flags requested by the App; actual calculation sources are proven by returned retflags in provenance"
+   },
+   "house_system": {
+    "applicable": false,
+    "available": false,
+    "calculated": false,
+    "code": null,
+    "executed": false,
+    "latitude_regime": null,
+    "method_layer": true,
+    "requested": false,
+    "requested_code": "W",
+    "source": null
+   },
+   "modules": {
+    "anti_vertex": "not_requested",
+    "antiscia": "not_requested",
+    "aspects": "computed",
+    "chiron": "not_requested",
+    "core_positions": "computed",
+    "declination_aspects": "not_requested",
+    "eclipses": "not_requested",
+    "essential_dignities": "computed",
+    "fixed_stars": "not_requested",
+    "house_division": "not_requested",
+    "lots": "not_requested",
+    "lunar_apsides": "not_requested",
+    "lunar_phases": "not_requested",
+    "outer_planets": "not_requested",
+    "parallax_moon": "not_requested",
+    "planet_in_house": "not_requested",
+    "rise_set_transits": "not_requested",
+    "sect": "not_requested",
+    "south_nodes": "not_requested",
+    "void_of_course": "not_requested"
+   },
+   "moon_position": {
+    "effective_moon_source": "geocentric",
+    "geocentric_reference_retained": false,
+    "global_center": "geocentric",
+    "requested_profile": "global_computation_mode",
+    "source": "astronomical_data.parallax_moon"
+   },
+   "normalized_requested_options": {
+    "antiscia_include_nodes": false,
+    "aspect_angle_orb_degrees": null,
+    "aspect_fixed_orb_degrees": null,
+    "aspect_include_angles": false,
+    "aspect_include_nodes": false,
+    "aspect_orb_profile": null,
+    "aspect_orb_scale_percent": null,
+    "aspect_set_profile": "ptolemaic_major_v1",
+    "body_selection_preset": "custom",
+    "bounds_profile": null,
+    "decan_profile": null,
+    "declination_aspect_orb_degrees": 1.0,
+    "house_system": "W",
+    "include_anti_vertex": false,
+    "include_antiscia": false,
+    "include_aspect_perfection": false,
+    "include_aspects": true,
+    "include_chiron": false,
+    "include_declination_aspects": false,
+    "include_domicile_exaltation": true,
+    "include_eclipses": false,
+    "include_extra_angles": false,
+    "include_fixed_stars": false,
+    "include_houses": false,
+    "include_lilith_priapus": false,
+    "include_lots": false,
+    "include_lunar_phases": false,
+    "include_outer_planets": false,
+    "include_rise_set_transits": false,
+    "include_south_nodes": false,
+    "include_void_of_course": false,
+    "moon_position_profile": "global_computation_mode",
+    "partile_profile": "same_degree_number_v1",
+    "triplicity_include_research_comparison": false,
+    "triplicity_profile": null
+   }
+  },
+  "dossier_version": "0.6.0",
+  "engine": {
+   "available_input_files": [
+    {
+     "exists": true,
+     "filename": "sepl_18.se1",
+     "required_for_this_request": true,
+     "role": "major_planet_segment_1800_2399",
+     "sha256": "ca1393ceab3a44fbc895887cf789c68819ae6a1cbc9b22225872dbe4ccd99a66",
+     "size_bytes": 484061
+    },
+    {
+     "exists": true,
+     "filename": "semo_18.se1",
+     "required_for_this_request": true,
+     "role": "moon_segment_1800_2399",
+     "sha256": "1ca07bd67c24374d77226180c20a4f9996cba013697894810518e7eb582ca4f7",
+     "size_bytes": 1304771
+    },
+    {
+     "exists": true,
+     "filename": "seas_18.se1",
+     "required_for_this_request": false,
+     "role": "minor_planet_segment_for_optional_chiron",
+     "sha256": "a2cd8fc33807c78ca9a700c91c2e042258b12fc4796519e00781440b5ad8b2e2",
+     "size_bytes": 223004
+    },
+    {
+     "exists": true,
+     "filename": "sefstars.txt",
+     "required_for_this_request": false,
+     "role": "fixed_star_catalog",
+     "sha256": "18b0dcafbe5b7240773daba2c038a325f5b3fc4163f61e0a7f4e92abd4f517c6",
+     "size_bytes": 136618
+    },
+    {
+     "exists": true,
+     "filename": "seorbel.txt",
+     "required_for_this_request": false,
+     "role": "auxiliary_orbital_elements",
+     "sha256": "97b454ff78f4f4716b5cc987a93ca8f33e44ef4b524a165a155a8a4885fd2e18",
+     "size_bytes": 6063
+    }
+   ],
+   "ephemeris_dataset_lineage": {
+    "applies_to": [
+     "sepl_18.se1",
+     "semo_18.se1"
+    ],
+    "evidence": "bundled_file_header_checked_at_development_time",
+    "jpl_ephemeris_basis": "DE441",
+    "representation": "Swiss Ephemeris compressed files",
+    "runtime_limit": "returned retflags identify the Swiss/Moshier source family, not the exact opened file or JPL kernel lineage",
+    "status": "declared_from_bundled_file_headers"
+   },
+   "manifest_semantics": "availability_only_actual_source_is_proven_by_each_returned_retflag",
+   "pyswisseph_distribution_version": "2.10.3.2",
+   "requested_ephemeris_source": "Swiss Ephemeris files",
+   "swiss_ephemeris_library_version": "2.10.03",
+   "tz_database": {
+    "available": true,
+    "reason_code": null,
+    "source": "zoneinfo_file:+VERSION",
+    "version": "2026b"
+   }
+  },
+  "input_receipt": {
+   "atmosphere": {
+    "pressure_hpa": null,
+    "temperature_c": 15.0
+   },
+   "birth_time_precision": "date_only",
+   "computation_mode": {
+    "ayanamsa": "fagan_bradley",
+    "center": "geocentric",
+    "ecliptic_frame": "of_date",
+    "nutation": true,
+    "position_mode": "apparent",
+    "zodiac": "tropical"
+   },
+   "datetime": {
+    "day": 15,
+    "hour": 0,
+    "minute": 0,
+    "month": 5,
+    "second": 0.0,
+    "year": 1990
+   },
+   "location": {
+    "altitude_m": 80.0,
+    "latitude": 24.1477,
+    "location_precision": "user_supplied_coordinates",
+    "location_source": "manual",
+    "longitude": 120.6736,
+    "place_label": null,
+    "source_record_id": null
+   },
+   "options": {
+    "antiscia_include_nodes": false,
+    "aspect_angle_orb_degrees": null,
+    "aspect_fixed_orb_degrees": null,
+    "aspect_include_angles": false,
+    "aspect_include_nodes": false,
+    "aspect_orb_profile": null,
+    "aspect_orb_scale_percent": null,
+    "aspect_set_profile": "ptolemaic_major_v1",
+    "body_selection_preset": "custom",
+    "bounds_profile": null,
+    "decan_profile": null,
+    "declination_aspect_orb_degrees": 1.0,
+    "house_system": "W",
+    "include_anti_vertex": false,
+    "include_antiscia": false,
+    "include_aspect_perfection": false,
+    "include_aspects": true,
+    "include_chiron": false,
+    "include_declination_aspects": false,
+    "include_domicile_exaltation": true,
+    "include_eclipses": false,
+    "include_extra_angles": false,
+    "include_fixed_stars": false,
+    "include_houses": false,
+    "include_lilith_priapus": false,
+    "include_lots": false,
+    "include_lunar_phases": false,
+    "include_outer_planets": false,
+    "include_rise_set_transits": false,
+    "include_south_nodes": false,
+    "include_void_of_course": false,
+    "moon_position_profile": "global_computation_mode",
+    "partile_profile": "same_degree_number_v1",
+    "triplicity_include_research_comparison": false,
+    "triplicity_profile": null
+   },
+   "timezone": {
+    "fold": 0,
+    "iana_name": "Asia/Taipei",
+    "mode": "iana",
+    "utc_offset_hours": null
+   }
+  },
+  "location_resolution": {
+   "location_precision": "user_supplied_coordinates",
+   "location_source": "manual",
+   "place_label": null,
+   "resolved_coordinates": {
+    "altitude_m": 80.0,
+    "latitude": 24.1477,
+    "longitude": 120.6736
+   },
+   "source_record_id": null,
+   "verification_status": "user_supplied"
+  },
+  "methodology": {
+   "items": {
+    "aspects": {
+     "computed": true,
+     "execution_status": "computed",
+     "method": "whole_sign_configuration_v1",
+     "method_authority": null,
+     "method_status": "provisional_pending_method_audit",
+     "response_path": "derived_methods.aspects"
+    },
+    "declination_aspects": {
+     "computed": false,
+     "execution_status": "not_requested",
+     "method": null,
+     "method_authority": null,
+     "method_status": null,
+     "response_path": "derived_methods.declination_aspects"
+    },
+    "essential_dignities": {
+     "computed": true,
+     "execution_status": "computed",
+     "method": "named_essential_dignity_components_v1",
+     "method_authority": "Sebastian rulings MTH-024 through MTH-028 (2026-08-04)",
+     "method_status": "sebastian_authorized_profiles_through_mth_028_2026_08_04",
+     "response_path": "derived_methods.essential_dignities"
+    },
+    "house_division": {
+     "computed": false,
+     "execution_status": "not_requested",
+     "method": null,
+     "method_authority": null,
+     "method_status": null,
+     "response_path": "derived_methods.house_division"
+    },
+    "lots": {
+     "computed": false,
+     "execution_status": "not_requested",
+     "method": null,
+     "method_authority": null,
+     "method_status": null,
+     "response_path": "derived_methods.lots"
+    },
+    "planet_in_house": {
+     "computed": false,
+     "execution_status": "not_requested",
+     "method": null,
+     "method_authority": null,
+     "method_status": null,
+     "response_path": "derived_methods.planet_in_house"
+    },
+    "sect": {
+     "computed": false,
+     "execution_status": "not_requested",
+     "method": null,
+     "method_authority": null,
+     "method_status": null,
+     "response_path": "derived_methods.sect"
+    },
+    "void_of_course": {
+     "computed": false,
+     "execution_status": "not_requested",
+     "method": null,
+     "method_authority": null,
+     "method_status": null,
+     "response_path": "derived_methods.void_of_course"
+    }
+   },
+   "policy": "record_existing_status_only_no_method_authority_is_added_by_dossier"
+  },
+  "privacy": {
+   "anonymous_share_ready": false,
+   "attestation_status": "provisional_pending_external_review",
+   "claims": [
+    {
+     "control": {
+      "id": "application-no-persistence-current-chart-path-v1",
+      "mechanism": "No persistence dependency on the current chart path plus Python file-write API regression guards."
+     },
+     "enforcement_layer": "application_request_path",
+     "evidence": [
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_chart_request_does_not_use_python_file_write_apis",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "python_test_reference"
+      },
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_backend_has_no_third_party_telemetry_or_persistence_dependency",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "static_contract_reference"
+      }
+     ],
+     "id": "application_chart_path_no_persistence",
+     "limitations": [
+      "No secure memory erasure claim.",
+      "Python write guards do not intercept every native library or operating-system side effect."
+     ],
+     "scope": {
+      "applies_to": [
+       "current synchronous FastAPI POST /api/chart path"
+      ],
+      "excludes": [
+       "pyswisseph native or OS side effects",
+       "RAM, swap, crash dump and backup retention",
+       "user-initiated browser clipboard and downloads"
+      ],
+      "surface": "current_local_product"
+     },
+     "statement": "目前 /api/chart application path 不使用出生資料資料庫、session store、request cache或background queue，並以Python write guard監看目前同步處理路徑。",
+     "status": "implemented_in_application_layer"
+    },
+    {
+     "control": {
+      "id": "privacy-request-event-v1",
+      "mechanism": "Closed event builder plus sink-side schema validation and non-propagating dedicated logger."
+     },
+     "enforcement_layer": "application_event_sink",
+     "evidence": [
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_structured_event_schema_is_closed_and_discards_attacker_controlled_text",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "python_test_reference"
+      },
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_emitter_rejects_direct_unsanitized_event",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "python_test_reference"
+      }
+     ],
+     "id": "application_telemetry_allowlist",
+     "limitations": [
+      "Future logger or telemetry changes require a new privacy review and canary test."
+     ],
+     "scope": {
+      "applies_to": [
+       "classical_astrology.privacy application event sink"
+      ],
+      "excludes": [
+       "ASGI server access log",
+       "reverse proxy, hosting supervisor and third-party telemetry"
+      ],
+      "surface": "current_local_product"
+     },
+     "statement": "Application營運事件由封閉欄位與封閉 vocabulary重建，不直接序列化request、response、header或exception。",
+     "status": "implemented_in_application_layer"
+    },
+    {
+     "control": {
+      "id": "privacy-asgi-boundary-v1",
+      "mechanism": "Low-level ASGI middleware contains pre-start and post-start Exception paths and isolates event-sink failures."
+     },
+     "enforcement_layer": "asgi_application_boundary",
+     "evidence": [
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_real_uvicorn_unexpected_error_does_not_emit_traceback_or_canary",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "python_test_reference"
+      },
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_real_uvicorn_post_start_errors_are_contained_and_reported",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "python_test_reference"
+      },
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_real_uvicorn_event_emitter_failure_is_isolated",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "python_test_reference"
+      }
+     ],
+     "id": "asgi_exception_data_minimization",
+     "limitations": [
+      "Post-response-start failures cannot rewrite an HTTP status already sent on the wire."
+     ],
+     "scope": {
+      "applies_to": [
+       "current FastAPI application wrapped by PrivacyBoundaryMiddleware"
+      ],
+      "excludes": [
+       "process-control BaseException and cancellation semantics",
+       "transport failures outside the application boundary",
+       "future process supervisor error capture"
+      ],
+      "surface": "current_local_product"
+     },
+     "statement": "目前ASGI application boundary以固定錯誤回應與完整response-lifecycle containment避免原始exception進入response或Uvicorn traceback。",
+     "status": "implemented_in_asgi_layer"
+    },
+    {
+     "control": {
+      "id": "canonical-uvicorn-no-access-log-v1",
+      "mechanism": "scripts/local/run-local.sh passes an explicit --no-access-log argument and real-launcher canaries inspect process output."
+     },
+     "enforcement_layer": "canonical_local_launcher",
+     "evidence": [
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_supported_launcher_disables_uvicorn_access_log_and_loads_privacy_boundary",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "static_contract_reference"
+      },
+      {
+       "reference": "tests/backend/test_privacy_logging.py::test_real_launcher_logs_are_body_free_for_success_rejection_and_malformed_json",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "python_test_reference"
+      }
+     ],
+     "id": "canonical_launcher_access_log_suppression",
+     "limitations": [
+      "Startup and shutdown messages remain visible in the local terminal."
+     ],
+     "scope": {
+      "applies_to": [
+       "start.command and scripts/local/run-local.sh canonical local runtime"
+      ],
+      "excludes": [
+       "manual or alternate Uvicorn invocation",
+       "future reverse proxy, CDN, WAF and hosting logs"
+      ],
+      "surface": "current_local_product"
+     },
+     "statement": "Canonical本機launcher以--no-access-log啟動Uvicorn，避免request line與query進入Uvicorn access output。",
+     "status": "conditional_on_canonical_launcher"
+    },
+    {
+     "control": {
+      "id": "browser-sensitive-lifecycle-v1",
+      "mechanism": "Central lifecycle controller, request generation checks, AbortController, result clear, panic clear and pagehide clear."
+     },
+     "enforcement_layer": "browser_application",
+     "evidence": [
+      {
+       "reference": "frontend/tests/privacy_lifecycle.test.cjs",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "node_test_reference"
+      },
+      {
+       "reference": "tests/integration/test_frontend_contract.py::test_privacy_lifecycle_precedes_handlers_and_blocks_browser_persistence",
+       "semantics": "repository_pointer_not_test_execution_result",
+       "type": "static_contract_reference"
+      }
+     ],
+     "id": "browser_transient_sensitive_state",
+     "limitations": [
+      "autocomplete=off is a browser hint, not an enforcement API.",
+      "JavaScript cannot securely erase runtime or operating-system memory."
+     ],
+     "scope": {
+      "applies_to": [
+       "current same-origin frontend calculation and export UI"
+      ],
+      "excludes": [
+       "API clients that do not load the bundled frontend",
+       "browser extensions and compromised browser",
+       "browser or OS crash/session restoration",
+       "completed clipboard writes and downloaded files"
+      ],
+      "surface": "current_local_product"
+     },
+     "statement": "目前browser application不使用persistent storage API，並集中失效canonical document、section reference、Blob URL與in-flight request。",
+     "status": "conditional_on_bundled_frontend"
+    }
+   ],
+   "contains_sensitive_birth_data": true,
+   "evidence_semantics": "repository_test_references_not_execution_attestation",
+   "privacy_attestation_version": "1.2.0",
+   "uncovered_layers": [
+    {
+     "layer": "reverse_proxy_cdn_waf",
+     "note": "目前本機產品路徑不存在此層；不提供未來部署保證。",
+     "status": "outside_current_control_scope"
+    },
+    {
+     "layer": "hosting_supervisor",
+     "note": "Infomaniak provider已選且identity verification已通過；真實VPS尚未部署或驗證，host log與retention仍待deployment canary。",
+     "status": "outside_current_control_scope"
+    },
+    {
+     "layer": "third_party_telemetry",
+     "note": "目前未整合；未來新增前必須重新進行隱私審查。",
+     "status": "outside_current_control_scope"
+    },
+    {
+     "layer": "browser_os_native_memory",
+     "note": "不宣稱RAM、swap、crash restore或原生函式庫資料可安全抹除。",
+     "status": "outside_current_control_scope"
+    }
+   ]
+  },
+  "provenance": {
+   "all_core_calculation_sources_used_full_ephemeris": true,
+   "core_objects": [
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "sun",
+     "name": "太陽",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "moon",
+     "name": "月亮",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "mercury",
+     "name": "水星",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "venus",
+     "name": "金星",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "mars",
+     "name": "火星",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "jupiter",
+     "name": "木星",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "saturn",
+     "name": "土星",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "true_node",
+     "name": "北交點(密切)",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    },
+    {
+     "calculation_source": null,
+     "derived_from": null,
+     "key": "mean_node",
+     "name": "北交點(平均)",
+     "result_status": "available",
+     "retflags": {
+      "ecliptic": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      },
+      "equatorial": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED",
+        "FLG_EQUATORIAL"
+       ],
+       "value": 2306
+      },
+      "horizontal_source": {
+       "names": [
+        "FLG_SWIEPH",
+        "FLG_SPEED"
+       ],
+       "value": 258
+      }
+     },
+     "used_full_ephemeris": true
+    }
+   ],
+   "core_result_status_counts": {
+    "available": 9,
+    "failed": 0,
+    "not_applicable": 0
+   },
+   "event_modules": {
+    "eclipses": {
+     "computed": false,
+     "detail_path": "astronomical_data.lunar_events.eclipses",
+     "source_policy": "Swiss global search plus Sun/Moon retflag verification"
+    },
+    "lunar_phases": {
+     "computed": false,
+     "detail_path": "astronomical_data.lunar_events",
+     "source_policy": "Swiss files required; fail closed on Moshier fallback"
+    },
+    "rise_set_transits": {
+     "actual_source_verified": false,
+     "computed": false,
+     "detail_path": "astronomical_data.horizon_events",
+     "source_evidence": "requested_flag_only_rise_trans_returns_no_ephemeris_retflag",
+     "source_policy": "Swiss files requested via FLG_SWIEPH"
+    }
+   },
+   "fallback_object_keys": [],
+   "fixed_stars": [],
+   "source_usage_semantics": "ephemeris source usage and result applicability are independent; inspect result_status and used_full_ephemeris separately"
+  },
+  "status": "provisional",
+  "time_conversion": {
+   "ayanamsa_degrees": null,
+   "calendar": {
+    "supported_year_range": [
+     1900,
+     2399
+    ],
+    "swiss_flag": "GREG_CAL",
+    "system": "gregorian"
+   },
+   "conversion_function": "swe.utc_to_jd",
+   "delta_t_seconds": 57.10498094558716,
+   "dst_warning": null,
+   "ecl_nut_retflag": {
+    "names": [
+     "FLG_SWIEPH"
+    ],
+    "value": 2
+   },
+   "fold": 0,
+   "input_local_time": "1990-05-15 12:00:00.00",
+   "input_semantics": "representative_computational_anchor_not_birth_time",
+   "jd_tt": 2448026.6673285183,
+   "jd_ut1": 2448026.666667581,
+   "resolved_utc_offset_hours": 8.0,
+   "timezone_label": "Asia/Taipei",
+   "timezone_mode": "iana",
+   "utc_iso_8601": "1990-05-15T04:00:00.000Z"
+  },
+  "trace_receipt": {
+   "python_json_serialization_sha256": "d6843b9c50db4a785663507a1bdd33421a64c5a4775b7850a8abe43ca9ddb142",
+   "response_path": "calculation_trace",
+   "serialization_recipe": {
+    "encoding": "UTF-8",
+    "ensure_ascii": false,
+    "float_serialization": "Python runtime json encoder",
+    "implementation": "Python json.dumps",
+    "portable_across_languages": false,
+    "separators": [
+     ",",
+     ":"
+    ],
+    "sort_keys": true
+   },
+   "step_count": 20
+  },
+  "warnings": [
+   {
+    "affected_paths": [
+     "derived_methods.aspects"
+    ],
+    "code": "provisional_method_result",
+    "message": "aspects 已計算，但方法仍待審閱，不能視為正式採用。",
+    "severity": "notice",
+    "source": "derived_methods.aspects"
+   },
+   {
+    "affected_paths": [
+     "derived_methods.aspects",
+     "derived_methods.essential_dignities"
+    ],
+    "code": "date_only_method_sensitivity_not_evaluated",
+    "message": "這些方法結果只屬當地正午的可重現計算錨點，不是出生時刻判定；目前未評估它們在整個 civil day 內是否改變。",
+    "severity": "warning",
+    "source": "birth_time_precision_date_only_policy"
+   }
+  ]
+ },
+ "calculation_trace": [
+  {
+   "formula": "UTC = 本地時間 - 時區偏移",
+   "inputs": {
+    "時區": "Asia/Taipei",
+    "時區偏移(小時)": 8.0,
+    "本地時間": "1990-05-15 12:00:00.00"
+   },
+   "note": "",
+   "result": {
+    "UTC時間": "1990-05-15 04:00:00.000"
+   },
+   "title": "本地時間 -> UTC"
+  },
+  {
+   "formula": "JD_UT, JD_ET = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
+   "inputs": {
+    "UTC": "1990-05-15 04:00:00.000"
+   },
+   "note": "",
+   "result": {
+    "JD(ET/TT)": 2448026.6673285183,
+    "JD(UT)": 2448026.666667581
+   },
+   "title": "UTC -> 儒略日 (swe.utc_to_jd)"
+  },
+  {
+   "formula": "ΔT(秒) = (JD_ET - JD_UT) * 86400",
+   "inputs": {
+    "JD(ET)": 2448026.6673285183,
+    "JD(UT)": 2448026.666667581
+   },
+   "note": "",
+   "result": {
+    "ΔT(秒)": 57.105
+   },
+   "title": "地球時與世界時之差 ΔT"
+  },
+  {
+   "formula": "ECL_NUT 回傳 [真黃赤交角, 平黃赤交角, 黃經章動, 交角章動]",
+   "inputs": {
+    "JD(UT)": 2448026.666667581
+   },
+   "note": "",
+   "result": {
+    "交角章動(度)": 0.001630047148156628,
+    "平黃赤交角(度)": 23.44053267417123,
+    "真黃赤交角ε(度)": 23.442162721319388,
+    "黃經章動(度)": 0.0032520381801893297
+   },
+   "title": "黃赤交角與章動 (swe.calc_ut ECL_NUT)"
+  },
+  {
+   "formula": "GAST = swe.sidtime(JD_UT)；GMST = swe.sidtime0(JD_UT, 平黃赤交角, 0)；LAST/LMST = GAST/GMST + 東經/15",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "地理經度(東正西負)": 120.6736
+   },
+   "note": "舊欄位 gst_hours/lst_hours 為向後相容 alias，固定等同 GAST/LAST。",
+   "result": {
+    "GAST(小時)": 19.5085308546128,
+    "GMST(小時)": 19.508331946488905,
+    "LAST(小時)": 3.5534375212794664,
+    "LMST(小時)": 3.553238613155571
+   },
+   "title": "平均／視恆星時 (Sidereal Time)"
+  },
+  {
+   "formula": "真太陽時 = UTC + 經度/15(小時) + 均時差；均時差 = swe.time_equ(JD_UT) * 1440 分鐘",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "地理經度": 120.6736
+   },
+   "note": "此為輔助資訊；本次時鐘值只是代表計算錨點，不是實際出生時刻",
+   "result": {
+    "均時差(分鐘)": 3.7082,
+    "真太陽時(參考)": "1990-05-15 12:06:24"
+   },
+   "title": "均時差與真太陽時（僅供參考，不影響本次計算）"
+  },
+  {
+   "formula": "套用於本次所有星體計算的統一旗標",
+   "inputs": {
+    "ayanamsa": "-",
+    "位置": "apparent",
+    "章動": "on",
+    "計算中心": "geocentric",
+    "黃道參考框架": "of_date",
+    "黃道系統": "tropical"
+   },
+   "note": "",
+   "result": {
+    "ayanamsa數值(度)": null,
+    "requested_flags": 258
+   },
+   "title": "計算模式設定"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "positive",
+    "方位角Az(Swiss原始,南=0,向西)": 15.848203906184494,
+    "方位角Az(北=0,順時針)": 195.8482039061845,
+    "真高度Alt": 84.4420885185153,
+    "視高度(含蒙氣差)": 84.4436264966704,
+    "赤經": 51.70058650266904,
+    "赤緯": 18.79298029206119,
+    "距離(AU)": 1.01082659363358,
+    "黃經": 54.07468337877212,
+    "黃經速度(度/日)": 0.9643350755521559,
+    "黃緯": -3.065676881880914e-05
+   },
+   "title": "太陽 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "positive",
+    "方位角Az(Swiss原始,南=0,向西)": 77.63090781802953,
+    "方位角Az(北=0,順時針)": 257.6309078180295,
+    "真高度Alt": -33.76706169880888,
+    "視高度(含蒙氣差)": -33.76706169880888,
+    "赤經": 295.1598025552592,
+    "赤緯": -22.946385955460766,
+    "距離(AU)": 0.002652091109492561,
+    "黃經": 293.0563464017741,
+    "黃經速度(度/日)": 12.281051226780825,
+    "黃緯": -1.495807645677524
+   },
+   "title": "月亮 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "negative",
+    "方位角Az(Swiss原始,南=0,向西)": 55.34987539615355,
+    "方位角Az(北=0,順時針)": 235.34987539615355,
+    "真高度Alt": 69.88569947356706,
+    "視高度(含蒙氣差)": 69.89148698218706,
+    "赤經": 36.498425035037904,
+    "赤緯": 11.87184020921645,
+    "距離(AU)": 0.5989576655335905,
+    "黃經": 38.05673207848914,
+    "黃經速度(度/日)": -0.145262342620705,
+    "黃緯": -2.454203013393917
+   },
+   "title": "水星 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "positive",
+    "方位角Az(Swiss原始,南=0,向西)": 68.75918864546156,
+    "方位角Az(北=0,順時針)": 248.75918864546156,
+    "真高度Alt": 45.16712238242169,
+    "視高度(含蒙氣差)": 45.18282588838086,
+    "赤經": 12.137570059320995,
+    "赤緯": 3.2697068022892144,
+    "距離(AU)": 1.0355190955599036,
+    "黃經": 12.438191777914717,
+    "黃經速度(度/日)": 1.1400968155779998,
+    "黃緯": -1.7868557596122152
+   },
+   "title": "金星 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "positive",
+    "方位角Az(Swiss原始,南=0,向西)": 72.47626578180484,
+    "方位角Az(北=0,順時針)": 252.47626578180484,
+    "真高度Alt": 21.019918148769555,
+    "視高度(含蒙氣差)": 21.060933470324304,
+    "赤經": 349.7231403554311,
+    "赤緯": -6.29986001214654,
+    "距離(AU)": 1.4585870253550837,
+    "黃經": 348.0862585080767,
+    "黃經速度(度/日)": 0.7428445973897613,
+    "黃緯": -1.726575620989794
+   },
+   "title": "火星 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "positive",
+    "方位角Az(Swiss原始,南=0,向西)": 261.2146925676178,
+    "方位角Az(北=0,順時針)": 81.21469256761782,
+    "真高度Alt": 47.13901332013559,
+    "視高度(含蒙氣差)": 47.15367214989983,
+    "赤經": 100.32493875542903,
+    "赤緯": 23.24517508199691,
+    "距離(AU)": 5.859095003688154,
+    "黃經": 99.4787514653712,
+    "黃經速度(度/日)": 0.18877682442404511,
+    "黃緯": 0.1421453447281532
+   },
+   "title": "木星 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "negative",
+    "方位角Az(Swiss原始,南=0,向西)": 79.34168199670461,
+    "方位角Az(北=0,順時針)": 259.3416819967046,
+    "真高度Alt": -31.425495337379306,
+    "視高度(含蒙氣差)": -31.425495337379306,
+    "赤經": 297.1808267851026,
+    "赤緯": -20.934942801841835,
+    "距離(AU)": 9.48951933980827,
+    "黃經": 295.254955576134,
+    "黃經速度(度/日)": -0.01637146648836713,
+    "黃緯": 0.1554707028397212
+   },
+   "title": "土星 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "negative",
+    "方位角Az(Swiss原始,南=0,向西)": 77.63147932246085,
+    "方位角Az(北=0,順時針)": 257.63147932246085,
+    "真高度Alt": -16.493121824651855,
+    "視高度(含蒙氣差)": -16.493121824651855,
+    "赤經": 312.7159605164418,
+    "赤緯": -17.671166482898276,
+    "距離(AU)": 0.0026118016988647057,
+    "黃經": 310.2673680819017,
+    "黃經速度(度/日)": -0.033946473742825174,
+    "黃緯": 0.0
+   },
+   "title": "北交點(密切) 位置計算"
+  },
+  {
+   "formula": "黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)",
+   "inputs": {
+    "JD(UT)": 2448026.666667581,
+    "flags": 258,
+    "地平座標來源flags(tropical of-date)": 258,
+    "氣壓(hPa；0=依海拔估算)": 0.0,
+    "溫度(°C)": 15.0
+   },
+   "note": "",
+   "result": {
+    "motion_sign": "negative",
+    "方位角Az(Swiss原始,南=0,向西)": 77.53217585893469,
+    "方位角Az(北=0,順時針)": 257.5321758589347,
+    "真高度Alt": -15.407889395723787,
+    "視高度(含蒙氣差)": -15.407889395723787,
+    "赤經": 313.8151137607888,
+    "赤緯": -17.374126691584,
+    "距離(AU)": 0.00256955528979999,
+    "黃經": 311.3567924981125,
+    "黃經速度(度/日)": -0.05293221888363914,
+    "黃緯": 0.0
+   },
+   "title": "北交點(平均) 位置計算"
+  },
+  {
+   "formula": "",
+   "inputs": {
+    "include_houses": false
+   },
+   "note": "依 request 真正略過 swe.houses_ex；未產生宮頭、ASC、MC、額外角點或行星落宮。",
+   "result": {
+    "execution_status": "not_requested"
+   },
+   "title": "宮位與角點"
+  },
+  {
+   "formula": "星座距離 = min((星座B − 星座A) mod 12, 12 − 同值)；0/2/3/4/6 → 合/六分/刑/拱/沖，其餘不合意",
+   "inputs": {
+    "參與者數": 7
+   },
+   "note": "此層不需容許度：星座距離是算術，配置名稱是希臘化占星的成文教義。",
+   "result": {
+    "成整宮相位者": 18,
+    "組合總數": 21
+   },
+   "title": "整宮配置 (method=whole_sign_configuration_v1)"
+  },
+  {
+   "formula": "角距離與距離精確相位的差為純幾何量；是否成立需要容許度表",
+   "inputs": {},
+   "note": "⚠ 未指定 orb_profile，故 in_orb 全部回傳 null。角距離、入相位／出相位仍為有效輸出。容許度表的選擇屬方法裁決，本程式不自行指定。",
+   "result": {},
+   "title": "逐度相位 (method=ptolemaic_degree_aspect_moiety_v1)"
+  },
+  {
+   "formula": "tropical longitude -> whole-sign domicile/exaltation match and/or source-named half-open table; no scoring or interpretation",
+   "inputs": {
+    "sect_basis": "unavailable_date_only",
+    "sect_is_day": null,
+    "selected_profiles": {
+     "bounds": null,
+     "domicile_exaltation": "traditional_seven_domicile_exaltation_signs_v1",
+     "face_decan": null,
+     "triplicity": null
+    },
+    "triplicity_research_comparison": false
+   },
+   "note": "Traditional-seven whole-sign domicile/exaltation is kept separate from exact exaltation-degree traditions. Dorothean, Ptolemy textual, Lilly compact, Egyptian, Chaldaean, Robbins and Lilly tables remain separate profiles.",
+   "result": {
+    "profile_ids": [
+     "traditional_seven_domicile_exaltation_signs_v1"
+    ]
+   },
+   "title": "具名古典尊貴元件"
+  }
+ ],
+ "computation_mode": {
+  "ayanamsa": "fagan_bradley",
+  "center": "geocentric",
+  "ecliptic_frame": "of_date",
+  "nutation": true,
+  "position_mode": "apparent",
+  "zodiac": "tropical"
+ },
+ "derived_geometry": {
+  "antiscia": {}
+ },
+ "derived_methods": {
+  "aspects": {
+   "date_only_sensitivity_status": "not_evaluated_across_civil_day",
+   "degree_based": {
+    "angle_participation": {
+     "angle_angle_pairs_included": false,
+     "angle_pair_orb_degrees": null,
+     "angle_pair_orb_source": null,
+     "applicable": false,
+     "applying_semantics": "not_applicable_angle_motion_not_modeled",
+     "available": false,
+     "executed": false,
+     "participant_keys": [],
+     "reason_code": "house_calculation_not_executed",
+     "requested": false,
+     "source": null
+    },
+    "application_method": "relative_longitude_speed_sign_v1",
+    "aspect_keys": [
+     "conjunction",
+     "sextile",
+     "square",
+     "trine",
+     "opposition"
+    ],
+    "aspect_set_profile": "ptolemaic_major_v1",
+    "aspect_set_profile_detail": {
+     "aspect_keys": [
+      "conjunction",
+      "sextile",
+      "square",
+      "trine",
+      "opposition"
+     ],
+     "display_name": "托勒密五大逐度相位",
+     "method_classification": "classical_major_degree_aspects",
+     "source": "existing_ptolemaic_degree_aspect_contract"
+    },
+    "aspect_set_profiles_available": [
+     "modern_common_minor_v1",
+     "modern_minor_combined_v1",
+     "modern_quintile_family_v1",
+     "ptolemaic_major_v1"
+    ],
+    "method": "ptolemaic_degree_aspect_moiety_v1",
+    "method_authority": null,
+    "method_status": "provisional_pending_method_audit",
+    "orb_profile": null,
+    "orb_profile_detail": null,
+    "orb_receipt": {
+     "angle_pair_threshold_degrees": null,
+     "applicable": true,
+     "available": false,
+     "configuration_mode": "none",
+     "executed": false,
+     "fixed_pair_threshold_degrees": null,
+     "pair_threshold_formula": null,
+     "participant_orbs": [
+      {
+       "category": "classical_planet",
+       "key": "sun",
+       "orb_degrees": null,
+       "orb_eligible": true,
+       "reason_code": "orb_profile_not_selected"
+      },
+      {
+       "category": "classical_planet",
+       "key": "moon",
+       "orb_degrees": null,
+       "orb_eligible": true,
+       "reason_code": "orb_profile_not_selected"
+      },
+      {
+       "category": "classical_planet",
+       "key": "mercury",
+       "orb_degrees": null,
+       "orb_eligible": true,
+       "reason_code": "orb_profile_not_selected"
+      },
+      {
+       "category": "classical_planet",
+       "key": "venus",
+       "orb_degrees": null,
+       "orb_eligible": true,
+       "reason_code": "orb_profile_not_selected"
+      },
+      {
+       "category": "classical_planet",
+       "key": "mars",
+       "orb_degrees": null,
+       "orb_eligible": true,
+       "reason_code": "orb_profile_not_selected"
+      },
+      {
+       "category": "classical_planet",
+       "key": "jupiter",
+       "orb_degrees": null,
+       "orb_eligible": true,
+       "reason_code": "orb_profile_not_selected"
+      },
+      {
+       "category": "classical_planet",
+       "key": "saturn",
+       "orb_degrees": null,
+       "orb_eligible": true,
+       "reason_code": "orb_profile_not_selected"
+      }
+     ],
+     "profile_key": null,
+     "reason_code": "orb_profile_not_selected",
+     "requested": false,
+     "rule": null,
+     "scale_percent": null,
+     "source": null
+    },
+    "orb_unavailable_reason_code": "orb_profile_not_selected",
+    "orb_verdict_available": false,
+    "partile_note": "三種慣例並存且會給出不同答案，其中兩種都出自 Lilly 本人（1647 同度、1677 三度以內）。預設採最通行的同度慣例，可經 partile_profile 改選。",
+    "partile_profile": "same_degree_number_v1",
+    "partile_profile_detail": {
+     "display_name": "同一整數度",
+     "note": "Houlding 記為最通行的用法。兩星必須落在各自星座的同一個整數度，與角距離無關。",
+     "provenance": "lilly_christian_astrology_1647_and_general_usage",
+     "rule": "same_integer_degree_of_sign",
+     "sources": [
+      "William Lilly, Christian Astrology (1647) Book I p.107",
+      "Deborah Houlding, Skyscript glossary 'Partile / Platick'"
+     ],
+     "threshold_degrees": null
+    },
+    "partile_profiles_available": [
+     "lilly_1677_three_degrees_v1",
+     "same_degree_number_v1",
+     "within_one_degree_v1"
+    ],
+    "partile_source_verification": {
+     "evidence_standard": "secondary_tabulation_permitted_when_disclosed",
+     "finding": "RT-BACKEND-9-E-012",
+     "primary_texts_independently_transcribed": false,
+     "ruling": "Sebastian 2026-08-03, E-011 甲 and E-012",
+     "tabulated_from": "Deborah Houlding, Skyscript glossary 'Partile / Platick' (secondary), quoting Lilly's Christian Astrology 1647 p.107 and Merlini Anglici 1677"
+    }
+   },
+   "excluded_participant_keys": [],
+   "method": "whole_sign_configuration_v1",
+   "method_authority": null,
+   "method_status": "provisional_pending_method_audit",
+   "pairs": [
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "sun",
+     "body_a_name": "太陽",
+     "body_b": "moon",
+     "body_b_name": "月亮",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 120.0,
+      "is_tied": false,
+      "key": "trine",
+      "offset_from_exact_degrees": 1.0183369769980573,
+      "signed_offset_from_exact_degrees": 1.0183369769980573,
+      "tie_rule": null,
+      "zh": "拱"
+     },
+     "orb_degrees": {
+      "moon": null,
+      "sun": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": -11.316716151228668,
+     "separation_degrees": 121.01833697699806,
+     "whole_sign": {
+      "configuration_key": "trine",
+      "configuration_zh": "拱",
+      "in_aspect": true,
+      "sign_distance": 4,
+      "signed_sign_distance": 8
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "sun",
+     "body_a_name": "太陽",
+     "body_b": "mercury",
+     "body_b_name": "水星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 0.0,
+      "is_tied": false,
+      "key": "conjunction",
+      "offset_from_exact_degrees": 16.017951300282988,
+      "signed_offset_from_exact_degrees": 16.017951300282988,
+      "tie_rule": null,
+      "zh": "合"
+     },
+     "orb_degrees": {
+      "mercury": null,
+      "sun": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 1.109597418172861,
+     "separation_degrees": 16.017951300282988,
+     "whole_sign": {
+      "configuration_key": "conjunction",
+      "configuration_zh": "合",
+      "in_aspect": true,
+      "sign_distance": 0,
+      "signed_sign_distance": 0
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "sun",
+     "body_a_name": "太陽",
+     "body_b": "venus",
+     "body_b_name": "金星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 60.0,
+      "is_tied": false,
+      "key": "sextile",
+      "offset_from_exact_degrees": -18.363508399142603,
+      "signed_offset_from_exact_degrees": -18.363508399142603,
+      "tie_rule": null,
+      "zh": "六分"
+     },
+     "orb_degrees": {
+      "sun": null,
+      "venus": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": -0.17576174002584388,
+     "separation_degrees": 41.6364916008574,
+     "whole_sign": {
+      "configuration_key": "aversion",
+      "configuration_zh": "不合意",
+      "in_aspect": false,
+      "sign_distance": 1,
+      "signed_sign_distance": 11
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "sun",
+     "body_a_name": "太陽",
+     "body_b": "mars",
+     "body_b_name": "火星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 60.0,
+      "is_tied": false,
+      "key": "sextile",
+      "offset_from_exact_degrees": 5.9884248706954395,
+      "signed_offset_from_exact_degrees": 5.9884248706954395,
+      "tie_rule": null,
+      "zh": "六分"
+     },
+     "orb_degrees": {
+      "mars": null,
+      "sun": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.22149047816239464,
+     "separation_degrees": 65.98842487069544,
+     "whole_sign": {
+      "configuration_key": "sextile",
+      "configuration_zh": "六分",
+      "in_aspect": true,
+      "sign_distance": 2,
+      "signed_sign_distance": 10
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "sun",
+     "body_a_name": "太陽",
+     "body_b": "jupiter",
+     "body_b_name": "木星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 60.0,
+      "is_tied": false,
+      "key": "sextile",
+      "offset_from_exact_degrees": -14.595931913400932,
+      "signed_offset_from_exact_degrees": 14.595931913400932,
+      "tie_rule": null,
+      "zh": "六分"
+     },
+     "orb_degrees": {
+      "jupiter": null,
+      "sun": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.7755582511281108,
+     "separation_degrees": 45.40406808659907,
+     "whole_sign": {
+      "configuration_key": "sextile",
+      "configuration_zh": "六分",
+      "in_aspect": true,
+      "sign_distance": 2,
+      "signed_sign_distance": 2
+     }
+    },
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "sun",
+     "body_a_name": "太陽",
+     "body_b": "saturn",
+     "body_b_name": "土星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 120.0,
+      "is_tied": false,
+      "key": "trine",
+      "offset_from_exact_degrees": -1.1802721973618873,
+      "signed_offset_from_exact_degrees": -1.1802721973618873,
+      "tie_rule": null,
+      "zh": "拱"
+     },
+     "orb_degrees": {
+      "saturn": null,
+      "sun": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.9807065420405231,
+     "separation_degrees": 118.81972780263811,
+     "whole_sign": {
+      "configuration_key": "trine",
+      "configuration_zh": "拱",
+      "in_aspect": true,
+      "sign_distance": 4,
+      "signed_sign_distance": 8
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "moon",
+     "body_a_name": "月亮",
+     "body_b": "mercury",
+     "body_b_name": "水星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 120.0,
+      "is_tied": false,
+      "key": "trine",
+      "offset_from_exact_degrees": -14.999614323284959,
+      "signed_offset_from_exact_degrees": 14.999614323284959,
+      "tie_rule": null,
+      "zh": "拱"
+     },
+     "orb_degrees": {
+      "mercury": null,
+      "moon": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 12.42631356940153,
+     "separation_degrees": 105.00038567671504,
+     "whole_sign": {
+      "configuration_key": "trine",
+      "configuration_zh": "拱",
+      "in_aspect": true,
+      "sign_distance": 4,
+      "signed_sign_distance": 4
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "moon",
+     "body_a_name": "月亮",
+     "body_b": "venus",
+     "body_b_name": "金星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 90.0,
+      "is_tied": false,
+      "key": "square",
+      "offset_from_exact_degrees": -10.618154623859368,
+      "signed_offset_from_exact_degrees": 10.618154623859368,
+      "tie_rule": null,
+      "zh": "刑"
+     },
+     "orb_degrees": {
+      "moon": null,
+      "venus": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 11.140954411202825,
+     "separation_degrees": 79.38184537614063,
+     "whole_sign": {
+      "configuration_key": "square",
+      "configuration_zh": "刑",
+      "in_aspect": true,
+      "sign_distance": 3,
+      "signed_sign_distance": 3
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "moon",
+     "body_a_name": "月亮",
+     "body_b": "mars",
+     "body_b_name": "火星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 60.0,
+      "is_tied": false,
+      "key": "sextile",
+      "offset_from_exact_degrees": -4.970087893697382,
+      "signed_offset_from_exact_degrees": 4.970087893697382,
+      "tie_rule": null,
+      "zh": "六分"
+     },
+     "orb_degrees": {
+      "mars": null,
+      "moon": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 11.538206629391064,
+     "separation_degrees": 55.02991210630262,
+     "whole_sign": {
+      "configuration_key": "sextile",
+      "configuration_zh": "六分",
+      "in_aspect": true,
+      "sign_distance": 2,
+      "signed_sign_distance": 2
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "moon",
+     "body_a_name": "月亮",
+     "body_b": "jupiter",
+     "body_b_name": "木星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 180.0,
+      "is_tied": false,
+      "key": "opposition",
+      "offset_from_exact_degrees": -13.577594936402875,
+      "signed_offset_from_exact_degrees": 13.577594936402875,
+      "tie_rule": null,
+      "zh": "沖"
+     },
+     "orb_degrees": {
+      "jupiter": null,
+      "moon": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 12.09227440235678,
+     "separation_degrees": 166.42240506359713,
+     "whole_sign": {
+      "configuration_key": "opposition",
+      "configuration_zh": "沖",
+      "in_aspect": true,
+      "sign_distance": 6,
+      "signed_sign_distance": 6
+     }
+    },
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "moon",
+     "body_a_name": "月亮",
+     "body_b": "saturn",
+     "body_b_name": "土星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 0.0,
+      "is_tied": false,
+      "key": "conjunction",
+      "offset_from_exact_degrees": 2.1986091743599445,
+      "signed_offset_from_exact_degrees": -2.1986091743599445,
+      "tie_rule": null,
+      "zh": "合"
+     },
+     "orb_degrees": {
+      "moon": null,
+      "saturn": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 12.297422693269192,
+     "separation_degrees": 2.1986091743599445,
+     "whole_sign": {
+      "configuration_key": "conjunction",
+      "configuration_zh": "合",
+      "in_aspect": true,
+      "sign_distance": 0,
+      "signed_sign_distance": 0
+     }
+    },
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "mercury",
+     "body_a_name": "水星",
+     "body_b": "venus",
+     "body_b_name": "金星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 0.0,
+      "is_tied": false,
+      "key": "conjunction",
+      "offset_from_exact_degrees": 25.61854030057441,
+      "signed_offset_from_exact_degrees": 25.61854030057441,
+      "tie_rule": null,
+      "zh": "合"
+     },
+     "orb_degrees": {
+      "mercury": null,
+      "venus": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": -1.2853591581987047,
+     "separation_degrees": 25.61854030057441,
+     "whole_sign": {
+      "configuration_key": "aversion",
+      "configuration_zh": "不合意",
+      "in_aspect": false,
+      "sign_distance": 1,
+      "signed_sign_distance": 11
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "mercury",
+     "body_a_name": "水星",
+     "body_b": "mars",
+     "body_b_name": "火星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 60.0,
+      "is_tied": false,
+      "key": "sextile",
+      "offset_from_exact_degrees": -10.029526429587577,
+      "signed_offset_from_exact_degrees": -10.029526429587577,
+      "tie_rule": null,
+      "zh": "六分"
+     },
+     "orb_degrees": {
+      "mars": null,
+      "mercury": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": -0.8881069400104663,
+     "separation_degrees": 49.97047357041242,
+     "whole_sign": {
+      "configuration_key": "sextile",
+      "configuration_zh": "六分",
+      "in_aspect": true,
+      "sign_distance": 2,
+      "signed_sign_distance": 10
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "mercury",
+     "body_a_name": "水星",
+     "body_b": "jupiter",
+     "body_b_name": "木星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 60.0,
+      "is_tied": false,
+      "key": "sextile",
+      "offset_from_exact_degrees": 1.4220193868820559,
+      "signed_offset_from_exact_degrees": -1.4220193868820559,
+      "tie_rule": null,
+      "zh": "六分"
+     },
+     "orb_degrees": {
+      "jupiter": null,
+      "mercury": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": -0.3340391670447501,
+     "separation_degrees": 61.422019386882056,
+     "whole_sign": {
+      "configuration_key": "sextile",
+      "configuration_zh": "六分",
+      "in_aspect": true,
+      "sign_distance": 2,
+      "signed_sign_distance": 2
+     }
+    },
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "mercury",
+     "body_a_name": "水星",
+     "body_b": "saturn",
+     "body_b_name": "土星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 90.0,
+      "is_tied": false,
+      "key": "square",
+      "offset_from_exact_degrees": 12.801776502355096,
+      "signed_offset_from_exact_degrees": 12.801776502355096,
+      "tie_rule": null,
+      "zh": "刑"
+     },
+     "orb_degrees": {
+      "mercury": null,
+      "saturn": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": -0.12889087613233788,
+     "separation_degrees": 102.8017765023551,
+     "whole_sign": {
+      "configuration_key": "trine",
+      "configuration_zh": "拱",
+      "in_aspect": true,
+      "sign_distance": 4,
+      "signed_sign_distance": 8
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "venus",
+     "body_a_name": "金星",
+     "body_b": "mars",
+     "body_b_name": "火星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 0.0,
+      "is_tied": false,
+      "key": "conjunction",
+      "offset_from_exact_degrees": 24.351933269838014,
+      "signed_offset_from_exact_degrees": 24.351933269838014,
+      "tie_rule": null,
+      "zh": "合"
+     },
+     "orb_degrees": {
+      "mars": null,
+      "venus": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.3972522181882385,
+     "separation_degrees": 24.351933269838014,
+     "whole_sign": {
+      "configuration_key": "aversion",
+      "configuration_zh": "不合意",
+      "in_aspect": false,
+      "sign_distance": 1,
+      "signed_sign_distance": 11
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "venus",
+     "body_a_name": "金星",
+     "body_b": "jupiter",
+     "body_b_name": "木星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 90.0,
+      "is_tied": false,
+      "key": "square",
+      "offset_from_exact_degrees": -2.9594403125435065,
+      "signed_offset_from_exact_degrees": 2.9594403125435065,
+      "tie_rule": null,
+      "zh": "刑"
+     },
+     "orb_degrees": {
+      "jupiter": null,
+      "venus": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.9513199911539547,
+     "separation_degrees": 87.0405596874565,
+     "whole_sign": {
+      "configuration_key": "square",
+      "configuration_zh": "刑",
+      "in_aspect": true,
+      "sign_distance": 3,
+      "signed_sign_distance": 3
+     }
+    },
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "venus",
+     "body_a_name": "金星",
+     "body_b": "saturn",
+     "body_b_name": "土星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 90.0,
+      "is_tied": false,
+      "key": "square",
+      "offset_from_exact_degrees": -12.816763798219313,
+      "signed_offset_from_exact_degrees": -12.816763798219313,
+      "tie_rule": null,
+      "zh": "刑"
+     },
+     "orb_degrees": {
+      "saturn": null,
+      "venus": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 1.156468282066367,
+     "separation_degrees": 77.18323620178069,
+     "whole_sign": {
+      "configuration_key": "square",
+      "configuration_zh": "刑",
+      "in_aspect": true,
+      "sign_distance": 3,
+      "signed_sign_distance": 9
+     }
+    },
+    {
+     "applying": false,
+     "applying_reason_code": null,
+     "body_a": "mars",
+     "body_a_name": "火星",
+     "body_b": "jupiter",
+     "body_b_name": "木星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 120.0,
+      "is_tied": false,
+      "key": "trine",
+      "offset_from_exact_degrees": -8.607507042705492,
+      "signed_offset_from_exact_degrees": 8.607507042705492,
+      "tie_rule": null,
+      "zh": "拱"
+     },
+     "orb_degrees": {
+      "jupiter": null,
+      "mars": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.5540677729657162,
+     "separation_degrees": 111.39249295729451,
+     "whole_sign": {
+      "configuration_key": "trine",
+      "configuration_zh": "拱",
+      "in_aspect": true,
+      "sign_distance": 4,
+      "signed_sign_distance": 4
+     }
+    },
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "mars",
+     "body_a_name": "火星",
+     "body_b": "saturn",
+     "body_b_name": "土星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 60.0,
+      "is_tied": false,
+      "key": "sextile",
+      "offset_from_exact_degrees": -7.168697068057327,
+      "signed_offset_from_exact_degrees": -7.168697068057327,
+      "tie_rule": null,
+      "zh": "六分"
+     },
+     "orb_degrees": {
+      "mars": null,
+      "saturn": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.7592160638781285,
+     "separation_degrees": 52.83130293194267,
+     "whole_sign": {
+      "configuration_key": "sextile",
+      "configuration_zh": "六分",
+      "in_aspect": true,
+      "sign_distance": 2,
+      "signed_sign_distance": 10
+     }
+    },
+    {
+     "applying": true,
+     "applying_reason_code": null,
+     "body_a": "jupiter",
+     "body_a_name": "木星",
+     "body_b": "saturn",
+     "body_b_name": "土星",
+     "in_orb": null,
+     "in_orb_reason_code": "orb_profile_not_selected",
+     "moiety_sum_degrees": null,
+     "nearest_aspect": {
+      "exact_angle_degrees": 180.0,
+      "is_tied": false,
+      "key": "opposition",
+      "offset_from_exact_degrees": -15.77620411076282,
+      "signed_offset_from_exact_degrees": -15.77620411076282,
+      "tie_rule": null,
+      "zh": "沖"
+     },
+     "orb_degrees": {
+      "jupiter": null,
+      "saturn": null
+     },
+     "orb_rule": null,
+     "pair_orb_threshold_degrees": null,
+     "partile": false,
+     "partile_reason_code": null,
+     "partile_rule": "same_integer_degree_of_sign",
+     "perfection": null,
+     "relative_longitude_speed": 0.20514829091241224,
+     "separation_degrees": 164.22379588923718,
+     "whole_sign": {
+      "configuration_key": "opposition",
+      "configuration_zh": "沖",
+      "in_aspect": true,
+      "sign_distance": 6,
+      "signed_sign_distance": 6
+     }
+    }
+   ],
+   "participants": [
+    {
+     "category": "classical_planet",
+     "degree_in_sign": 24.07468337877212,
+     "key": "sun",
+     "name": "太陽",
+     "orb_eligible": true,
+     "sign_index": 1,
+     "sign_key": "taurus",
+     "sign_zh": "金牛"
+    },
+    {
+     "category": "classical_planet",
+     "degree_in_sign": 23.05634640177408,
+     "key": "moon",
+     "name": "月亮",
+     "orb_eligible": true,
+     "sign_index": 9,
+     "sign_key": "capricorn",
+     "sign_zh": "摩羯"
+    },
+    {
+     "category": "classical_planet",
+     "degree_in_sign": 8.05673207848914,
+     "key": "mercury",
+     "name": "水星",
+     "orb_eligible": true,
+     "sign_index": 1,
+     "sign_key": "taurus",
+     "sign_zh": "金牛"
+    },
+    {
+     "category": "classical_planet",
+     "degree_in_sign": 12.438191777914717,
+     "key": "venus",
+     "name": "金星",
+     "orb_eligible": true,
+     "sign_index": 0,
+     "sign_key": "aries",
+     "sign_zh": "牡羊"
+    },
+    {
+     "category": "classical_planet",
+     "degree_in_sign": 18.086258508076696,
+     "key": "mars",
+     "name": "火星",
+     "orb_eligible": true,
+     "sign_index": 11,
+     "sign_key": "pisces",
+     "sign_zh": "雙魚"
+    },
+    {
+     "category": "classical_planet",
+     "degree_in_sign": 9.478751465371204,
+     "key": "jupiter",
+     "name": "木星",
+     "orb_eligible": true,
+     "sign_index": 3,
+     "sign_key": "cancer",
+     "sign_zh": "巨蟹"
+    },
+    {
+     "category": "classical_planet",
+     "degree_in_sign": 25.254955576134023,
+     "key": "saturn",
+     "name": "土星",
+     "orb_eligible": true,
+     "sign_index": 9,
+     "sign_key": "capricorn",
+     "sign_zh": "摩羯"
+    }
+   ],
+   "perfection": {
+    "requested": false,
+    "search_window_days": null,
+    "semantics": "forward_search_from_chart_moment_bounded_by_search_window",
+    "solver": null
+   },
+   "time_basis": "representative_computational_anchor_not_birth_time",
+   "whole_sign": {
+    "method": "whole_sign_configuration_v1",
+    "method_authority": null,
+    "method_provenance": "hellenistic_whole_sign_configuration_doctrine",
+    "method_status": "provisional_pending_method_audit",
+    "requires_orb": false
+   }
+  },
+  "declination_aspects": {},
+  "essential_dignities": {
+   "applicable": true,
+   "available": true,
+   "coordinate_center": "geocentric",
+   "date_only_sensitivity_status": "not_evaluated_across_civil_day",
+   "defaulted": true,
+   "ecliptic_frame": "of_date",
+   "executed": true,
+   "interpretation": null,
+   "method": "named_essential_dignity_components_v1",
+   "method_authority": "Sebastian rulings MTH-024 through MTH-028 (2026-08-04)",
+   "method_status": "sebastian_authorized_profiles_through_mth_028_2026_08_04",
+   "nutation": true,
+   "participant_scope": "classical_seven_planets_only",
+   "profile_results": {
+    "traditional_seven_domicile_exaltation_signs_v1": {
+     "debility_evaluated": false,
+     "degree_policy": "specific_exaltation_degrees_not_selected_or_evaluated",
+     "exact_exaltation_degrees_evaluated": false,
+     "interpretation": null,
+     "match_basis": "whole_tropical_sign",
+     "not_evaluated": [
+      "detriment",
+      "fall",
+      "peregrine",
+      "reception"
+     ],
+     "objects": [
+      {
+       "degree_in_sign": 24.07468337877212,
+       "domicile_matched": false,
+       "domicile_signs": [
+        "leo"
+       ],
+       "exaltation_matched": false,
+       "exaltation_sign": "aries",
+       "key": "sun",
+       "longitude": 54.07468337877212,
+       "name": "太陽",
+       "sign": "taurus",
+       "sign_index": 1
+      },
+      {
+       "degree_in_sign": 23.05634640177408,
+       "domicile_matched": false,
+       "domicile_signs": [
+        "cancer"
+       ],
+       "exaltation_matched": false,
+       "exaltation_sign": "taurus",
+       "key": "moon",
+       "longitude": 293.0563464017741,
+       "name": "月亮",
+       "sign": "capricorn",
+       "sign_index": 9
+      },
+      {
+       "degree_in_sign": 8.05673207848914,
+       "domicile_matched": false,
+       "domicile_signs": [
+        "gemini",
+        "virgo"
+       ],
+       "exaltation_matched": false,
+       "exaltation_sign": "virgo",
+       "key": "mercury",
+       "longitude": 38.05673207848914,
+       "name": "水星",
+       "sign": "taurus",
+       "sign_index": 1
+      },
+      {
+       "degree_in_sign": 12.438191777914717,
+       "domicile_matched": false,
+       "domicile_signs": [
+        "taurus",
+        "libra"
+       ],
+       "exaltation_matched": false,
+       "exaltation_sign": "pisces",
+       "key": "venus",
+       "longitude": 12.438191777914717,
+       "name": "金星",
+       "sign": "aries",
+       "sign_index": 0
+      },
+      {
+       "degree_in_sign": 18.086258508076696,
+       "domicile_matched": false,
+       "domicile_signs": [
+        "aries",
+        "scorpio"
+       ],
+       "exaltation_matched": false,
+       "exaltation_sign": "capricorn",
+       "key": "mars",
+       "longitude": 348.0862585080767,
+       "name": "火星",
+       "sign": "pisces",
+       "sign_index": 11
+      },
+      {
+       "degree_in_sign": 9.478751465371204,
+       "domicile_matched": false,
+       "domicile_signs": [
+        "sagittarius",
+        "pisces"
+       ],
+       "exaltation_matched": true,
+       "exaltation_sign": "cancer",
+       "key": "jupiter",
+       "longitude": 99.4787514653712,
+       "name": "木星",
+       "sign": "cancer",
+       "sign_index": 3
+      },
+      {
+       "degree_in_sign": 25.254955576134023,
+       "domicile_matched": true,
+       "domicile_signs": [
+        "capricorn",
+        "aquarius"
+       ],
+       "exaltation_matched": false,
+       "exaltation_sign": "libra",
+       "key": "saturn",
+       "longitude": 295.254955576134,
+       "name": "土星",
+       "sign": "capricorn",
+       "sign_index": 9
+      }
+     ],
+     "participant_scope": "classical_seven_planets_only",
+     "profile_id": "traditional_seven_domicile_exaltation_signs_v1",
+     "score": null,
+     "source": "Ptolemy, Tetrabiblos I.17 and I.19, Frank E. Robbins trans. (Loeb 1940); sign assignments corroborated by Dorotheus Carmen Astrologicum I.1-2, Valens Anthologies III.4, and Firmicus Maternus Mathesis II.2-3",
+     "source_scope_note": "Ptolemy I.17 and I.19 support the sign-level output used here. The corroborating Dorotheus, Valens, and Firmicus passages also transmit exact-degree traditions that this profile deliberately does not evaluate; their inclusion does not imply that ancient traditions were sign-only.",
+     "sources": [
+      {
+       "location": "I.17 and I.19",
+       "role": "whole_sign_domicile_and_exaltation_basis_without_exact_degrees_in_the_cited_chapters",
+       "work": "Ptolemy, Tetrabiblos"
+      },
+      {
+       "location": "I.1-2",
+       "role": "corroborating_sign_assignments_source_also_supplies_exact_degrees_not_evaluated_by_this_profile",
+       "work": "Dorotheus of Sidon, Carmen Astrologicum"
+      },
+      {
+       "location": "III.4",
+       "role": "corroborating_exaltation_signs_source_also_supplies_exact_degrees_not_evaluated_by_this_profile",
+       "work": "Vettius Valens, Anthologies"
+      },
+      {
+       "location": "II.2-3",
+       "role": "corroborating_domiciles_and_exaltation_signs_source_also_supplies_exact_degrees_not_evaluated_by_this_profile",
+       "work": "Firmicus Maternus, Mathesis"
+      }
+     ],
+     "technique": "domicile_exaltation"
+    }
+   },
+   "reason_code": null,
+   "requested": true,
+   "requested_explicitly": false,
+   "research_comparison_profiles": [],
+   "score": null,
+   "sect": {
+    "basis": "unavailable_date_only",
+    "is_day": null,
+    "selected_ruler_available": false
+   },
+   "selected_profiles": {
+    "bounds": null,
+    "domicile_exaltation": "traditional_seven_domicile_exaltation_signs_v1",
+    "face_decan": null,
+    "triplicity": null
+   },
+   "source": "selected_named_primary_text_profiles",
+   "time_basis": "representative_computational_anchor_not_birth_time",
+   "zodiac_basis": "tropical"
+  },
+  "house_division": {
+   "angles_source": null,
+   "applicable": false,
+   "available": false,
+   "cusps": [],
+   "executed": false,
+   "execution_status": "not_requested",
+   "method": null,
+   "method_authority": null,
+   "method_status": null,
+   "reason_code": "house_calculation_disabled",
+   "requested": false,
+   "requested_system_code": "W",
+   "system_code": null,
+   "system_name": null
+  },
+  "lots": {},
+  "planet_in_house": {
+   "execution_status": "not_requested",
+   "house_system_code": null,
+   "house_system_name": null,
+   "interval_semantics": null,
+   "method": null,
+   "method_authority": null,
+   "method_status": null,
+   "placements": [],
+   "reason_codes": [
+    "house_calculation_not_executed"
+   ]
+  },
+  "sect": null,
+  "void_of_course": {}
+ },
+ "library_info": {
+  "note": "兩者是不同的版本號：前者是 pip 安裝的 pyswisseph 套件版本，後者是其內建 Swiss Ephemeris C 函式庫自報的版本，數字格式相近但並非同一個值。tz_database 是本地時間換算所用的 IANA 時區資料庫版本，它不由本產品固定：macOS 由作業系統提供、容器由 image 提供，更新後同一組輸入可能換算出不同的 UTC。",
+  "pyswisseph_distribution_version": "2.10.3.2",
+  "swiss_ephemeris_library_version": "2.10.03",
+  "tz_database": {
+   "available": true,
+   "reason_code": null,
+   "source": "zoneinfo_file:+VERSION",
+   "version": "2026b"
+  }
+ },
+ "output_contract": {
+  "compatibility": "additive_during_0.x_unless_a_documented_correctness_fix_requires_change",
+  "layers": {
+   "astronomical_data": "直接天文計算與座標／時間轉換",
+   "derived_geometry": "只需明示公式的幾何轉換",
+   "derived_methods": "需要占星方法或門檻選擇的結果；預設不計算"
+  },
+  "status": "provisional"
+ },
+ "requested_options": {
+  "antiscia_include_nodes": false,
+  "aspect_angle_orb_degrees": null,
+  "aspect_fixed_orb_degrees": null,
+  "aspect_include_angles": false,
+  "aspect_include_nodes": false,
+  "aspect_orb_profile": null,
+  "aspect_orb_scale_percent": null,
+  "aspect_set_profile": "ptolemaic_major_v1",
+  "body_selection_preset": "custom",
+  "bounds_profile": null,
+  "decan_profile": null,
+  "declination_aspect_orb_degrees": 1.0,
+  "house_system": "W",
+  "include_anti_vertex": false,
+  "include_antiscia": false,
+  "include_aspect_perfection": false,
+  "include_aspects": true,
+  "include_chiron": false,
+  "include_declination_aspects": false,
+  "include_domicile_exaltation": true,
+  "include_eclipses": false,
+  "include_extra_angles": false,
+  "include_fixed_stars": false,
+  "include_houses": false,
+  "include_lilith_priapus": false,
+  "include_lots": false,
+  "include_lunar_phases": false,
+  "include_outer_planets": false,
+  "include_rise_set_transits": false,
+  "include_south_nodes": false,
+  "include_void_of_course": false,
+  "moon_position_profile": "global_computation_mode",
+  "partile_profile": "same_degree_number_v1",
+  "triplicity_include_research_comparison": false,
+  "triplicity_profile": null
+ },
+ "schema_version": "0.13.0"
+}
