@@ -645,10 +645,8 @@ def test_object_key_parity_failure_names_both_sides():
 
     expected = {"longitude": 1.0}
     actual = {**expected, "speed_source": "swiss", "speed_position_derivative_status": "available"}
-    module._assert_parity(
-        expected, actual, "$.astronomical_data.bodies[0]",
-        parity_scope="cross_platform",
-    )
+    for path in module.CROSS_PLATFORM_ADDITIVE_KEYS:
+        module._assert_parity(expected, actual, path.replace("[]", "[0]"), parity_scope="cross_platform")
     with pytest.raises(module.GateFailure):
         module._assert_parity(
             expected, {**actual, "unknown": True},

@@ -463,9 +463,14 @@ def _is_compiled_artifact(path: str) -> bool:
 
 CONTENT_IDENTITY_SCHEMA = "content-identity-v2"
 CROSS_PLATFORM_ADDITIVE_KEYS = {
-    "$.astronomical_data.bodies[]": frozenset(
-        {"speed_position_derivative_status", "speed_source"}
-    ),
+    path: frozenset({"speed_position_derivative_status", "speed_source"})
+    for path in (
+        "$.astronomical_data.bodies[]",
+        "$.astronomical_data.nodes[]",
+        "$.astronomical_data.lunar_apsides.points[]",
+        "$.astronomical_data.parallax_moon.geocentric_reference",
+        "$.astronomical_data.parallax_moon.topocentric_effective",
+    )
 }
 
 
