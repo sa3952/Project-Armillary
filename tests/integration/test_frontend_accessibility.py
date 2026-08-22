@@ -238,3 +238,15 @@ def test_reduced_motion_disables_the_only_control_transitions():
     assert '.choiceinput[type="radio"]' in body
     assert 'input[type="checkbox"].option-control' in body
     assert "transition:none" in body
+
+
+def test_advanced_option_visual_groups_do_not_skip_heading_levels():
+    script = APP_JS.read_text(encoding="utf-8")
+    build = script.split("function buildOptionUi()", 1)[1].split(
+        "const NO_HOUSES", 1
+    )[0]
+
+    assert 'document.createElement("h3")' not in build
+    assert 'heading.className = "option-heading"' in build
+    assert 'block.setAttribute("role", "group")' in build
+    assert 'block.setAttribute("aria-labelledby", heading.id)' in build

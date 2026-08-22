@@ -1,0 +1,8 @@
+# Hosted gate authority is anchored outside the pull request by GitHub's
+# require-code-owner-review branch protection.  The external setting is
+# verified after publication; this file alone is not that authority.
+/.github/workflows/ @sa3952
+/scripts/publication/ @sa3952
+/scripts/verify_delivery.py @sa3952
+/SECURITY.md @sa3952
+/.well-known/security.txt @sa3952

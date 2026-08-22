@@ -65,11 +65,15 @@
     host.replaceChildren();
 
     Catalogue.GROUPS.filter((group) => group.in_advanced).forEach((group) => {
-      const block = document.createElement("section");
+      const block = document.createElement("div");
       block.className = "option-block";
       block.dataset.group = group.key;
+      block.setAttribute("role", "group");
 
-      const heading = document.createElement("h3");
+      const heading = document.createElement("div");
+      heading.className = "option-heading";
+      heading.id = `option-group-${group.key}-heading`;
+      block.setAttribute("aria-labelledby", heading.id);
       heading.append(group.label_zh);
       const en = document.createElement("span");
       en.className = "en";

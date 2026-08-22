@@ -48,11 +48,11 @@ From the candidate root, replay either supported mode without copying an
 existing virtual environment:
 
 ```bash
-python -m scripts.publication.verify_publication_candidate \
+bash scripts/publication/verify_candidate_clean.sh \
   --root . \
   --reconstruction-mode offline-source-only
 
-python -m scripts.publication.verify_publication_candidate \
+bash scripts/publication/verify_candidate_clean.sh \
   --root . \
   --reconstruction-mode online-clean
 ```

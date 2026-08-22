@@ -279,7 +279,7 @@ button.danger:hover{background:var(--ink); border-color:var(--ink)}
 /* 分組只是視覺分隔線，不是容器 */
 .option-block{margin-top:var(--s3)}
 .option-block:first-child{margin-top:0}
-.option-block h3{
+.option-heading{
   font-family:var(--serif); font-weight:400; font-size:1rem; letter-spacing:.02em;
   border-bottom:1px solid var(--hair); padding-bottom:.35rem; margin-bottom:.2rem;
 }
@@ -298,7 +298,7 @@ button.danger:hover{background:var(--ink); border-color:var(--ink)}
   gap:.35rem var(--s3); align-items:center;
   padding:1rem 0; border-top:1px solid var(--hair-soft);
 }
-.option-block h3 + .option-row{border-top:0}
+.option-heading + .option-row{border-top:0}
 .option-row.is-changed{box-shadow:inset 3px 0 0 var(--accent); padding-left:.9rem}
 .option-label{
   font-size:.98rem; color:var(--ink); line-height:1.6;

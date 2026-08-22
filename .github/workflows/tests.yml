@@ -12,6 +12,9 @@ jobs:
   hosted-source:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONPYCACHEPREFIX: /tmp/classical-astrology-pycache
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
@@ -23,6 +26,8 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: "22"
+      - name: Publication boundary before hosted writers
+        run: bash scripts/publication/verify_candidate_clean.sh --root .
       - name: Install test dependencies
         run: >-
           python -m pip install --require-hashes
@@ -41,3 +46,5 @@ jobs:
           node --test "${frontend_tests[@]}"
       - name: Python compile
         run: python -m compileall -q backend/app scripts
+      - name: Publication boundary after hosted writers
+        run: bash scripts/publication/verify_candidate_clean.sh --root .

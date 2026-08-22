@@ -35,6 +35,9 @@ jobs:
   container-runtime:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONPYCACHEPREFIX: /tmp/classical-astrology-pycache
     steps:
       - name: Checkout tested revision
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -42,7 +45,7 @@ jobs:
           persist-credentials: false
 
       - name: Publication boundary
-        run: python3 -m scripts.publication.verify_publication_candidate --root .
+        run: bash scripts/publication/verify_candidate_clean.sh --root .
 
       - name: Privacy dependency boundary
         run: python3 -m scripts.verification.verify_privacy_dependencies --check
@@ -62,3 +65,6 @@ jobs:
             --worker-resilience \
             --soak-requests 250 \
             --quiet
+
+      - name: Publication boundary after hosted writers
+        run: bash scripts/publication/verify_candidate_clean.sh --root .

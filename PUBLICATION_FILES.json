@@ -6,24 +6,34 @@
       "size_bytes": 1473
     },
     {
+      "path": ".github/CODEOWNERS",
+      "sha256": "319826fcabbd44888722e8adeac0fbc55d3a0ad1313e5ea8ab9c20ae2392c2ef",
+      "size_bytes": 363
+    },
+    {
       "path": ".github/dependabot.yml",
       "sha256": "d85613dde5d374d6f11efe7c54acb05518b38f16590b726251e20ab8b072e167",
       "size_bytes": 414
     },
     {
       "path": ".github/workflows/production-amd64.yml",
-      "sha256": "e691fd2b9729ec1884aba4cbe9009836f47a850e621d864bf07916400c1e4f38",
-      "size_bytes": 1927
+      "sha256": "4e70a2d7cbdc3f82bcf80bee73e6cb86f5c0d97e917aaf6b437915da61ce44a3",
+      "size_bytes": 2152
     },
     {
       "path": ".github/workflows/tests.yml",
-      "sha256": "5f8c4f73b3296cbd8aaacf71455d4fd326f092b9d9cc9428492a84eeea1d2c4d",
-      "size_bytes": 1276
+      "sha256": "c139d00d7226d3db4df650f56918033651e8bdffe726d83782e06166adc2e77c",
+      "size_bytes": 1639
     },
     {
       "path": ".gitignore",
       "sha256": "c1b69158afeaedbeed7c7f372ceff7924154628ac895ce3e624360530220c1c7",
       "size_bytes": 109
+    },
+    {
+      "path": ".well-known/security.txt",
+      "sha256": "dba02e779737572bcdbd0bd3dbdc7facfa45364c42e88d9766fee026030dfeea",
+      "size_bytes": 322
     },
     {
       "path": "CHANGELOG.md",
@@ -47,12 +57,12 @@
     },
     {
       "path": "SECURITY.md",
-      "sha256": "c8f54b5c55c9a9e5cb46500113fd620947778fdd365fa34b3e49cfa5db5263e4",
-      "size_bytes": 1112
+      "sha256": "d6f60d58a95422d54b419e2e6a04bf77cee29905116a3c98d74ffde06efa999f",
+      "size_bytes": 2329
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "7fb871ff803a84a3633ec5d39d846c719944f6d02a3f4e30ec6f3870816887c5",
+      "sha256": "cfd49f7963633699c77c02091e6d0ffa687d0558408bbeb1c14ed471cba31fe0",
       "size_bytes": 353
     },
     {
@@ -402,8 +412,8 @@
     },
     {
       "path": "docs/REPRODUCIBLE_BUILD.md",
-      "sha256": "f4633548b7822ec5dd0fd160c1aa9cb0670456da6c0f0eabae9af7baf3552cdc",
-      "size_bytes": 2800
+      "sha256": "98e9c02b8095faa52fd338915874e8ba30513c6a54e031757ab7c6e27f6bf0a2",
+      "size_bytes": 2784
     },
     {
       "path": "docs/SECURITY_REVIEW_SUMMARY.md",
@@ -527,18 +537,18 @@
     },
     {
       "path": "frontend/zh-TW/calculate.css",
-      "sha256": "38530e4963a27d188d41796e7612729d42cc86a234ce78e6bdb3ec230bddeef5",
-      "size_bytes": 30491
+      "sha256": "b75bc11730484157113a120f89cee6e0e4238ff01cef86d353fc85b85a88edce",
+      "size_bytes": 30489
     },
     {
       "path": "frontend/zh-TW/calculate.html",
-      "sha256": "59eee623df3b2a445c8fdd3bd73a74d639a4cc666b07f945dd80977c68b35cd4",
-      "size_bytes": 15198
+      "sha256": "bf5f36b3a00d7e8479433381006c95817c0ced67122db8cc92e0cea61e8ade79",
+      "size_bytes": 15264
     },
     {
       "path": "frontend/zh-TW/calculate.js",
-      "sha256": "443ff6018f8ebf54cb8d896696f3b036ceaabc63855f023c5c1df922eba8b4a3",
-      "size_bytes": 52321
+      "sha256": "546b7be0ee10df370c067e195d2df66083fbeba4170890dd2c1d47b71229e227",
+      "size_bytes": 52518
     },
     {
       "path": "frontend/zh-TW/client-context.js",
@@ -791,6 +801,11 @@
       "size_bytes": 33389
     },
     {
+      "path": "scripts/publication/verify_candidate_clean.sh",
+      "sha256": "d332509cdec19c77d323e5aedb1f5b17aa4e348ee4128ac7fd35f7854fc9aa64",
+      "size_bytes": 1419
+    },
+    {
       "path": "scripts/publication/verify_image_supply_chain.py",
       "sha256": "9cde34744e227d349034ffa625f3bfdc4952a4c5adca3b8de568e420a9084947",
       "size_bytes": 16008
@@ -802,8 +817,8 @@
     },
     {
       "path": "scripts/publication/verify_publication_candidate.py",
-      "sha256": "dc54e7b849b4f89b84f0887df68d0a619092032ab9d294525bf1064c1e1cc154",
-      "size_bytes": 25292
+      "sha256": "d3b4456b7d0851aaa82bd861fdad3766a2af97c2a3ff8e8ed3518afb7b462e5c",
+      "size_bytes": 27432
     },
     {
       "path": "scripts/tools/__init__.py",
@@ -962,8 +977,8 @@
     },
     {
       "path": "tests/integration/test_frontend_accessibility.py",
-      "sha256": "31cfc9426a88bef589364fa9dbae3364781f0e53d7fb6123d79e40079499c4a7",
-      "size_bytes": 8352
+      "sha256": "4a6d6dcbcc7201f8859e8f8f908ccd7727cacd79bda3bfccba5e8239ab9ed171",
+      "size_bytes": 8820
     },
     {
       "path": "tests/integration/test_frontend_contract.py",

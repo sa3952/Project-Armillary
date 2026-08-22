@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
@@ -60,6 +61,7 @@ SECRET_PATTERNS = {
 LITERAL_REMOTE_URL = re.compile(r"https?://", re.IGNORECASE)
 QUOTED_CANDIDATE_PATH = re.compile(r"`([A-Za-z0-9_./-]+)`")
 PUBLIC_FILE_INVENTORY = "PUBLICATION_FILES.json"
+SECURITY_TXT_PATH = ".well-known/security.txt"
 RECONSTRUCTION_PLATFORM = "linux/amd64"
 RECONSTRUCTION_BUILDER_IMAGE = (
     "python:3.13.14-trixie@"
@@ -374,6 +376,55 @@ def _verify_public_file_inventory(root: Path) -> None:
             )
 
 
+def _verify_security_txt(root: Path) -> None:
+    path = root / SECURITY_TXT_PATH
+    if not path.is_file() or path.is_symlink() or path.stat().st_size > 4096:
+        raise CandidateFailure("security.txt is missing or unsafe")
+    try:
+        text = path.read_text(encoding="ascii")
+    except (OSError, UnicodeError) as error:
+        raise CandidateFailure(f"security.txt is unreadable: {error}") from None
+    entries: dict[str, list[str]] = {}
+    for line in text.splitlines():
+        if not line or ": " not in line:
+            raise CandidateFailure("security.txt contains an invalid line")
+        key, value = line.split(": ", 1)
+        entries.setdefault(key, []).append(value)
+    expected = {
+        "Contact": [
+            "https://github.com/sa3952/Project-Armillary/security/advisories/new",
+            "mailto:privacy@projectarmillary.com",
+        ],
+        "Preferred-Languages": ["zh-TW, en"],
+        "Canonical": [
+            "https://projectarmillary.com/.well-known/security.txt"
+        ],
+        "Policy": [
+            "https://github.com/sa3952/Project-Armillary/blob/main/SECURITY.md"
+        ],
+    }
+    if any(entries.get(key) != value for key, value in expected.items()):
+        raise CandidateFailure("security.txt contact, canonical or policy is invalid")
+    if set(entries) != set(expected) | {"Expires"} or len(entries["Expires"]) != 1:
+        raise CandidateFailure("security.txt field set is invalid")
+    try:
+        expires = datetime.fromisoformat(
+            entries["Expires"][0].replace("Z", "+00:00")
+        )
+    except ValueError:
+        expires = None
+    now = datetime.now(timezone.utc)
+    if (
+        expires is None
+        or expires.tzinfo is None
+        or expires <= now
+        or expires > now + timedelta(days=366)
+    ):
+        raise CandidateFailure("security.txt expiry is invalid")
+    if "security@" in text.casefold():
+        raise CandidateFailure("security.txt names an unavailable contact")
+
+
 def _license_evidence_complete(package: dict) -> bool:
     has_identity = bool(
         package.get("license_expression")
@@ -460,6 +511,7 @@ def _verify_sha256sums(
 def verify_candidate(root: Path) -> None:
     root = root.resolve()
     required = {
+        SECURITY_TXT_PATH,
         "LICENSE",
         PUBLIC_FILE_INVENTORY,
         "README.md",
@@ -489,6 +541,7 @@ def verify_candidate(root: Path) -> None:
     if missing:
         raise CandidateFailure(f"required files missing: {missing}")
     _verify_public_file_inventory(root)
+    _verify_security_txt(root)
     _verify_notice_paths(root, files["THIRD_PARTY_NOTICES.md"])
 
     for path in root.rglob("*"):
