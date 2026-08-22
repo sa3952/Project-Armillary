@@ -32,7 +32,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "7ff07873bee463bb2854cc5cfd228121c30794b040df0dc8b0cb5c20cef1363a",
+      "sha256": "6ac9984d02c6b43d4c46e03018ebaf0bfc812e4f1ba8fd1b7e653ffa09cd9972",
       "size_bytes": 322
     },
     {
@@ -62,7 +62,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "b4fc8b972639c2b87b3024e5e192971b973bc674d4da1676827f80f752a6728c",
+      "sha256": "8fc7d94c76b95da4b77949a693092d02054ef6f6c34c1c339bb93e8bf169da9c",
       "size_bytes": 353
     },
     {
@@ -882,8 +882,8 @@
     },
     {
       "path": "scripts/verification/verify_container_runtime.py",
-      "sha256": "40d22369b65283f1e5ed8eb427aa3ac2973a516e1b8f83c7b3d92809a2267eef",
-      "size_bytes": 96876
+      "sha256": "f9510ecd5e58b7b11b8a4b6a4526f066c477ccce35dd951d2da5d2ea36369560",
+      "size_bytes": 97095
     },
     {
       "path": "scripts/verification/verify_docker_context.py",
@@ -957,8 +957,8 @@
     },
     {
       "path": "tests/deployment/test_production_runtime_contract.py",
-      "sha256": "2de5b4bb5550a9f34be8ed781b71d4a52918237f0c64559daca0be4105d8f2d4",
-      "size_bytes": 62285
+      "sha256": "8aa4111e6b53857cf042f78945363ee642634fec5d0829fbfd73d014042c403c",
+      "size_bytes": 62418
     },
     {
       "path": "tests/deployment/test_release_build_transaction.py",

@@ -471,6 +471,14 @@ CROSS_PLATFORM_ADDITIVE_KEYS = {
         "$.astronomical_data.parallax_moon.geocentric_reference",
         "$.astronomical_data.parallax_moon.topocentric_effective",
     )
+} | {
+    path: frozenset(
+        {"delta_t_model", "leap_second_input", "swiss_time_input_semantics"}
+    )
+    for path in (
+        "$.astronomical_data.time",
+        "$.calculation_dossier.time_conversion",
+    )
 }
 
 

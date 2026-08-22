@@ -645,8 +645,12 @@ def test_object_key_parity_failure_names_both_sides():
 
     expected = {"longitude": 1.0}
     actual = {**expected, "speed_source": "swiss", "speed_position_derivative_status": "available"}
-    for path in module.CROSS_PLATFORM_ADDITIVE_KEYS:
-        module._assert_parity(expected, actual, path.replace("[]", "[0]"), parity_scope="cross_platform")
+    for path, keys in module.CROSS_PLATFORM_ADDITIVE_KEYS.items():
+        governed_actual = {**expected, **{key: "receipt" for key in keys}}
+        module._assert_parity(
+            expected, governed_actual, path.replace("[]", "[0]"),
+            parity_scope="cross_platform",
+        )
     with pytest.raises(module.GateFailure):
         module._assert_parity(
             expected, {**actual, "unknown": True},
