@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import platform as platform_module
 import shutil
+import struct
 import subprocess
 import sys
 import tarfile
@@ -534,9 +535,32 @@ def _assert_app_tree_is_expected(observed: list[str]) -> None:
         )
 
 
-def _assert_compiled_artifacts_are_expected(
+def _elf_identity(payload: bytes) -> dict[str, Any]:
+    if payload[:4] != b"\x7fELF" or payload[4] != 2 or payload[5] not in {1, 2}:
+        raise GateFailure("compiled artifact is not a supported ELF64 object")
+    endian = "<" if payload[5] == 1 else ">"
+    header = struct.unpack_from(endian + "HHIQQQIHHHHHH", payload, 16)
+    offset, size, count, names_index = header[5], header[10], header[11], header[12]
+    sections = [struct.unpack_from(endian + "IIQQQQIIQQ", payload, offset + i * size) for i in range(count)]
+    if names_index >= len(sections):
+        raise GateFailure("ELF section-name table is unavailable")
+    string_section = sections[names_index]
+    names = payload[string_section[4]:string_section[4] + string_section[5]]
+    rows, normalized = [], hashlib.sha256()
+    for section in sections:
+        end = names.find(b"\0", section[0]); end = len(names) if end < 0 else end
+        name = names[section[0]:end].decode("utf-8", "replace")
+        data = payload[section[4]:section[4] + section[5]]
+        rows.append({"name":name,"type":section[1],"flags":section[2],"size":section[5],"sha256":hashlib.sha256(data).hexdigest()})
+        if section[2] & 0x2 and name != ".note.gnu.build-id" and not name.startswith(".debug"):
+            normalized.update(json.dumps([name,section[1],section[2],section[5]],separators=(",",":")).encode()+b"\0"+data)
+    structural = [{k:v for k,v in row.items() if k != "sha256"} for row in rows]
+    return {"elf_class":64,"endianness":"little" if payload[5] == 1 else "big","e_machine":header[1],"sections":rows,"structural_sha256":hashlib.sha256(json.dumps(structural,sort_keys=True,separators=(",",":")).encode()).hexdigest(),"normalized_runtime_sha256":normalized.hexdigest()}
+
+
+def _compiled_artifact_discrepancies(
     observed: dict[str, str], architecture: str
-) -> None:
+) -> list[dict[str, Any]]:
     """Pin the hashes of the natively compiled extensions, per architecture.
 
     The 2026-07-30 rebuild investigation refuted the concern that the unpinned
@@ -552,19 +576,11 @@ def _assert_compiled_artifacts_are_expected(
     """
 
     if not COMPILED_ARTIFACTS_MANIFEST.is_file():
-        _review_required(
-            COMPILED_ARTIFACTS_MANIFEST,
-            {"artifacts": {architecture: observed}},
-            "compiled artifact manifest",
-        )
+        return [{"class":"missing_manifest","candidate_blocker":True}]
     expected = json.loads(COMPILED_ARTIFACTS_MANIFEST.read_text(encoding="utf-8"))
     by_architecture = expected["artifacts"]
     if architecture not in by_architecture:
-        _review_required(
-            COMPILED_ARTIFACTS_MANIFEST,
-            {"artifacts": {**by_architecture, architecture: observed}},
-            f"compiled artifact manifest entry for {architecture}",
-        )
+        return [{"class":"missing_architecture_manifest","architecture":architecture,"candidate_blocker":True}]
     recorded = by_architecture[architecture]
     drifted = {
         path: {"expected": recorded.get(path), "observed": digest}
@@ -572,11 +588,10 @@ def _assert_compiled_artifacts_are_expected(
         if recorded.get(path) != digest
     }
     absent = sorted(set(recorded) - set(observed))
-    if drifted or absent:
-        raise GateFailure(
-            "compiled artifact drift: the native extensions differ from the "
-            f"recorded build. drifted={drifted}, absent={absent}"
-        )
+    result = [{"class":"whole_file_hash_drift","path":path,"expected":item["expected"],"observed":item["observed"],"candidate_blocker":True,"disposition":"unresolved_until_normalized_and_runtime_classification"} for path,item in sorted(drifted.items())]
+    if absent:
+        result.append({"class":"compiled_artifact_absent","paths":absent,"candidate_blocker":True})
+    return result
 
 
 def _builder_environment() -> dict[str, Any]:
@@ -643,6 +658,8 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
             app_entries: list[str] = []
             content_identity_rows: list[str] = []
             compiled_artifacts: dict[str, str] = {}
+            compiled_identities: dict[str, dict[str, Any]] = {}
+            embedded_toolchain: dict[str, Any] | None = None
             canary_found = False
             with tarfile.open(archive_path, mode="r") as archive:
                 for member in archive:
@@ -685,10 +702,20 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                     if member.isfile():
                         extracted = archive.extractfile(member)
                         if extracted is not None:
+                            if _is_compiled_artifact(normalized):
+                                payload = extracted.read(); extracted = None
+                                payload_digest = hashlib.sha256(payload).hexdigest()
+                                compiled_artifacts[normalized] = payload_digest
+                                compiled_identities[normalized] = _elf_identity(payload)
+                                canary_found = canary_found or CANARY.encode() in payload
+                            elif normalized == "/usr/local/share/project-armillary/build-evidence/builder-toolchain.json":
+                                payload = extracted.read(); extracted = None
+                                payload_digest = hashlib.sha256(payload).hexdigest()
+                                embedded_toolchain = json.loads(payload)
                             digest = hashlib.sha256()
                             canary_bytes = CANARY.encode()
                             canary_tail = b""
-                            while True:
+                            while extracted is not None:
                                 chunk = extracted.read(1024 * 1024)
                                 if not chunk:
                                     break
@@ -698,9 +725,8 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                                 canary_tail = (canary_tail + chunk)[
                                     -max(len(canary_bytes) - 1, 0):
                                 ]
-                            payload_digest = digest.hexdigest()
-                            if _is_compiled_artifact(normalized):
-                                compiled_artifacts[normalized] = payload_digest
+                            if extracted is not None:
+                                payload_digest = digest.hexdigest()
                     if normalized not in DOCKER_INJECTED_PATHS:
                         content_identity_rows.append(
                             _content_identity_row(
@@ -715,7 +741,7 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                 "\n".join(sorted(content_identity_rows)).encode("utf-8")
             ).hexdigest()
             _assert_app_tree_is_expected(sorted(app_entries))
-            _assert_compiled_artifacts_are_expected(
+            compiled_discrepancies = _compiled_artifact_discrepancies(
                 compiled_artifacts, _image_architecture(image, platform)
             )
     finally:
@@ -814,6 +840,9 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
         "content_identity_schema": CONTENT_IDENTITY_SCHEMA,
         "content_identity": content_identity,
         "compiled_artifacts": dict(sorted(compiled_artifacts.items())),
+        "compiled_artifact_identities": dict(sorted(compiled_identities.items())),
+        "embedded_toolchain": embedded_toolchain,
+        "discrepancies": compiled_discrepancies,
         "production_packages": sorted(packages),
         "forbidden_packages_present": sorted(forbidden),
         "secret_canary_present": False,
@@ -2489,6 +2518,17 @@ def main() -> int:
             receipt_path.write_text(
                 json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
+            )
+        blockers = [
+            item
+            for item in inventory.get("discrepancies", [])
+            if item.get("candidate_blocker") is True
+        ]
+        if blockers:
+            print(json.dumps(receipt, indent=2, sort_keys=True))
+            raise GateFailure(
+                "container checks completed with candidate-blocking discrepancies: "
+                + json.dumps(blockers, sort_keys=True)
             )
         if args.quiet:
             scope = receipt["verdict_scope"]
