@@ -364,6 +364,8 @@
           ["UTC", time.utc_time],
           ["儒略日 JD(UT)", num(time.jd_ut, 6)],
           ["ΔT（秒）", num(time.delta_t_seconds, 3)],
+          ["Swiss 時間輸入語義", time.swiss_time_input_semantics],
+          ["ΔT 模型狀態", (time.delta_t_model || {}).status],
           ["地方真恆星時 LAST（小時）", num(time.last_hours, 6)],
           ["真黃赤交角 ε", dms(time.true_obliquity)],
         ],
@@ -382,7 +384,11 @@
       notes: [
         "黃道、赤道、地平三套座標一次輸出，不必換工具重填生辰。",
         "星座與宮內度數由後端黃經以 30° 分段換寫，非另一次計算；完整精度在 JSON 匯出中。",
-      ],
+        bodies.some((body) => body.speed_position_derivative_status
+          === "known_internal_disagreement_for_sun_moon")
+          ? "站心速度為 Swiss FLG_SPEED 解析值；太陽／月亮部分欄位已知不等於同次位置的有限差分導數，請勿把它當作已驗證的導數精度。"
+          : null,
+      ].filter(Boolean),
       tables: [{
         title: "本命天體",
         columns: BODY_COLUMNS,
@@ -394,6 +400,15 @@
 
   function anglesSection(response) {
     const angles = (response.astronomical_data || {}).angles || {};
+    const receipt = ((response.module_receipt || {}).modules || {}).angles;
+    if (receipt && receipt.requested === false) {
+      return absentSection(
+        "angles",
+        "軸點",
+        RING.ASTRONOMICAL,
+        "本次未請求軸點計算。"
+      );
+    }
     const rows = [
       ["上升 ASC", angles.asc],
       ["中天 MC", angles.mc],
@@ -1250,6 +1265,13 @@
     const traceReceipt = dossier.trace_receipt || {};
     const time = (response.astronomical_data || {}).time || {};
     const trace = response.calculation_trace || [];
+    const buildIdentity = dossier.build_identity || {};
+    const releaseIdentity = buildIdentity.release_identity || {};
+    const releaseRows = releaseIdentity.status === "available" ? [
+      ["組合發布識別", releaseIdentity.combined_release_id],
+      ["後端 image", (releaseIdentity.backend || {}).image_id],
+      ["前端 artifact", (releaseIdentity.frontend || {}).artifact_digest],
+    ] : [];
     return {
       id: "receipt",
       title: "計算收據",
@@ -1270,8 +1292,9 @@
             ["Calculation Dossier", dossier.dossier_version],
             ["Dossier 狀態", dossier.status],
             ["Dossier 權威", dossier.authority],
-            ["建置識別", (dossier.build_identity || {}).revision
-              || (dossier.build_identity || {}).identity],
+            ["建置識別", buildIdentity.source_revision
+              || buildIdentity.revision || buildIdentity.identity],
+            ...releaseRows,
             ["pyswisseph", engine.pyswisseph_distribution_version],
             ["Swiss Ephemeris", engine.swiss_ephemeris_library_version],
             ["時區資料庫", tzDatabase(engine.tz_database)],
@@ -1296,6 +1319,8 @@
             ["UTC", time.utc_time],
             ["儒略日 JD(UT)", num(time.jd_ut, 6)],
             ["ΔT（秒）", num(time.delta_t_seconds, 3)],
+            ["Swiss 時間輸入語義", time.swiss_time_input_semantics],
+            ["ΔT 模型狀態", (time.delta_t_model || {}).status],
             ["緯度", num((receipt.location || {}).latitude, 6)],
             ["經度", num((receipt.location || {}).longitude, 6)],
             ["海拔（公尺）", num((receipt.location || {}).altitude_m, 1)],

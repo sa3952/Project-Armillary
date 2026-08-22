@@ -6,8 +6,10 @@ source. Release engineering exports it with `scripts/publication/export_public_s
 rebuild a clean candidate; do not edit generated candidates. The private lifecycle contract is
 not part of this public tree, but the release gate requires its shared-claim mappings to pass.
 
-This repository contains the Corresponding Source for the hosted Classical
-Astrology Data Service. The service is an invited Private Alpha and is not
+This tree is the maintained publication candidate for the Corresponding Source
+of the Classical Astrology Data Service. It becomes the source for a hosted
+release only when an exact public revision is bound to the deployed image and
+is anonymously reachable. The intended service is an invited Private Alpha and is not
 professional medical, legal, financial, psychological, or other professional
 advice.
 
@@ -25,24 +27,32 @@ Ephemeris. See `LICENSE` and `THIRD_PARTY_NOTICES.md`.
 Requirements:
 
 - Docker with BuildKit and Compose;
-- a Linux `amd64` or `arm64` host for the validated container paths;
+- a Docker builder capable of producing the release target `linux/amd64`;
 - no production credential is required for a local build.
 
-Materialize the governed closed context outside the source tree, create a
-non-empty BuildKit probe, then build only from that context:
+Use the canonical build transaction owner. It materializes the governed closed
+context outside the source tree, creates and consumes a non-empty BuildKit
+secret, observes the context BuildKit actually received, captures the builder
+toolchain, and extracts the evidence from the exact runtime image:
 
 ```bash
 build_root="$(mktemp -d /tmp/classical-astrology-build.XXXXXX)"
-printf 'local-build-probe\n' > "$build_root/probe.txt"
-python -m scripts.verification.verify_docker_context \
-  --materialize "$build_root/context"
-DOCKER_BUILDKIT=1 docker build \
-  --secret id=private_alpha_probe,src="$build_root/probe.txt" \
-  --build-arg VCS_REF="$(git rev-parse HEAD)" \
-  --tag classical-astrology-data:local \
-  --file "$build_root/context/deploy/Dockerfile" \
-  "$build_root/context"
+python -m scripts.verification.build_release_image \
+  --image classical-astrology-data:local \
+  --platform linux/amd64 \
+  --purpose diagnostic \
+  --evidence-dir "$build_root/evidence" \
+  --require-clean
 ```
+
+`diagnostic` builds are labelled `provisional_unpublished`. A release-candidate
+build instead requires `--purpose release-candidate` and a verified
+`--publication-receipt`; the build owner rejects an operator-supplied claim that
+is not backed by that receipt.
+
+`deploy/compose.yaml` is intentionally runtime-only and contains no `build:` key. Do not replace
+the image reference with a Compose `build:` section or point Compose at the raw checkout; doing so
+would create an ungoverned second build path.
 
 The production image intentionally contains application runtime files, not
 tests, documentation, Git metadata, third-party source archives, or frontend
@@ -72,14 +82,16 @@ BACKEND_IMAGE_ID=sha256:FULL_IMAGE_ID \
 COMBINED_RELEASE_ID=FULL_COMBINED_RELEASE_ID \
 docker compose \
   -f deploy/compose.yaml \
-  -f deploy/staging/compose.staging.yaml \
   -f deploy/compose.frontend-release.yaml \
-  up --force-recreate
+  config
 ```
 
-Open `http://127.0.0.1:8124/`. Production deployment requires an authenticated
-HTTPS reverse proxy and additional host controls described in
-`docs/DEPLOYMENT_SECURITY.md`.
+This validates the exported composition only. The public source set deliberately
+does not ship the private operator staging overlay, and the base composition
+publishes no host port, so this command does not create a browser-reachable
+`127.0.0.1` service. A real hosted run requires the separately governed private
+operator overlay, an authenticated HTTPS reverse proxy, and the host controls
+described in `docs/DEPLOYMENT_SECURITY.md`.
 
 ## Tests
 
@@ -88,7 +100,9 @@ frontend, runtime, and container tests used for this release. Run:
 
 ```bash
 python -m pytest tests
-node --test frontend/tests/*.test.cjs
+frontend_tests=(frontend/tests/*.test.cjs)
+test -e "${frontend_tests[0]}" || { echo "frontend test universe is empty" >&2; exit 1; }
+node --test "${frontend_tests[@]}"
 python -m scripts.verification.verify_privacy_dependencies --check
 python -m scripts.verification.verify_ephemeris_integrity --check
 ```
@@ -98,7 +112,7 @@ documented by their command help.
 
 ## Source correspondence
 
-Each release publishes:
+Before a hosted release is eligible, release engineering must publish and bind:
 
 - an exact Git revision;
 - a source archive;
@@ -109,7 +123,9 @@ Each release publishes:
   source revision;
 - a combined runtime receipt binding the backend image and frontend release.
 
-The public source revision is the source used to build the deployed image.
+For an eligible release, the public source revision must be the source used to
+build the deployed image. This candidate text is not evidence that publication
+or deployment has already occurred.
 Development conversations, private operational records, credentials, logs,
 user data, and unrelated local-app packaging are not part of this hosted
 Corresponding Source.

@@ -9,6 +9,10 @@
   underlying storage behavior require provider-specific evidence.
 - No external uptime monitor, analytics, telemetry, remote log forwarding, or
   account-recovery system is used.
+- Container `/api/health` proves process liveness only. The source includes a
+  fixed nonpersonal chart probe and bounded host-watchdog policy, but no external
+  email/push monitor or automatic restart is active until separately verified on
+  the real host.
 - The alpha is not professional advice and calculation correctness does not
   establish the validity of an astrological method.
 - The security review summary is curated evidence, not a guarantee or a

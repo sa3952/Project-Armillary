@@ -53,7 +53,9 @@
     "speed_distance": 0.00022118817248626782,
     "speed_latitude": 3.6546006167635174e-05,
     "speed_longitude": 0.9643350755521559,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": 0.9871828062661824,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    },
    {
@@ -87,7 +89,9 @@
     "speed_distance": -2.6109963852579012e-05,
     "speed_latitude": 1.0345686495969781,
     "speed_longitude": 12.281051226780825,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": 12.949533488169822,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    },
    {
@@ -121,7 +125,9 @@
     "speed_distance": 0.008895817243066923,
     "speed_latitude": -0.1986487340269966,
     "speed_longitude": -0.145262342620705,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": -0.07552265223270971,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    },
    {
@@ -155,7 +161,9 @@
     "speed_distance": 0.007409479298490998,
     "speed_latitude": -0.030850020524139335,
     "speed_longitude": 1.1400968155779998,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": 1.0634676654356954,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    },
    {
@@ -189,7 +197,9 @@
     "speed_distance": -0.005907944767984797,
     "speed_latitude": -0.010444813952823971,
     "speed_longitude": 0.7428445973897613,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": 0.6914674878336304,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    },
    {
@@ -223,7 +233,9 @@
     "speed_distance": 0.011592313467528615,
     "speed_latitude": 0.0014051766148775926,
     "speed_longitude": 0.18877682442404511,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": 0.2050402059473214,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    },
    {
@@ -257,7 +269,9 @@
     "speed_distance": -0.014642130522567963,
     "speed_latitude": -0.0011456835260493614,
     "speed_longitude": -0.01637146648836713,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": -0.01701373966353797,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    }
   ],
@@ -312,7 +326,9 @@
     "speed_distance": -6.038860777046549e-07,
     "speed_latitude": 0.0,
     "speed_longitude": -0.033946473742825174,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": -0.034305695034562655,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    },
    {
@@ -346,7 +362,9 @@
     "speed_distance": 0.0,
     "speed_latitude": 0.0,
     "speed_longitude": -0.05293221888363914,
+    "speed_position_derivative_status": "not_evaluated",
     "speed_ra": -0.05331668574201806,
+    "speed_source": "swiss_ephemeris_flg_speed_analytic",
     "used_full_ephemeris": true
    }
   ],
@@ -354,6 +372,12 @@
   "time": {
    "apparent_solar_time": "1990-05-15 12:06:24",
    "ayanamsa": null,
+   "delta_t_model": {
+    "accuracy_status": "not_independently_established_for_this_epoch",
+    "far_epoch_warning_year": 2100,
+    "source": "swiss_ephemeris_internal_delta_t",
+    "status": "model_value"
+   },
    "delta_t_seconds": 57.10498094558716,
    "dst_warning": null,
    "ecl_nut_retflag": 2,
@@ -366,11 +390,13 @@
    "jd_et": 2448026.6673285183,
    "jd_ut": 2448026.666667581,
    "last_hours": 3.5534375212794664,
+   "leap_second_input": false,
    "lmst_hours": 3.553238613155571,
    "lst_hours": 3.5534375212794664,
    "mean_obliquity": 23.44053267417123,
    "nutation_longitude": 0.0032520381801893297,
    "nutation_obliquity": 0.001630047148156628,
+   "swiss_time_input_semantics": "utc",
    "timezone_label": "Asia/Taipei",
    "true_obliquity": 23.442162721319388,
    "utc_offset_hours": 8.0,
@@ -1199,6 +1225,463 @@
     "partile_profile": "same_degree_number_v1",
     "triplicity_include_research_comparison": false,
     "triplicity_profile": null
+   },
+   "option_states": {
+    "antiscia_include_nodes": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_geometry.antiscia.scope"
+     ],
+     "source": null
+    },
+    "aspect_angle_orb_degrees": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": null,
+     "response_paths": [
+      "derived_methods.aspects.degree_based.angle_participation"
+     ],
+     "source": null
+    },
+    "aspect_fixed_orb_degrees": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": null,
+     "response_paths": [
+      "derived_methods.aspects.degree_based.orb_receipt"
+     ],
+     "source": null
+    },
+    "aspect_include_angles": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.aspects.degree_based.angle_participation"
+     ],
+     "source": null
+    },
+    "aspect_include_nodes": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.aspects.participants"
+     ],
+     "source": null
+    },
+    "aspect_orb_profile": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": null,
+     "response_paths": [
+      "derived_methods.aspects.degree_based.orb_receipt"
+     ],
+     "source": null
+    },
+    "aspect_orb_scale_percent": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": null,
+     "response_paths": [
+      "derived_methods.aspects.degree_based.orb_receipt"
+     ],
+     "source": null
+    },
+    "aspect_set_profile": {
+     "applicable": true,
+     "available": true,
+     "executed": true,
+     "input_presence": "defaulted",
+     "reason_code": null,
+     "requested": true,
+     "requested_value": "ptolemaic_major_v1",
+     "response_paths": [
+      "derived_methods.aspects.degree_based"
+     ],
+     "source": "derived_methods.aspects.degree_based"
+    },
+    "body_selection_preset": {
+     "applicable": true,
+     "available": true,
+     "executed": true,
+     "input_presence": "defaulted",
+     "reason_code": null,
+     "requested": true,
+     "requested_value": "custom",
+     "response_paths": [
+      "calculation_dossier.calculation_policy.body_selection"
+     ],
+     "source": "calculation_dossier.calculation_policy.body_selection"
+    },
+    "bounds_profile": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": null,
+     "response_paths": [
+      "derived_methods.essential_dignities.profile_results"
+     ],
+     "source": null
+    },
+    "decan_profile": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": null,
+     "response_paths": [
+      "derived_methods.essential_dignities.profile_results"
+     ],
+     "source": null
+    },
+    "declination_aspect_orb_degrees": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": 1.0,
+     "response_paths": [
+      "derived_methods.declination_aspects"
+     ],
+     "source": null
+    },
+    "house_system": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": "W",
+     "response_paths": [
+      "derived_methods.house_division"
+     ],
+     "source": null
+    },
+    "include_anti_vertex": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.extra_angles.angles.anti_vertex"
+     ],
+     "source": null
+    },
+    "include_antiscia": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_geometry.antiscia"
+     ],
+     "source": null
+    },
+    "include_aspect_perfection": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.aspects.perfection"
+     ],
+     "source": null
+    },
+    "include_aspects": {
+     "applicable": true,
+     "available": true,
+     "executed": true,
+     "input_presence": "defaulted",
+     "reason_code": null,
+     "requested": true,
+     "requested_value": true,
+     "response_paths": [
+      "derived_methods.aspects"
+     ],
+     "source": "derived_methods.aspects"
+    },
+    "include_chiron": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.bodies"
+     ],
+     "source": null
+    },
+    "include_declination_aspects": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.declination_aspects"
+     ],
+     "source": null
+    },
+    "include_domicile_exaltation": {
+     "applicable": true,
+     "available": true,
+     "executed": true,
+     "input_presence": "defaulted",
+     "reason_code": null,
+     "requested": true,
+     "requested_value": true,
+     "response_paths": [
+      "derived_methods.essential_dignities"
+     ],
+     "source": "derived_methods.essential_dignities.profile_results"
+    },
+    "include_eclipses": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.lunar_events.eclipses"
+     ],
+     "source": null
+    },
+    "include_extra_angles": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.extra_angles"
+     ],
+     "source": null
+    },
+    "include_fixed_stars": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.fixed_stars"
+     ],
+     "source": null
+    },
+    "include_houses": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "explicit",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.house_division"
+     ],
+     "source": null
+    },
+    "include_lilith_priapus": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.lunar_apsides"
+     ],
+     "source": null
+    },
+    "include_lots": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.lots"
+     ],
+     "source": null
+    },
+    "include_lunar_phases": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.lunar_events"
+     ],
+     "source": null
+    },
+    "include_outer_planets": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.bodies"
+     ],
+     "source": null
+    },
+    "include_rise_set_transits": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.horizon_events"
+     ],
+     "source": null
+    },
+    "include_south_nodes": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "astronomical_data.nodes"
+     ],
+     "source": null
+    },
+    "include_void_of_course": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.void_of_course"
+     ],
+     "source": null
+    },
+    "moon_position_profile": {
+     "applicable": true,
+     "available": true,
+     "executed": true,
+     "input_presence": "defaulted",
+     "reason_code": null,
+     "requested": true,
+     "requested_value": "global_computation_mode",
+     "response_paths": [
+      "astronomical_data.bodies"
+     ],
+     "source": "astronomical_data.bodies"
+    },
+    "partile_profile": {
+     "applicable": true,
+     "available": true,
+     "executed": true,
+     "input_presence": "defaulted",
+     "reason_code": null,
+     "requested": true,
+     "requested_value": "same_degree_number_v1",
+     "response_paths": [
+      "derived_methods.aspects.degree_based"
+     ],
+     "source": "derived_methods.aspects.degree_based"
+    },
+    "triplicity_include_research_comparison": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "option_not_requested",
+     "requested": false,
+     "requested_value": false,
+     "response_paths": [
+      "derived_methods.essential_dignities.profile_results"
+     ],
+     "source": null
+    },
+    "triplicity_profile": {
+     "applicable": false,
+     "available": false,
+     "executed": false,
+     "input_presence": "defaulted",
+     "reason_code": "configuration_not_selected",
+     "requested": false,
+     "requested_value": null,
+     "response_paths": [
+      "derived_methods.essential_dignities.profile_results"
+     ],
+     "source": null
+    }
    }
   },
   "dossier_version": "0.6.0",
@@ -1264,7 +1747,7 @@
     "available": true,
     "reason_code": null,
     "source": "zoneinfo_file:+VERSION",
-    "version": "2026b"
+    "version": "2026c"
    }
   },
   "input_receipt": {
@@ -1588,7 +2071,7 @@
        "type": "node_test_reference"
       },
       {
-       "reference": "tests/integration/test_frontend_contract.py::test_privacy_lifecycle_precedes_handlers_and_blocks_browser_persistence",
+       "reference": "tests/integration/test_frontend_contract.py::test_privacy_lifecycle_guards_requests_exports_and_page_exit",
        "semantics": "repository_pointer_not_test_execution_result",
        "type": "static_contract_reference"
       }
@@ -1615,17 +2098,20 @@
     }
    ],
    "contains_sensitive_birth_data": true,
+   "deployment_profile": "local",
+   "deployment_profile_status": "declared_by_running_process",
    "evidence_semantics": "repository_test_references_not_execution_attestation",
-   "privacy_attestation_version": "1.2.0",
+   "privacy_attestation_version": "1.3.0",
+   "uncovered_layer_semantics": "these layers are named so the reader can see what this product does not control; presence of a layer is not a claim about its behaviour",
    "uncovered_layers": [
     {
      "layer": "reverse_proxy_cdn_waf",
-     "note": "目前本機產品路徑不存在此層；不提供未來部署保證。",
+     "note": "本機執行路徑不存在此層。此陳述只涵蓋本機 profile；託管部署的形態另行敘述於該 profile 的收據。",
      "status": "outside_current_control_scope"
     },
     {
      "layer": "hosting_supervisor",
-     "note": "Infomaniak provider已選且identity verification已通過；真實VPS尚未部署或驗證，host log與retention仍待deployment canary。",
+     "note": "本機執行，無 hosting supervisor。Infomaniak provider 已選且identity verification 已通過，但本機 profile 下不涉及該主機。",
      "status": "outside_current_control_scope"
     },
     {
@@ -1972,6 +2458,12 @@
     "system": "gregorian"
    },
    "conversion_function": "swe.utc_to_jd",
+   "delta_t_model": {
+    "accuracy_status": "not_independently_established_for_this_epoch",
+    "far_epoch_warning_year": 2100,
+    "source": "swiss_ephemeris_internal_delta_t",
+    "status": "model_value"
+   },
    "delta_t_seconds": 57.10498094558716,
    "dst_warning": null,
    "ecl_nut_retflag": {
@@ -1985,13 +2477,15 @@
    "input_semantics": "representative_computational_anchor_not_birth_time",
    "jd_tt": 2448026.6673285183,
    "jd_ut1": 2448026.666667581,
+   "leap_second_input": false,
    "resolved_utc_offset_hours": 8.0,
+   "swiss_time_input_semantics": "utc",
    "timezone_label": "Asia/Taipei",
    "timezone_mode": "iana",
    "utc_iso_8601": "1990-05-15T04:00:00.000Z"
   },
   "trace_receipt": {
-   "python_json_serialization_sha256": "d6843b9c50db4a785663507a1bdd33421a64c5a4775b7850a8abe43ca9ddb142",
+   "python_json_serialization_sha256": "1636cbb227c257b74cbd36db7dedbfc29b639c6c886bd7505e5d38c987a3a95c",
    "response_path": "calculation_trace",
    "serialization_recipe": {
     "encoding": "UTF-8",
@@ -2044,7 +2538,7 @@
    "title": "本地時間 -> UTC"
   },
   {
-   "formula": "JD_UT, JD_ET = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
+   "formula": "JD_ET, JD_UT = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
    "inputs": {
     "UTC": "1990-05-15 04:00:00.000"
    },
@@ -2590,6 +3084,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": -11.316716151228668,
      "separation_degrees": 121.01833697699806,
@@ -2629,6 +3124,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 1.109597418172861,
      "separation_degrees": 16.017951300282988,
@@ -2668,6 +3164,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": -0.17576174002584388,
      "separation_degrees": 41.6364916008574,
@@ -2707,6 +3204,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.22149047816239464,
      "separation_degrees": 65.98842487069544,
@@ -2746,6 +3244,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.7755582511281108,
      "separation_degrees": 45.40406808659907,
@@ -2785,6 +3284,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.9807065420405231,
      "separation_degrees": 118.81972780263811,
@@ -2824,6 +3324,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 12.42631356940153,
      "separation_degrees": 105.00038567671504,
@@ -2863,6 +3364,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 11.140954411202825,
      "separation_degrees": 79.38184537614063,
@@ -2902,6 +3404,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 11.538206629391064,
      "separation_degrees": 55.02991210630262,
@@ -2941,6 +3444,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 12.09227440235678,
      "separation_degrees": 166.42240506359713,
@@ -2980,6 +3484,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 12.297422693269192,
      "separation_degrees": 2.1986091743599445,
@@ -3019,6 +3524,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": -1.2853591581987047,
      "separation_degrees": 25.61854030057441,
@@ -3058,6 +3564,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": -0.8881069400104663,
      "separation_degrees": 49.97047357041242,
@@ -3097,6 +3604,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": -0.3340391670447501,
      "separation_degrees": 61.422019386882056,
@@ -3136,6 +3644,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": -0.12889087613233788,
      "separation_degrees": 102.8017765023551,
@@ -3175,6 +3684,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.3972522181882385,
      "separation_degrees": 24.351933269838014,
@@ -3214,6 +3724,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.9513199911539547,
      "separation_degrees": 87.0405596874565,
@@ -3253,6 +3764,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 1.156468282066367,
      "separation_degrees": 77.18323620178069,
@@ -3292,6 +3804,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.5540677729657162,
      "separation_degrees": 111.39249295729451,
@@ -3331,6 +3844,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.7592160638781285,
      "separation_degrees": 52.83130293194267,
@@ -3370,6 +3884,7 @@
      "partile": false,
      "partile_reason_code": null,
      "partile_rule": "same_integer_degree_of_sign",
+     "partile_rule_implies_aspect": false,
      "perfection": null,
      "relative_longitude_speed": 0.20514829091241224,
      "separation_degrees": 164.22379588923718,
@@ -3693,7 +4208,7 @@
    "available": true,
    "reason_code": null,
    "source": "zoneinfo_file:+VERSION",
-   "version": "2026b"
+   "version": "2026c"
   }
  },
  "output_contract": {

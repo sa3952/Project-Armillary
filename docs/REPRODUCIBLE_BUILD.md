@@ -60,3 +60,7 @@ python -m scripts.publication.verify_publication_candidate \
 The verifier passes `--platform linux/amd64` to Docker explicitly. A different
 `--builder-image` is an investigative override, not evidence for the documented
 reconstruction contract.
+
+The runtime Compose files do not build images. The only candidate build context is the closed
+materialized output of `scripts.verification.verify_docker_context`; a raw-checkout Compose build
+is outside the supported and governed path.

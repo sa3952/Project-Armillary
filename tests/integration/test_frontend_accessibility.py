@@ -4,11 +4,50 @@ from __future__ import annotations
 
 from html.parser import HTMLParser
 from pathlib import Path
+import re
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 INDEX_HTML = PROJECT_ROOT / "frontend" / "zh-TW" / "calculate.html"
 APP_JS = PROJECT_ROOT / "frontend" / "zh-TW" / "calculate.js"
+
+
+def _relative_luminance(hex_color: str) -> float:
+    channels = [int(hex_color[index:index + 2], 16) / 255 for index in (1, 3, 5)]
+    linear = [
+        value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+        for value in channels
+    ]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def _contrast(first: str, second: str) -> float:
+    light, dark = sorted(
+        (_relative_luminance(first), _relative_luminance(second)), reverse=True
+    )
+    return (light + 0.05) / (dark + 0.05)
+
+
+def _token(css: str, name: str) -> str:
+    match = re.search(rf"{re.escape(name)}:\s*(#[0-9A-Fa-f]{{6}})", css)
+    assert match is not None, name
+    return match.group(1)
+
+
+def test_form_control_boundaries_and_placeholder_text_meet_contrast_floors():
+    tokens = (PROJECT_ROOT / "frontend/zh-TW/tokens.css").read_text(encoding="utf-8")
+    css = (PROJECT_ROOT / "frontend/zh-TW/calculate.css").read_text(encoding="utf-8")
+    background = _token(tokens, "--paper-2")
+    control_border = re.search(
+        r"input,select\{.*?border:1px solid var\((--[\w-]+)\)", css, re.DOTALL
+    )
+    placeholder = re.search(
+        r"input::placeholder\{.*?color:var\((--[\w-]+)\)", css, re.DOTALL
+    )
+    assert control_border is not None
+    assert placeholder is not None
+    assert _contrast(_token(tokens, control_border.group(1)), background) >= 3.0
+    assert _contrast(_token(tokens, placeholder.group(1)), background) >= 4.5
 
 
 class _FormControlParser(HTMLParser):
@@ -160,3 +199,42 @@ def test_horizontally_scrollable_generated_tables_are_keyboard_focusable():
 
     assert 'wrap.className = "table-wrap"' in script
     assert "wrap.tabIndex = 0" in script
+
+
+def test_horizontally_scrollable_generated_tables_have_an_accessible_name():
+    script = APP_JS.read_text(encoding="utf-8")
+
+    assert 'wrap.setAttribute("role", "region")' in script
+    assert 'wrap.setAttribute("aria-label",' in script
+
+
+def test_calculation_page_can_bypass_repeated_navigation():
+    source = INDEX_HTML.read_text(encoding="utf-8")
+
+    assert 'class="skip-link" href="#main-content"' in source
+    assert '<main class="wrap" id="main-content"' in source
+
+
+def test_controls_can_shrink_inside_a_magnified_viewport():
+    css = (PROJECT_ROOT / "frontend" / "zh-TW" / "calculate.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert "input,select,button{min-width:0; max-width:100%}" in css
+
+
+def test_reduced_motion_disables_the_only_control_transitions():
+    css = (PROJECT_ROOT / "frontend/zh-TW/calculate.css").read_text(
+        encoding="utf-8"
+    )
+
+    reduced = re.search(
+        r"@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{(?P<body>.*?)\n\}",
+        css,
+        re.DOTALL,
+    )
+    assert reduced is not None
+    body = reduced.group("body").replace(" ", "")
+    assert '.choiceinput[type="radio"]' in body
+    assert 'input[type="checkbox"].option-control' in body
+    assert "transition:none" in body

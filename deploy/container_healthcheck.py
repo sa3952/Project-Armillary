@@ -22,7 +22,11 @@ def main() -> int:
                 return 1
     except (OSError, URLError, ValueError, json.JSONDecodeError):
         return 1
-    return 0 if payload == {"status": "ok", "ready": True} else 1
+    return 0 if payload == {
+        "status": "ok",
+        "ready": True,
+        "readiness_scope": "process_liveness_only",
+    } else 1
 
 
 if __name__ == "__main__":

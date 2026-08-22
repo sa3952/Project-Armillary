@@ -80,6 +80,28 @@ test("『明確拒絕』與『使用者沒要求』不得映射成同一個狀�
   );
 });
 
+test("收據顯示 source revision 與 available release identity", () => {
+  const response = structuredClone(EXACT);
+  response.calculation_dossier.build_identity = {
+    source_revision: "source-revision-control",
+    release_identity: {
+      status: "available",
+      combined_release_id: "combined-release-control",
+      backend: { image_id: "sha256:backend-control" },
+      frontend: { artifact_digest: "sha256:frontend-control" },
+    },
+  };
+
+  const receipt = sectionById(ViewModel.buildSections(response), "receipt");
+  const versions = receipt.tables.find((table) => table.title === "版本與來源");
+  assert.ok(versions);
+  const rows = new Map(versions.rows);
+  assert.equal(rows.get("建置識別"), "source-revision-control");
+  assert.equal(rows.get("組合發布識別"), "combined-release-control");
+  assert.equal(rows.get("後端 image"), "sha256:backend-control");
+  assert.equal(rows.get("前端 artifact"), "sha256:frontend-control");
+});
+
 test("預設帶入與使用者主動選取是不同狀態", () => {
   const dignities = sectionById(ViewModel.buildSections(EXACT), "dignities");
   assert.equal(dignities.status.state, "defaulted");
@@ -94,6 +116,18 @@ test("未計算的陷落與外來不得呈現為『沒有』", () => {
   const joined = dignities.notes.join("\n");
   assert.ok(joined.includes("未評估"), "必須明說是未評估");
   assert.ok(joined.includes("不是「沒有」"), "必須否定『沒有』的讀法");
+});
+
+test("未請求軸點時不得以 placeholder rows 呈現為已計算", () => {
+  const response = structuredClone(EXACT);
+  response.module_receipt = response.module_receipt || { modules: {} };
+  response.module_receipt.modules = response.module_receipt.modules || {};
+  response.module_receipt.modules.angles = { requested: false };
+  delete response.astronomical_data.angles;
+
+  const angles = sectionById(ViewModel.buildSections(response), "angles");
+  assert.equal(angles.status.state, "not_requested");
+  assert.equal(angles.tables.length, 0);
 });
 
 // ---------------------------------------------------------------------------
@@ -263,8 +297,11 @@ test("sections 改變時，view tree 與每一種匯出都同步改變（§10）
     const beforeOut = render(before);
     const afterOut = render(after);
     assert.notEqual(beforeOut, afterOut, `${name} 未隨 sections 改變`);
+    const comparable = name === "markdown"
+      ? afterOut.replace(/\\/g, "")
+      : afterOut;
     assert.ok(
-      afterOut.includes("SENTINEL_NOTE_FOR_SYNC_TEST"),
+      comparable.includes("SENTINEL_NOTE_FOR_SYNC_TEST"),
       `${name} 沒有帶上新的 section 內容`
     );
     assert.ok(

@@ -174,7 +174,11 @@ def test_private_alpha_exposes_only_hosted_health_and_no_live_schema():
         schema = client.get("/openapi.json")
 
     assert health.status_code == 200
-    assert health.json() == {"status": "ok", "ready": True}
+    assert health.json() == {
+        "status": "ok",
+        "ready": True,
+        "readiness_scope": "process_liveness_only",
+    }
     assert runtime.status_code == 404
     assert schema.status_code == 404
 
@@ -445,10 +449,8 @@ def test_private_alpha_known_errors_return_only_closed_code(monkeypatch):
 
 def test_hosted_boundary_rejects_conflicting_content_length_and_transfer_encoding():
     """RFC 9112 forbids framing a body with both Content-Length and
-    Transfer-Encoding.  h11 accepts the combination and prefers Content-Length,
-    so before this bound such a request reached Pydantic and returned 422; the
-    only defence was reverse-proxy normalization, a layer this boundary does not
-    own."""
+    Transfer-Encoding.  Parser/proxy normalization can otherwise make the
+    application contract depend on which HTTP stack receives the request."""
     from app.main import create_app
     from app.settings import AppSettings, AppProfile
 

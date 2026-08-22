@@ -146,3 +146,38 @@ test("未觸發互斥時不封鎖任何欄位", () => {
   assert.equal(Catalogue.conflictFor(Catalogue.BY_KEY.include_chiron, values), null);
   assert.equal(Catalogue.toRequestOptions(values).include_chiron, true);
 });
+
+test("任一容許度表都會在送出前封鎖固定容許度", () => {
+  const fixed = Catalogue.BY_KEY.aspect_fixed_orb_degrees;
+  for (const profile of [
+    "abu_mashar_lineage_v1",
+    "lilly_1647_experience_v1",
+  ]) {
+    const values = {
+      ...Catalogue.defaults(),
+      aspect_orb_profile: profile,
+      aspect_fixed_orb_degrees: 5,
+    };
+    const conflict = Catalogue.conflictFor(fixed, values);
+    assert.ok(conflict, `${profile} 沒有封鎖固定容許度`);
+    assert.equal(Catalogue.toRequestOptions(values).aspect_fixed_orb_degrees, undefined);
+  }
+  assert.equal(
+    Catalogue.conflictFor(fixed, {
+      ...Catalogue.defaults(), aspect_orb_profile: null,
+    }),
+    null,
+  );
+});
+
+test("每個互斥規則恰好宣告一種比對形式", () => {
+  const forms = ["value", "values", "any_non_null"];
+  for (const option of Catalogue.OPTIONS) {
+    if (!option.conflicts_when) continue;
+    assert.equal(
+      forms.filter((form) => Object.hasOwn(option.conflicts_when, form)).length,
+      1,
+      option.key,
+    );
+  }
+});

@@ -6,10 +6,12 @@
 <meta name="robots" content="noindex, nofollow">
 <title>功能｜渾儀 Armillary</title>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
 </head>
 <body>
+
+<a class="skip-link" href="#main-content">跳到主要內容</a>
 
 <header>
   <div class="wrap">
@@ -24,152 +26,306 @@
       <span>渾儀<small>ARMILLARY</small></span>
     </a>
     <nav class="site-nav" aria-label="主要導覽">
-      <a href="/zh-TW/calculate">計算</a>
       <a href="/zh-TW/features">功能</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>
       <a href="/zh-TW/about">關於</a>
+      <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
   </div>
 </header>
 
-<main>
-<div class="wrap page-body">
-  <div class="eyebrow">功能 · FEATURES</div>
-  <h1>我們不要求你相信任何一個數字。<br>我們要求你有能力去查。</h1>
-  <p class="lede">底下九件事，每一件都是為了同一個目的：<strong>讓你能自己核對。</strong></p>
+<main id="main-content">
+<div class="wrap page-body specimens">
 
-  <section>
-    <h2>你能驗證：這個數字是怎麼算出來的</h2>
-    <p><strong>逐步計算軌跡，整份攤開。</strong></p>
-    <p>不是「我們用了 Swiss Ephemeris」這種說法。是<strong>每一步的函式名稱、實際傳入的參數、使用的旗標、回傳的值，以及當時做了什麼假設。</strong></p>
-    <p>步數隨你啟用的模組而變，實際步數印在該次卷宗裡。整份可複製、可下載。</p>
-    <p>你在星曆軟體裡看到不一樣的數字時，可以一路查到分岔點——<strong>不必猜，也不必寫信問我們。</strong></p>
+  <section class="feat-hero">
+    <p class="eyebrow">功能 · FEATURES</p>
+    <h1>每一個數字，<br>都說得出它從哪裡來。</h1>
+    <p class="lede">界表有書名與頁碼，時區資料庫有版本號，出生時刻不確定就標成不確定。<b>不解讀，不預測，只計算。</b></p>
+    <p class="feat-promise">底下每一組數字都是<b>真的輸出</b>——同一張示範盤，1990-05-15 14:30 臺北，直接由本站引擎算出。你可以自己重算一次來對。</p>
+    <p class="hero-act"><a class="btn" href="/zh-TW/calculate">排一張盤 →</a></p>
   </section>
 
-  <section>
-    <h2>你能驗證：這份結果沒有被動過</h2>
-    <p><strong>每份卷宗附 SHA-256 收據。</strong></p>
-    <p>三年後你翻出一份舊卷宗，可以核對它跟產生當時是不是同一份。</p>
-    <p>卷宗裡有本次的完整口徑、引擎版本、星曆來源與方法版本，<strong>另一個人拿著它可以重建等價請求。</strong>這是可重現性，不是截圖。</p>
+  <!-- ═══ 01 界 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">01</span> 古典方法</p>
+    <h2>「界」不只有一張表。<br>我們四張都給，一張都不預設。</h2>
+
+    <p class="verdict">這張盤的月亮在摩羯 24°20′。<br><b>它的界主是誰，取決於你用誰的表。</b></p>
+
+    <div class="versus four">
+      <div><span class="vs-label">埃及界</span><b class="vs-answer">土星</b><span class="vs-src">Tetrabiblos I.20<br>Robbins, Loeb 1940, pp. 97–99</span></div>
+      <div><span class="vs-label">迦勒底界</span><b class="vs-answer alt">火星</b><span class="vs-src">Tetrabiblos I.21<br>依日夜盤切換土／水次序</span></div>
+      <div><span class="vs-label">托勒密界</span><b class="vs-answer">土星</b><span class="vs-src">Tetrabiblos I.21<br>Robbins, Loeb 1940, pp. 103–107</span></div>
+      <div><span class="vs-label">Lilly 1647</span><b class="vs-answer alt">火星</b><span class="vs-src">Christian Astrology, p. 104<br>初版掃描轉錄</span></div>
+    </div>
+
+    <p>這不是誤差，是四位作者本來就不同意。多數軟體給你一個「界」欄位卻不說那是誰的界——於是你永遠不知道自己在用誰的說法。</p>
+    <p>四套表的規則識別碼、出處與「為什麼不設預設」，見〈<a href="/zh-TW/methods">方法</a>〉。</p>
+
+    <details class="more">
+      <summary>七顆星的完整對照</summary>
+      <div class="spec-scroll">
+        <table class="log spec-table">
+          <thead><tr><th>星體</th><th>位置</th><th>埃及界</th><th>迦勒底界</th><th>托勒密界</th><th>Lilly 1647</th><th>幾種答案</th></tr></thead>
+          <tbody>
+            <tr><td>太陽</td><td>金牛 24°10′30″</td><td>土星</td><td>火星</td><td>火星</td><td>土星</td><td class="count">2</td></tr>
+            <tr><td>月亮</td><td>摩羯 24°20′12″</td><td>土星</td><td>火星</td><td>土星</td><td>火星</td><td class="count">2</td></tr>
+            <tr><td>水星</td><td>金牛 8°02′31″</td><td>水星</td><td>土星</td><td>水星</td><td>水星</td><td class="count">2</td></tr>
+            <tr><td>金星</td><td>牡羊 12°33′25″</td><td>水星</td><td>金星</td><td>金星</td><td>金星</td><td class="count">2</td></tr>
+            <tr><td>火星</td><td>雙魚 18°09′49″</td><td>水星</td><td>金星</td><td>水星</td><td>水星</td><td class="count">2</td></tr>
+            <tr><td>木星</td><td>巨蟹 9°29′54″</td><td>金星</td><td>木星</td><td>木星</td><td>木星</td><td class="count">2</td></tr>
+            <tr><td>土星</td><td>摩羯 25°15′12″</td><td>土星</td><td>火星</td><td>火星</td><td>土星</td><td class="count">2</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="spec-note"><b>七顆星，七顆的界主都會換。</b>面（兩套）與三分性（三套）比照辦理。</p>
+    </details>
+
+    <p class="limit"><b>邊界：</b>不打分、不加總、不解讀。把不同作者的表加總成一個數字，等於宣稱它們可以通約——我們不做這個宣稱。陷落、互容、almuten 尚未裁決，不提供。</p>
   </section>
 
-  <section>
-    <h2>你能驗證：兩套軟體為什麼算出不同答案</h2>
-    <p><strong>口徑印在每一個結果旁。</strong></p>
-    <p>這是本產品的核心。兩個網站算出兩個上升星座，通常兩邊都沒算錯——它們用了不同的口徑，只是沒告訴你。</p>
-    <table class="log">
-      <thead><tr><th>選項</th><th>可選</th></tr></thead>
-      <tbody>
-        <tr><td>黃道系統</td><td>回歸／恆星（四種 ayanamsa）</td></tr>
-        <tr><td>計算中心</td><td>地心／站心／日心／質心</td></tr>
-        <tr><td>位置模式</td><td>視位置／真位置</td></tr>
-        <tr><td>黃道框架</td><td>當日／J2000</td></tr>
-        <tr><td>宮位制</td><td>整宮／Alcabitius／Regiomontanus／Placidus／<strong>不算宮位</strong></td></tr>
-        <tr><td>月亮</td><td>跟隨全域模式，或單獨改用出生地站心</td></tr>
-      </tbody>
-    </table>
-    <p class="after">換一個口徑，哪些數字會動、動多少，當場看得見。</p>
-  </section>
+  <!-- ═══ 02 精準度 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">02</span> 精準度</p>
+    <h2>精準不是形容詞。<br>是一組可以查的版本號。</h2>
 
-  <section>
-    <h2>你能驗證：你用的是誰的那張表</h2>
-    <p><strong>界、面、三分性——具名到版本，而且沒有預設。</strong></p>
-    <p>大多數軟體給你一個「界」欄位，不告訴你那是誰的界。</p>
-    <p>我們給你<strong>四套界表、兩套面、三套三分性</strong>，每一套都具名到來源與版本，<strong>沒有任何一套是預設</strong>——選一套當預設，等於替你做了方法裁決。</p>
-    <p>幾個具體的處理方式：</p>
-    <ul>
-      <li>其中一套界表的土星／水星次序<strong>依日夜盤切換</strong>。日夜盤未知時，<strong>並列日夜兩組候選，不偽造一個單一主宰星</strong>。</li>
-      <li>面的兩套<strong>不可混名</strong>：一套每段由行星主宰，一套每段由星座主宰。它們不是同一回事。</li>
-      <li>三分性的其中一套<strong>忠實保留原文的共同主宰結構</strong>，不壓成單一主宰星。</li>
+    <p class="verdict">每一次計算都回報<b>三個獨立的版本號</b>——而且主動告訴你其中一個不歸我們管。</p>
+
+    <div class="versus three">
+      <div><span class="vs-label">pyswisseph 套件</span><b class="vs-answer sm">2.10.3.2</b><span class="vs-src">pip 安裝的 Python 套件</span></div>
+      <div><span class="vs-label">Swiss Ephemeris C 函式庫</span><b class="vs-answer sm">2.10.03</b><span class="vs-src">函式庫自報，基於 JPL DE441</span></div>
+      <div><span class="vs-label">IANA 時區資料庫</span><b class="vs-answer sm alt">2026c</b><span class="vs-src">由作業系統或 image 提供<br><b>不由本產品固定</b></span></div>
+    </div>
+
+    <p>前兩個數字格式相近，<b>但不是同一個值</b>——我們把這句話寫進每一份卷宗，因為搞混了會誤導。第三個更重要：時區資料庫更新後，同一組輸入可能換算出不同的 UTC。<b>所以它的版本也印在你的卷宗裡。</b></p>
+
+    <h3>已經對過外部基準的部分</h3>
+    <ul class="ticks">
+      <li>月相四相（朔、上弦、望、下弦）的事件時刻，已與 <b>USNO Astronomical Applications API v4.0.1</b> 的一分鐘精度資料交叉核對。</li>
+      <li>臺北固定案例的太陽與月亮升起、過中天、落下，已與 USNO 單日表交叉核對；USNO 只顯示到分鐘，自動測試因此容許 <b>2 分鐘</b>誤差。</li>
+      <li>黃赤交角<b>逐次計算</b>，取平交角加章動，不是寫死的常數——這張盤是 <span class="mono">23°26′31.79″</span>，平值 <span class="mono">23°26′25.92″</span> 加章動 <span class="mono">+5.870″</span>。</li>
+      <li>真高度與視高度<b>分成兩欄</b>；視高度另附折射模型與當時採用的氣壓、溫度假設，不會被合稱為「高度」。</li>
     </ul>
-    <p><strong>不同作者不會被壓成一個欄位。</strong>壓平之後，你就再也看不出你在用誰的說法。</p>
+
+    <p class="limit"><b>邊界：</b>下中天與極區狀態目前只有內部回歸測試，尚無第二套外部參照。真位置、J2000 與關閉章動三種模式在獨立參考管線的涵蓋範圍之外。<b>「可執行」不等於「已獨立驗證」，兩者在〈驗證證據〉頁逐項分開列出。</b></p>
   </section>
 
-  <section>
-    <h2>你能驗證：這是天文事實，還是某個人的主張</h2>
-    <p><strong>三層分開輸出。</strong></p>
-    <table class="log">
-      <thead><tr><th>層</th><th>內容</th></tr></thead>
-      <tbody>
-        <tr><td>天文事實</td><td>星曆位置、時間尺度、座標轉換、觀測幾何</td></tr>
-        <tr><td>幾何推導</td><td>只需明示公式的確定性轉換</td></tr>
-        <tr><td>方法判斷</td><td>需要選定流派、集合、容許度或門檻的結果</td></tr>
-      </tbody>
-    </table>
-    <p>第三層的每一項都印著它的規則版本與來源狀態。</p>
-    <p>相位的容許度<strong>沒有預設表</strong>。你不指定時，角距離照常給你，但「是否成相」留空並說明原因——<strong>因為選一張容許度表，就是替你做方法裁決。</strong></p>
+  <!-- ═══ 03 出生時刻 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">03</span> 出生時刻</p>
+    <h2>只記得大約幾點？<br>那就別假裝知道。</h2>
+
+    <p class="verdict">這張盤如果只知道「下午兩點多」——<br><b>七顆星的落宮會在某一秒同時換宮。我們把那一秒找出來。</b></p>
+
+    <div class="bignum">
+      <div><b>14:22:58 – 14:23:12</b><span>翻面就發生在這 14 秒之間</span></div>
+      <div><b>7</b><span>顆星的落宮同時改變</span></div>
+      <div><b>13.62°</b><span>上升點在這一小時內的擺幅</span></div>
+    </div>
+
+    <p>做法是對整個小時取樣五個時刻，再用有界二分法把分類改變的位置夾出來：</p>
+
+    <div class="probe">
+      <div><span>14:00:00</span><b>處女 24°46′40.7″</b></div>
+      <div><span>14:15:00</span><b>處女 28°11′04.4″</b></div>
+      <div><span>14:30:00</span><b>天秤 1°35′32.3″</b></div>
+      <div><span>14:45:00</span><b>天秤 4°59′56.5″</b></div>
+      <div><span>14:59:59</span><b>天秤 8°23′55.8″</b></div>
+    </div>
+    <p class="spec-note">月亮在這一小時內始終在摩羯，標為「取樣範圍內穩定」。求根方法字串 <span class="mono">bounded_bisection_of_a_sampled_classification_change</span> 也印在卷宗裡。</p>
+
+    <p>只知道日期呢？那就<b>不給你上升點、中天、宮位與日夜盤</b>——沒有時刻，那些東西不存在。我們改給你全日的位置範圍，並標出月亮可能跨星座。</p>
+
+    <p class="limit"><b>邊界：</b>五點取樣加有界二分，不是對整個連續小時的數學證明。五點都相同只能說「取樣範圍內穩定」。恆星、月相、地平事件與反照點在此模式下不取樣，未取樣的路徑會逐項列出。</p>
   </section>
 
-  <section>
-    <h2>你能驗證：同一顆星在三套座標裡的位置</h2>
-    <p><strong>黃道、赤道、地平並列。</strong></p>
-    <p>每顆天體同時給黃經黃緯、赤經赤緯、方位角高度角，數值與度分秒格式都有。</p>
-    <p>大多數占星軟體只給黃經。<strong>赤道與地平座標可以直接拿去對天文軟體</strong>——我們刻意保留這條驗證管道。</p>
+  <!-- ═══ 04 口徑 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">04</span> 口徑</p>
+    <h2>兩個網站算出不同的上升星座。<br>通常兩邊都沒錯。</h2>
+
+    <p class="verdict">同一個時間、同一個地點。<b>換一把尺，上升星座整個退一格。</b></p>
+
+    <div class="versus two">
+      <div><span class="vs-label">回歸黃道 · 春分點為原點</span><b class="vs-answer">天秤 1°35′32″</b><span class="vs-src">黃經 181.591957°</span></div>
+      <div><span class="vs-label">恆星黃道 · Fagan–Bradley</span><b class="vs-answer alt">處女 6°58′59″</b><span class="vs-src">黃經 156.982954°</span></div>
+    </div>
+    <p class="spec-note">兩者相差 <b>24°36′32″</b>，就是這套歲差修正值。<b>你可以自己把兩個黃經相減來核對。</b></p>
+
+    <p>可以換的口徑：黃道系統（回歸／四種恆星）、宮位制（整宮／Alcabitius／Regiomontanus／Placidus／不算宮位）、月亮位置（跟隨全域或單獨改用出生地站心）。<b>換一項，哪些數字會動、動多少，當場看得見。</b></p>
+
+    <p class="limit"><b>邊界：</b>計算中心、位置模式與黃道框架目前固定為地心、視位置、當日框架，介面不提供切換；三者仍逐次印在卷宗裡。對帳需要知道「這次用了什麼」，那和「你可以改成什麼」是兩件事。</p>
   </section>
 
-  <section>
-    <h2>你能驗證：出生時間不準到底影響了什麼</h2>
-    <p><strong>出生時刻敏感度分析。</strong></p>
-    <p>只記得大約幾點？不必猜一個分鐘數然後假裝它是真的。</p>
-    <p>我們對整個小時取樣，<strong>誠實列出哪些判定穩定、哪些會隨分鐘改變</strong>：角點與宮頭的變動範圍、星座與落宮的分類、分類在哪一分鐘翻轉。</p>
-    <p>只知道日期？<strong>不會給你上升點、中天、宮位或日夜盤</strong>——那些東西沒有時間就不存在。我們給你全日的位置範圍。</p>
-    <p><strong>我們不會給你一張假裝知道時間的盤。</strong></p>
+  <!-- ═══ 05 座標 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">05</span> 座標</p>
+    <h2>一次計算，<br>三套座標一起輸出。</h2>
+
+    <p class="verdict">多數占星軟體只給黃經。<b>赤道與地平座標可以直接拿去對天文軟體。</b></p>
+
+    <div class="versus three">
+      <div><span class="vs-label">黃道 — 它在十二宮的哪裡</span><b class="vs-answer sm">λ 54°10′30.48″</b><span class="vs-src">β −0°00′00.10″</span></div>
+      <div><span class="vs-label">赤道 — 它在天球的哪裡</span><b class="vs-answer sm">α 03h27m12.82s</b><span class="vs-src">δ +18°49′03.80″</span></div>
+      <div><span class="vs-label">地平 — 此時此地往哪看</span><b class="vs-answer sm">Az 268.582°</b><span class="vs-src">真高 52.553°／視高 52.566°</span></div>
+    </div>
+    <p class="spec-note">同一顆太陽，同一個時刻。這條驗證管道是刻意留的。</p>
+
+    <p>涵蓋七政、三王星、凱龍、平均與密切交點（含南交點）、Lilith 與 Priapus，以及 <b>34 顆</b>古典常引恆星。相位分兩層輸出：整宮配置層（純算術）與逐度層（角距離、距精確相位差、入相位方向）。四套相位集合、兩套具名容許度表，<b>同樣沒有預設</b>。</p>
+
+    <p class="limit"><b>邊界：</b>恆星只輸出座標與星等，不判定合相——那需要容許度與歲差政策，兩者都還沒裁決。行運、推運、回歸、合盤目前一項都沒有。</p>
   </section>
 
-  <section>
-    <h2>你能驗證：我們真的沒留你的資料</h2>
-    <p><strong>0 追蹤器　0 cookie　0 第三方請求　免註冊</strong></p>
-    <p>應用程式裡<strong>沒有可以存放出生資料的地方</strong>——沒有帳號資料庫、沒有命盤資料庫、沒有工作階段儲存、沒有請求快取、沒有背景佇列。</p>
-    <p>前端不載入外部字型、CDN 腳本或第三方 JavaScript。地名搜尋讀內建的離線資料庫，<strong>不使用瀏覽器或 IP 定位</strong>。匯出檔名固定，<strong>不嵌入出生日期、時間、姓名或座標</strong>。</p>
-    <p>完整說明在<a href="/zh-TW/trust">〈信任中心〉</a>與<a href="/zh-TW/security">〈安全〉</a>。</p>
+  <!-- ═══ 06 收據 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">06</span> 出處</p>
+    <h2>算完之後，<br>這份結果還要能被查。</h2>
+
+    <p class="verdict">每次計算附一份卷宗：<b>逐步軌跡、完整口徑、所有版本號，以及一組 SHA-256 收據。</b></p>
+
+    <div class="spec-scroll">
+      <table class="log spec-table">
+        <thead><tr><th>步</th><th>算什麼</th><th>得到</th><th>怎麼來的</th></tr></thead>
+        <tbody>
+          <tr><td class="num">003</td><td>儒略日 JD(UT1)</td><td class="num">2448026.7708342</td><td>民用時刻 → UT1 → JD</td></tr>
+          <tr><td class="num">007</td><td>地方恆星時 LST</td><td class="num">6.1171350 h</td><td>GMST ＋ 觀測地經度</td></tr>
+          <tr><td class="num">012</td><td>真黃赤交角 ε</td><td class="num">23°26′31.79″</td><td>平交角 ＋ 章動 Δε +5.870″</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="spec-note">步數隨啟用的模組而變，實際步數印在該次卷宗裡。整份可複製、可下載、可離線核對。</p>
+
+    <p>三年後你翻出一份舊卷宗，可以核對它跟產生當時是不是同一份；另一個人拿著它可以重建等價請求。<b>這是可重現性，不是截圖。</b></p>
+    <p>四種匯出：JSON（完整結構）、Markdown（可讀卷宗，也適合餵給 AI）、CSV（表格核對）、純文字。結果頁另有列印版面，直接列印或存成 PDF 時只留下計算結果與收據。畫面與匯出讀同一份資料，不從畫面反推。</p>
+
+    <p class="limit"><b>邊界：</b>收據證明的是「這份檔案沒被改過」與「這次用了哪些版本」，不是「這個占星方法是對的」。方法的權威狀態另外逐項標示，包括標成「尚未確立」的那些。</p>
   </section>
 
-  <section>
-    <h2>你能驗證：這個程式到底在做什麼</h2>
-    <p><strong>GNU AGPL v3，原始碼公開。</strong></p>
-    <p>你正在使用的這一版，完整對應原始碼可以取得，版本識別碼印在每份卷宗裡。</p>
-    <p><strong>你不必相信我們對程式行為的描述，你可以去讀。</strong></p>
-  </section>
+  <!-- ═══ 07 隱私 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">07</span> 隱私</p>
+    <h2>不留你的資料。<br>因為沒有地方可以留。</h2>
 
-  <section>
-    <h2>規格</h2>
-    <table class="log">
-      <thead><tr><th>項目</th><th>值</th></tr></thead>
-      <tbody>
-        <tr><td>可計算年份</td><td>1900–2399</td></tr>
-        <tr><td>計算引擎</td><td>Swiss Ephemeris 2.10.03</td></tr>
-        <tr><td>內建星曆</td><td>基於 JPL DE441</td></tr>
-        <tr><td>古典七政</td><td>太陽、月亮、水星、金星、火星、木星、土星</td></tr>
-        <tr><td>恆星</td><td>34 顆（選用）</td></tr>
-        <tr><td>宮位制</td><td>4 種</td></tr>
-        <tr><td>界表／面／三分性</td><td>4 套／2 套／3 套</td></tr>
-        <tr><td>相位集合</td><td>4 套（托勒密五大相位、常用現代小相位、五分相家族、聯合集合）</td></tr>
-        <tr><td>座標系</td><td>黃道、赤道、地平並列</td></tr>
-        <tr><td>匯出</td><td>JSON、Markdown、純文字、CSV</td></tr>
-        <tr><td>費用</td><td><strong>目前全部免費</strong></td></tr>
-      </tbody>
-    </table>
-    <p class="after">單次計算通常在數十毫秒完成——快到可以「開卷即時算出此刻的天空」。</p>
-  </section>
+    <p class="verdict">這不是一個可以關掉的設定，是應用程式的形狀。<br><b>下面每一個 0，你打開瀏覽器的開發者工具就能自己數。</b></p>
 
-  <section>
-    <h2>我們目前不做的事</h2>
-    <p>為了讓上面那些話有意義，這一段必須存在：</p>
-    <ul>
-      <li><strong>不解盤、不預測、不描述性格、不給運勢。</strong>這不是還沒做，是產品憲法禁止。</li>
-      <li><strong>不給尊貴分數或總分。</strong>把不同作者的表加總成一個數字，等於宣稱它們可以通約——我們不做這個宣稱。</li>
-      <li><strong>不做競品比較頁。</strong>對競品的宣稱需要證據，而競品隨時改版，證據會腐爛。我們改做方法比較：整宮制與 Placidus 差在哪、平均交點與密切交點差在哪。</li>
-      <li><strong>不加追蹤器、不加廣告、不加第三方分析。</strong></li>
+    <dl class="zeros">
+      <div><b>0</b><dt>Cookie</dt><dd>網站放在你瀏覽器、每次連線自動送回去的小紙條。<b>跨站追蹤最常用的就是它。</b></dd></div>
+      <div><b>0</b><dt>localStorage</dt><dd>存在瀏覽器裡、不會自己過期的資料。關掉分頁、重開電腦都還在，<b>可以拿來長期認出同一個人</b>。</dd></div>
+      <div><b>0</b><dt>sessionStorage</dt><dd>同樣存在瀏覽器裡，但只活到你關掉這個分頁。<b>常被用來在頁面之間傳遞你剛填過的東西。</b></dd></div>
+      <div><b>0</b><dt>IndexedDB</dt><dd>瀏覽器內建的資料庫，能存大量結構化資料——<b>整張命盤放進去綽綽有餘</b>，而且你不會察覺。</dd></div>
+      <div><b>0</b><dt>Service Worker</dt><dd>常駐在背景的腳本。<b>就算你已經離開這個網站，它仍可能繼續執行、快取內容或送出請求。</b></dd></div>
+      <div><b>0</b><dt>第三方主機</dt><dd>整個計算頁載入 12 個檔案，<b>全部來自本站</b>——沒有外部字型、沒有 CDN、沒有分析腳本。任何一個外部請求都會把你的 IP 交給別人。</dd></div>
+    </dl>
+
+    <p>另外沒有的：<b>帳號、email、密碼</b>。沒有帳號資料庫、沒有命盤資料庫、沒有請求快取、沒有背景佇列。</p>
+
+    <ul class="ticks">
+      <li>計算期間若有任何程式碼嘗試寫檔，<b>測試會直接失敗</b>——這是機制，不是承諾。</li>
+      <li>地名搜尋讀<b>內建的離線資料庫</b>，不呼叫第三方地理服務、不使用瀏覽器定位、不看你的 IP。</li>
+      <li>匯出檔名固定為 <span class="mono">classical-astrology-export.{json,md,csv,txt}</span>，<b>不嵌入出生日期、時間、姓名或座標</b>。</li>
+      <li>「清除本頁敏感資料」會清空表單、結果、錯誤與網址列的 query 與 fragment，並使已發出的複製／下載 handler 立即失效。</li>
     </ul>
-    <p>為什麼不先做？因為<strong>在能做對並證明做對之前，我們不提供。</strong>不因為別的工具有就加進來。</p>
+
+    <p class="limit"><b>邊界：</b>此為 Public Alpha 階段的架構陳述，不是對未來所有階段的無限期承諾。你按下下載之後，檔案就在你的裝置上，我們無法撤回；貼進剪貼簿的內容同理。這說的是<b>沒有主動寫入，不是安全抹除</b>——我們不宣稱能從記憶體、swap 或當機傾印中抹除任何東西。完整資料流見〈信任中心〉。</p>
   </section>
 
-  <section>
-    <h2>不用註冊。不用 email。填四個欄位就能算。</h2>
-    <p><a class="cta" href="/zh-TW/calculate">開始計算</a></p>
+  <!-- ═══ 08 資安 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">08</span> 資安</p>
+    <h2>資安跟隱私是兩件事。<br>隱私是我們不拿；資安是別人也拿不到。</h2>
+
+    <p class="verdict">瀏覽器收到的每一個安全標頭都是可以當場查的。<br><b>把開發者工具切到 Network，點任一個回應，就在 Headers 裡。</b></p>
+
+    <div class="spec-scroll">
+      <table class="log spec-table">
+        <thead><tr><th>標頭</th><th>設定值</th><th>擋掉什麼</th></tr></thead>
+        <tbody>
+          <tr><td>Content-Security-Policy</td><td class="num">script-src 'self'</td><td>只執行本站腳本。<b>沒有 unsafe-inline，也沒有 unsafe-eval</b>——注入的腳本無處可跑</td></tr>
+          <tr><td></td><td class="num">frame-ancestors 'none'</td><td>不准任何網站把本站嵌進 iframe（點擊劫持）</td></tr>
+          <tr><td></td><td class="num">object-src 'none'</td><td>不載入外掛物件</td></tr>
+          <tr><td></td><td class="num">base-uri 'none'</td><td>不准竄改相對路徑的基準位址</td></tr>
+          <tr><td></td><td class="num">form-action 'self'</td><td>表單只能送回本站，不能被改成送去別處</td></tr>
+          <tr><td>Permissions-Policy</td><td class="num">geolocation=()</td><td><b>叫瀏覽器直接拒絕定位</b>——就算我們自己的程式想問也問不到</td></tr>
+          <tr><td></td><td class="num">camera=(), microphone=()</td><td>同上，相機與麥克風一律關閉</td></tr>
+          <tr><td>Referrer-Policy</td><td class="num">no-referrer</td><td>你從本站點出去時，對方拿不到你來自哪一頁</td></tr>
+          <tr><td>Cross-Origin-Opener-Policy</td><td class="num">same-origin</td><td>切斷與其他分頁的視窗參照</td></tr>
+          <tr><td>X-Content-Type-Options</td><td class="num">nosniff</td><td>不讓瀏覽器自行猜測檔案型別</td></tr>
+          <tr><td>Strict-Transport-Security</td><td class="num">max-age=31536000</td><td>一年內只准用 HTTPS 連本站</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>寫進程式裡的其他限制</h3>
+    <ul class="ticks">
+      <li><b>試算表公式注入防護：</b>CSV 匯出時，凡是以 <span class="mono">=</span> <span class="mono">+</span> <span class="mono">-</span> <span class="mono">@</span> 開頭而又不是合法數字的欄位，會被前置單引號。<b>否則有人把公式塞進地名，你一開檔它就在你的電腦上執行。</b>合法的 <span class="mono">-2.5</span>、<span class="mono">1e-6</span> 不受影響。</li>
+      <li><b>請求上限：</b>單次計算請求最大 16 KB，每個工作行程最多 32 個併發連線、其中計算類最多 4 個。超過就拒絕，不是排隊到資源耗盡。</li>
+      <li><b>失敗優先：</b>算不出來就明白說算不出來。極區的四分宮制回 422 並說明原因，<b>不會偷偷換一個宮位制給你一個看起來正常的答案。</b></li>
+      <li><b>供應鏈：</b>沒有前端建置鏈、沒有 npm 執行期相依、沒有外部字型。你看到的每一個檔案都在公開原始碼裡，可以逐字比對。</li>
+    </ul>
+
+    <p class="limit"><b>邊界（這一段很重要）：</b>我們<b>沒有第三方安全認證，沒有專業滲透測試，也沒有漏洞獎金計畫</b>。有的是寫進程式並由失敗優先測試守著的限制、多輪獨立 AI 紅隊與外部模型審查，以及一份誠實的「我們控制不了什麼」清單。<b>這些都不等於專業滲透測試。</b>完整的邊界、資料流與已知限制列在〈<a href="/zh-TW/security">安全</a>〉，那一頁是專門寫這件事的。</p>
   </section>
+
+  <!-- ═══ 08 讀者 ═══ -->
+  <section class="feat who-sec">
+    <p class="feat-num"><span class="dnum">09</span> 讀者</p>
+    <h2>這個工具給誰用。</h2>
+    <div class="who">
+      <div>
+        <h3>會問「你這個上升點是用什麼算的」的人</h3>
+        <p>進階學習者與實務占星師。已經會排盤，在意臨界度數、宮頭、恆星與方法輸入值，現在得在兩三個工具之間手動核對。</p>
+      </div>
+      <div>
+        <h3>要向學生或讀者交代設定的人</h3>
+        <p>教師、作者、研究者。需要固定設定重現案例，需要可附錄的資料，需要一份說得出出處的講義素材。</p>
+      </div>
+      <div>
+        <h3>不想讓 AI 自己猜天文數值的人</h3>
+        <p>技術型使用者與 AI 工作流使用者。要 schema 穩定的 JSON、可讀的 Markdown，以及一份能重跑的請求。</p>
+      </div>
+      <div class="who-not">
+        <h3>目前不適合</h3>
+        <p>剛開始學占星、想知道「我是什麼樣的人」的讀者。<b>這裡不會告訴你任何一個數字代表什麼意思</b>——那不在能力範圍內，也不會為了好賣而假裝在。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 09 規格 ═══ -->
+  <section class="feat">
+    <p class="feat-num"><span class="dnum">10</span> 規格</p>
+    <h2>可查證的數字。</h2>
+    <div class="spec-scroll">
+      <table class="log spec-table">
+        <tbody>
+          <tr><td>計算引擎</td><td>Swiss Ephemeris 2.10.03（套件與 C 函式庫版本分開輸出）</td></tr>
+          <tr><td>內建星曆</td><td>基於 JPL DE441</td></tr>
+          <tr><td>可計算年份</td><td>1900–2399</td></tr>
+          <tr><td>天體與點</td><td>古典七政 · 三王星 · 凱龍 · 平均／密切交點與南交點 · Lilith 與 Priapus · 恆星 34 顆</td></tr>
+          <tr><td>宮位制</td><td>4 種，另可完全不計算宮位</td></tr>
+          <tr><td>界／面／三分性</td><td>4 套／2 套／3 套，全部具名到書名與頁碼，全部無預設</td></tr>
+          <tr><td>相位</td><td>整宮層 ＋ 逐度層；4 套相位集合、2 套具名容許度表、3 種精確相位慣例</td></tr>
+          <tr><td>進階選項</td><td>33 項，分九組，全部可個別開關並回顯於卷宗</td></tr>
+          <tr><td>出生時刻精度</td><td>3 種：精確到分鐘 · 只知道小時 · 只知道日期</td></tr>
+          <tr><td>座標系</td><td>黃道、赤道、地平並列；真高度與視高度分欄</td></tr>
+          <tr><td>匯出</td><td>JSON · Markdown · CSV · 純文字，另有列印版面</td></tr>
+          <tr><td>授權</td><td>GNU AGPL v3，原始碼公開</td></tr>
+          <tr><td>費用</td><td><b>目前全部免費，包含上面每一項</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="limit"><b>速度：</b>開發機上量到預設請求 20–40 毫秒、全部模組開啟約 130 毫秒。這是本機量測值，隨主機、網路與所選模組而變，不是線上服務的效能承諾。</p>
+  </section>
+
+  <section class="feat-close">
+    <div>
+      <h2>不用註冊。不用 email。<br>填四個欄位就能算。</h2>
+      <p>上面每一個數字，你都可以自己重算一次來對。</p>
+    </div>
+    <p><a class="btn" href="/zh-TW/calculate">開始計算 →</a></p>
+  </section>
+
 </div>
 </main>
 
@@ -185,6 +341,7 @@
     </div>
     <div class="sitemap-col">
       <h2>可查證性</h2>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>

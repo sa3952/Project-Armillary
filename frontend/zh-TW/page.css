@@ -10,14 +10,19 @@ body{
   font-family:var(--sans); font-size:16px; line-height:1.9;
   font-feature-settings:"palt" 1;
 }
+.skip-link{position:fixed;z-index:1000;top:var(--s2);left:var(--s2);padding:.55rem .75rem;background:var(--paper);color:var(--ink);border:2px solid var(--accent);border-radius:var(--radius);transform:translateY(-180%)}
+.skip-link:focus{transform:translateY(0)}
 .wrap{max-width:var(--wrap); margin:0 auto; padding:0 var(--pad)}
 .mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
 
 /* ─── 銘牌 ─── */
 .eyebrow{
-  font-family:var(--mono); font-size:.7rem; letter-spacing:.24em;
+  font-family:var(--mono); font-size:.86rem; letter-spacing:.18em;
   text-transform:uppercase; color:var(--ink-faint);
 }
+/* .7rem（11.2px）在英文可讀，但「關於」「路線」這類漢字在該尺寸加上 .24em 字距
+   會散掉——漢字筆畫多，縮小再拉開字距是最糟的組合。放大後字距同步收窄，
+   否則會過鬆。計算頁不受影響：它載入自己的 calculate.css，那裡另有一份定義。 */
 
 /* ─── 頁首：黑底招牌段的一部分 ─── */
 header{background:var(--plate); color:var(--plate-fg); border-bottom:1px solid var(--plate-hair)}
@@ -45,16 +50,46 @@ header .wrap{display:flex; align-items:baseline; height:78px}
 .hero h1 em{font-style:normal; color:var(--accent-rev)}
 .hero .lede{max-width:var(--measure); color:var(--plate-dim); font-size:1.02rem}
 
-/* ─── 接縫：黑與紙之間的刻度條（借候選 X）─── */
-.ticker{
-  background:var(--paper-2); border-bottom:1px solid var(--hair);
-  font-family:var(--mono); font-size:.71rem; letter-spacing:.1em;
-  font-variant-numeric:tabular-nums; padding:.8rem 0;
-  white-space:nowrap; overflow:hidden;
+/* ─── 首屏行動列 ───
+   計算入口先前只在頁尾，位於第 6702px。陌生訪客不會捲到那裡。
+   次要按鈕指向範例卷宗：不交出生資料也能看到完整輸出，是本產品與
+   需要登入才給結果的工具之間最直接的差別，值得在首屏就講。 */
+.hero-act{display:flex; flex-wrap:wrap; align-items:center; gap:var(--s3); margin-top:var(--s3)}
+.btn.rev{background:var(--paper); color:var(--plate)}
+.btn.rev:hover{background:var(--accent-rev); color:var(--paper)}
+.btn.ghost.rev{
+  background:transparent; color:var(--plate-dim);
+  border-bottom:1px solid var(--plate-hair); margin-right:0;
 }
-.ticker .wrap{display:flex; gap:2.4rem}
-.ticker span{color:var(--ink-faint)}
-.ticker b{color:var(--ink); font-weight:400}
+.btn.ghost.rev:hover{background:transparent; color:var(--plate-fg); border-bottom-color:var(--plate-fg)}
+
+/* ─── 首屏憑證列（借候選 A 的 hero 底標、C 的授權徽章）───
+   三個詞把商業姿態、授權與追蹤立場擺在首屏，不必先讀一段文字。
+   內容須為可查證事實：AGPL-3.0 見 /legal/copyright，追蹤器為零見 /security。 */
+.hero .creds{
+  list-style:none; display:flex; flex-wrap:wrap; gap:var(--s4);
+  margin:var(--s4) 0 0; padding:var(--s3) 0 0;
+  border-top:1px solid var(--plate-hair);
+}
+.hero .creds b{
+  display:block; font-family:var(--mono); font-weight:400;
+  font-size:1.05rem; letter-spacing:.1em; color:var(--plate-fg);
+}
+.hero .creds span{
+  display:block; margin-top:.4rem; max-width:17rem;
+  font-size:.76rem; line-height:1.7; color:var(--plate-dim);
+}
+
+/* ─── 首屏術語條（借 Augurine 的 SECT · DIGNITY · … 一行）───
+   六個模組名並排，不解釋。懂的人一眼認得，不懂的人滑過去——比一段說明
+   更省版面，也不會在首屏就把人擋在術語牆外。列出的每一項都是實際模組，
+   完整清單與分層在下方的 #moduli。 */
+.hero .depth{
+  margin-top:var(--s3); padding-top:var(--s2);
+  border-top:1px solid var(--plate-hair);
+  font-family:var(--mono); font-size:.71rem; letter-spacing:.14em;
+  color:var(--plate-dim); line-height:2;
+}
 
 /* ─── 紙面開場：M 的那句話，換到黑底之後說 ─── */
 .intro{padding:var(--s6) 0 var(--s5)}
@@ -97,10 +132,12 @@ p{max-width:var(--measure); color:var(--ink-dim)}
   grid-column:1 / -1; font-family:var(--mono); font-size:.68rem;
   letter-spacing:.1em; color:var(--ink-faint); margin-top:var(--s3);
 }
-.s-ring{fill:none; stroke:var(--ink); stroke-width:.85}
-.s-ring.dim{stroke:var(--hair)}
-.s-ring.hot{stroke:var(--accent); stroke-width:1}   /* 全頁唯一的紅，其二：黃道環 */
-.s-lead{stroke:var(--hair); stroke-width:.55}
+/* 圖版線重取自定案樣板 M。--hair 是表格分隔線的顏色，先前拿來畫環，
+   結構線因此淡得像分隔線；環是實體，用 --ink-faint 才對。 */
+.s-ring{fill:none; stroke:var(--ink); stroke-width:1.25}
+.s-ring.soft{stroke:var(--ink-faint); stroke-width:.95}  /* 球輪廓與地平環：在場但不搶 */
+.s-ring.hot{stroke:var(--accent); stroke-width:1.5}      /* 全頁唯一的紅，其二：黃道環 */
+.s-lead{stroke:var(--ink-faint); stroke-width:.6}
 .s-num{font-family:var(--mono); font-size:11px; fill:var(--ink-faint)}
 .s-dot{fill:var(--ink)}
 .s-label{font-family:var(--mono); font-size:10px; fill:var(--ink-faint)}
@@ -110,6 +147,16 @@ p{max-width:var(--measure); color:var(--ink-dim)}
 .rule-row{display:grid; grid-template-columns:9.5rem 1fr; gap:var(--s2); align-items:baseline; padding:var(--s2) 0}
 .rule-row + .rule-row{border-top:1px solid var(--hair-soft)}
 .rule-row .name{font-family:var(--mono); font-size:.7rem; letter-spacing:.16em; color:var(--ink-faint)}
+/* 選項名用產品實際的名稱（回歸／恆星），英文附在下面當對照；
+   先前的「尺甲／尺乙」是疊在真名之上的第三層命名，讀者得先解碼才讀得到論點。 */
+.rule-row .name i{display:block; font-style:normal; margin-top:.25rem; letter-spacing:.1em; opacity:.75}
+.rule-row .why{grid-column:2; font-size:.82rem; line-height:1.85; color:var(--ink-faint); margin-top:.5rem}
+@media (max-width:760px){ .rule-row .why{grid-column:1} }
+
+/* 論點段：每一段示範之後，說清楚這件事對讀者有什麼利害。
+   先前幾段止於陳述事實，讀者容易停在「所以呢？」。 */
+.stake{margin-top:var(--s3); max-width:var(--measure)}
+.stake b{font-weight:700; color:var(--ink)}
 .readout{font-family:var(--mono); font-size:.84rem; color:var(--ink-dim); font-variant-numeric:tabular-nums}
 .readout b{color:var(--ink); font-weight:400}
 
@@ -121,108 +168,193 @@ p{max-width:var(--measure); color:var(--ink-dim)}
   border-bottom:1px solid var(--hair); padding:.6rem 1.1rem .6rem 0;
 }
 .log td{padding:.85rem 1.1rem .85rem 0; border-bottom:1px solid var(--hair-soft); color:var(--ink-dim)}
-.log td:nth-child(3){color:var(--ink)}
+/* 表格從五欄（含拉丁表頭與自編的 NOTA）改為四欄：步／在算什麼／實際算式／得到。
+   強調欄因此從第 3 欄移到第 4 欄（得到的值）。第 3 欄放的是真的函式呼叫，
+   用等寬字排，讓它看起來就是可以照抄去跑的東西。 */
+.log td:nth-child(4){color:var(--ink)}
+.log code{font-family:var(--mono); font-size:.94em; color:var(--ink-dim); white-space:nowrap}
 .log tr.mark td{border-bottom-color:var(--hair)}
 .log tr.mark td:first-child{position:relative}
 .log tr.mark td:first-child::before{
   content:""; position:absolute; left:-1.1rem; top:50%; width:.45rem; height:1px; background:var(--accent);
 }
-.log tr.mark td:nth-child(3){color:var(--ink); border-bottom:1px solid var(--ink)}
+.log tr.mark td:nth-child(4){color:var(--ink); border-bottom:1px solid var(--ink)}
 .after{font-family:var(--mono); font-size:.7rem; color:var(--ink-faint); padding-top:var(--s2); letter-spacing:.06em}
 
-/* ─── 敏感度 ─── */
-.track{position:relative; height:52px; margin:var(--s3) 0 var(--s2)}
-.track .line{position:absolute; top:26px; left:0; right:0; height:1px; background:var(--hair)}
-.track i{position:absolute; top:22px; width:6px; height:6px; border-radius:50%; background:var(--ink-faint)}
-.track i.flip{background:var(--accent); width:8px; height:8px; top:21px}
-.track .cap{position:absolute; top:-6px; font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; color:var(--ink-faint)}
-/* 刻點與框線的座標原本寫成 style 屬性，被 CSP 的 style-src 'self' 擋掉，
-   十個刻點因此全部疊在最左端。改成具名位置，值與原稿完全相同。 */
-.track .frame{position:absolute; top:10px; height:32px; border-left:1px solid var(--ink-faint); border-right:1px solid var(--ink-faint);left:52%; width:9%}
-.track .cap-start{left:0}
-.track .cap-flip{left:52%}
-.track .cap-end{right:0}
-.track i:nth-of-type(1){left:2%}
-.track i:nth-of-type(2){left:12%}
-.track i:nth-of-type(3){left:22%}
-.track i:nth-of-type(4){left:32%}
-.track i:nth-of-type(5){left:42%}
-.track i:nth-of-type(6){left:55%}
-.track i:nth-of-type(7){left:66%}
-.track i:nth-of-type(8){left:76%}
-.track i:nth-of-type(9){left:86%}
-.track i:nth-of-type(10){left:96%}
-section.no-rule{border-top:0}
+/* ─── 圖說在下：物件先出現，說明降級 ───
+   量測記錄那一區改成表格先給、說明放底下，跟圖版的 FIG 編號同一個規矩。
+   這也刻意打斷「eyebrow → 標題 → 導言 → 物件」的固定進場——同一個模板
+   連用六次，讀起來就是模板。 */
+.tabula-foot{
+  margin-top:var(--s2); padding-top:var(--s2);
+  border-top:1px solid var(--hair-soft); max-width:var(--measure);
+}
+.tabula-foot p{margin-top:.6rem; font-size:.86rem; color:var(--ink-dim)}
 
-/* ═══ /validation 的內嵌範例卷宗（SD-24：須點選才展開）═══════
-   零 JS：用 <details> 原生收合。內容於 commit 時由 view-model.js 產生，
-   見 scripts/frontend/render_example_dossier.cjs。 */
-.dossier{border-top:1px solid var(--hair); margin-top:var(--s3)}
-.dossier > summary{
-  cursor:pointer; list-style:none; padding:var(--s2) 0;
-  font-family:var(--mono); font-size:.82rem; letter-spacing:.06em; color:var(--ink);
-  display:flex; align-items:center; gap:.7rem;
-}
-.dossier > summary::-webkit-details-marker{display:none}
-.dossier > summary::before{
-  content:"＋"; color:var(--accent); font-size:.9rem; line-height:1;
-}
-.dossier[open] > summary::before{content:"－"}
-.dossier > summary:hover{color:var(--accent)}
-.dossier-body{padding-bottom:var(--s3)}
-.dossier-lede{font-size:.9rem; color:var(--ink-dim); max-width:var(--measure)}
-.dossier-meta{grid-template-columns:10rem 1fr; margin-bottom:var(--s3)}
-.dossier-warnings-title{font-family:var(--mono); font-size:.7rem; letter-spacing:.14em;
-  text-transform:uppercase; color:var(--ink-faint); margin:var(--s2) 0 .6rem; font-weight:400}
-.dossier-warnings{list-style:none; padding-left:0; margin-bottom:var(--s3)}
-.dossier-warnings li{font-size:.85rem; color:var(--ink-dim)}
+/* 只有一行的導言：讓段落長度真的不一樣，而不是全部落在同一個字數帶。 */
+.terse{font-size:1.02rem; color:var(--ink-dim)}
 
-/* 每一節帶著它的環——三環各有其色的邏輯在這裡也要看得見。 */
-.dossier-section{
-  border-top:1px solid var(--hair-soft); border-left:2px solid var(--hair);
-  padding:var(--s3) 0 var(--s3) var(--s2); margin-left:0;
+/* ─── 模組清單（借候選 L 的模組網格、候選 O 的三環分層）───
+   三欄依 RING 分組，欄首的色帶用 --ring-1/2/3，與結果頁的分層同色，
+   讓首頁講的「三個環」和實際輸出用的是同一套視覺編碼。
+   欄寬刻意不等：RING I 項目最多，給它兩倍寬。 */
+.moduli{
+  display:grid; grid-template-columns:2fr 1fr 1fr;
+  gap:0; margin-top:var(--s4); border-top:1px solid var(--hair);
 }
-.dossier-section[data-ring="ring-1"]{border-left-color:var(--ring-1)}
-.dossier-section[data-ring="ring-2"]{border-left-color:var(--ring-2)}
-.dossier-section[data-ring="ring-3"]{border-left-color:var(--ring-3)}
-.dossier-section[data-ring="ring-v"]{border-left-color:var(--ring-v)}
-.dossier-section h3{
-  font-family:var(--serif); font-weight:400; font-size:1.15rem;
-  letter-spacing:.02em; margin-bottom:.3rem;
-  display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap;
+.moduli .ring{padding:var(--s3) var(--s3) var(--s3) 0}
+.moduli .ring + .ring{border-left:1px solid var(--hair-soft); padding-left:var(--s3)}
+.moduli .ring-head{padding-left:.9rem; border-left:3px solid var(--ring-v); margin-bottom:var(--s3)}
+.moduli .r1 .ring-head{border-left-color:var(--ring-1)}
+.moduli .r2 .ring-head{border-left-color:var(--ring-2)}
+.moduli .r3 .ring-head{border-left-color:var(--ring-3)}
+.moduli .ring-head b{
+  font-family:var(--mono); font-weight:400; font-size:.72rem;
+  letter-spacing:.24em; color:var(--ink-faint);
 }
-.dossier-layer{
-  font-family:var(--mono); font-size:.66rem; letter-spacing:.16em;
-  color:var(--ink-faint); text-transform:uppercase; margin-bottom:var(--s2);
+.moduli .ring-head span{display:block; font-size:1.06rem; color:var(--ink); margin-top:.15rem}
+.moduli .ring-head i{
+  display:block; font-style:normal; margin-top:.5rem; max-width:19rem;
+  font-size:.78rem; line-height:1.75; color:var(--ink-faint);
 }
-/* 「明確拒絕」與「使用者沒要求」必須看得出不同——同色會把兩件事混成一件。 */
-.dossier-status{
-  font-family:var(--mono); font-size:.66rem; letter-spacing:.1em;
-  font-weight:400; padding:.15rem .5rem; border:1px solid var(--hair);
-  color:var(--ink-faint); white-space:nowrap;
+.moduli ul{list-style:none; margin:0; padding:0}
+.moduli li{
+  padding:.5rem 0; border-bottom:1px solid var(--hair-soft);
+  font-size:.9rem; color:var(--ink);
 }
-.dossier-status[data-state="present"]{border-color:var(--hair-soft); color:var(--ink-dim)}
-.dossier-status[data-state="defaulted"]{border-style:dashed}
-.dossier-status[data-state="refused"]{border-color:var(--accent); color:var(--accent)}
-.dossier-status[data-state="not_requested"]{border-style:dotted}
-.dossier-status[data-state="executed_unavailable"]{border-color:var(--ink-faint)}
-.dossier-note{font-size:.85rem; color:var(--ink-dim); margin-bottom:var(--s2)}
-/* 寬表格在自己的容器裡捲，頁面本身不得橫向捲動。 */
-.dossier-table-wrap{overflow-x:auto; margin-bottom:var(--s2)}
-.dossier-table{font-family:var(--mono); font-size:.72rem; min-width:100%}
-.dossier-table caption{
-  text-align:left; font-family:var(--mono); font-size:.66rem;
-  letter-spacing:.12em; color:var(--ink-faint); padding-bottom:.5rem;
+.moduli li:last-child{border-bottom:0}
+.moduli li em{
+  font-style:normal; display:inline-block; margin-left:.6rem;
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.05em; color:var(--ink-faint);
 }
-.dossier-table th,.dossier-table td{padding:.4rem .9rem .4rem 0; white-space:nowrap}
+@media (max-width:900px){
+  .moduli{grid-template-columns:1fr}
+  .moduli .ring{padding-right:0}
+  .moduli .ring + .ring{
+    border-left:0; padding-left:0;
+    border-top:1px solid var(--hair-soft);
+  }
+}
 
-/* ─── 立場：同一材質，只用規線分隔 ─── */
-.stance{padding:var(--s5) 0; text-align:center}
+/* ─── 敏感度：可拖曳示範（借 Augurine 的取樣時間軸互動）───
+   五個刻度＝後端實際取樣的五個時刻，不是裝飾。跨界區間 14 秒是整條軌道的
+   0.39%，畫成細線而非色塊，畫成有寬度的框會誇大它。
+   關掉 JavaScript 時，標記裡的初始值（14:00、處女、落宮）本身就是一份
+   可讀的靜態圖表，不會變成空殼。 */
+.sd{margin:var(--s3) 0 var(--s2); border-top:1px solid var(--hair); padding-top:var(--s3)}
+.sd-head{display:flex; align-items:baseline; gap:var(--s2); flex-wrap:wrap}
+.sd-clock{
+  font-family:var(--mono); font-size:1.6rem; letter-spacing:.04em;
+  color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.sd-state{font-size:1rem; color:var(--ink-dim)}
+.sd[data-phase="after"] .sd-state{color:var(--accent)}
+.sd[data-phase="unknown"] .sd-state{color:var(--state-unavailable)}
+
+.sd-track{
+  position:relative; height:34px; margin:var(--s2) 0 .4rem;
+  cursor:ew-resize; touch-action:none;
+}
+.sd-track::before{
+  content:""; position:absolute; top:16px; left:0; right:0;
+  height:2px; background:var(--hair);
+}
+.sd-fill{position:absolute; top:16px; left:0; height:2px; width:0; background:var(--ink-faint)}
+.sd[data-phase="after"] .sd-fill{background:var(--accent)}
+.sd-flip{position:absolute; top:6px; height:22px; width:1px; background:var(--accent); left:38.3%}
+.sd-probe{
+  position:absolute; top:13px; width:8px; height:8px; margin-left:-4px;
+  border-radius:50%; background:var(--paper); border:1px solid var(--ink-faint);
+}
+.sd-handle{
+  position:absolute; top:5px; left:0; width:14px; height:24px; margin-left:-7px;
+  background:var(--ink); border-radius:2px; cursor:grab;
+}
+.sd-handle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.sd[data-phase="after"] .sd-handle{background:var(--accent)}
+
+.sd-scale{
+  display:flex; justify-content:space-between; gap:var(--s2);
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; color:var(--ink-faint);
+}
+/* 可點：跨界視窗只佔軌道 0.39%，拖曳幾乎命中不了。
+   刻度維持真實比例，改由這個標籤把把手送過去。 */
+.sd-flipcap{
+  color:var(--accent); font:inherit; background:none; cursor:pointer;
+  border:0; border-bottom:1px dotted var(--accent); padding:0;
+}
+.sd-flipcap:hover{border-bottom-style:solid}
+.sd-flipcap:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.sd-asc{
+  margin-top:var(--s2); font-family:var(--mono); font-size:.88rem;
+  color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.sd-note{margin-top:.3rem; font-size:.75rem; color:var(--ink-faint)}
+
+.sd-bodies-head{
+  margin-top:var(--s3); font-family:var(--mono); font-size:.66rem;
+  letter-spacing:.2em; color:var(--ink-faint);
+}
+.sd-bodies{
+  list-style:none; margin:.6rem 0 0; padding:0;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr)); gap:.15rem var(--s3);
+}
+.sd-bodies li{
+  display:flex; justify-content:space-between; gap:.6rem;
+  padding:.4rem 0; border-bottom:1px solid var(--hair-soft);
+  font-size:.85rem; color:var(--ink-dim);
+}
+.sd-bodies b{font-weight:400; color:var(--ink); font-variant-numeric:tabular-nums}
+/* 跨界之後，每一列都動過——用色標出來，讓「十一個同時改變」看得見而不只是讀到。 */
+.sd-bodies li[data-moved="yes"] b{color:var(--accent)}
+.sd-bodies li[data-moved="unknown"] b{color:var(--state-unavailable)}
+
+.sd-hint{margin-top:var(--s2); font-size:.75rem; color:var(--ink-faint)}
+
+/* ─── 隱私：機制清單（借候選 R 的「不是秘密儀式」框法）───
+   五條都是 security／trust 兩頁已審過的 L1 宣稱，這裡只是把它們提到首頁，
+   並保留最後那段「我們不宣稱的」。少了那段，前五條會變成行銷話術。
+   編號用計數器而非 list-style，才能與其他等寬字標號同一個視覺重量。 */
+.mech{list-style:none; counter-reset:mech; margin:var(--s4) 0 0; padding:0}
+.mech li{
+  counter-increment:mech; position:relative;
+  padding:var(--s3) 0 var(--s3) 3.6rem;
+  border-top:1px solid var(--hair-soft);
+}
+.mech li:last-child{border-bottom:1px solid var(--hair-soft)}
+.mech li::before{
+  content:counter(mech,decimal-leading-zero);
+  position:absolute; left:0; top:var(--s3);
+  font-family:var(--mono); font-size:.78rem; letter-spacing:.1em;
+  color:var(--accent);
+}
+.mech b{display:block; font-weight:700; font-size:1.06rem; color:var(--ink)}
+.mech span{
+  display:block; margin-top:.55rem; max-width:var(--measure);
+  font-size:.9rem; line-height:1.95; color:var(--ink-dim);
+}
+.limit{
+  margin-top:var(--s3); padding:var(--s2) var(--s3);
+  border-left:3px solid var(--state-refused);
+  background:var(--paper-2); max-width:var(--measure);
+  font-size:.86rem; line-height:1.95; color:var(--ink-dim);
+}
+.limit b{color:var(--ink); font-weight:700}
+
+/* ─── 立場：整幅黑底色帶（借候選 S）───
+   原本與正文同紙，讀起來像其中一段。這一段是產品的形狀宣告，不是一段補充，
+   給它整片出血的黑底，讓它在捲動中是個地標。與首屏同材質，前後呼應。 */
+.stance{
+  background:var(--plate); color:var(--plate-fg);
+  padding:var(--s5) 0; text-align:center;
+}
+.stance .eyebrow{color:var(--plate-dim)}
 .stance .body{
   max-width:44rem; margin:var(--s3) auto 0; font-family:var(--serif);
-  font-size:clamp(1.18rem,2.1vw,1.6rem); line-height:2.05; color:var(--ink);
+  font-size:clamp(1.18rem,2.1vw,1.6rem); line-height:2.05; color:var(--plate-fg);
 }
-.stance hr{border:0; border-top:1px solid var(--hair); width:5rem; margin:var(--s3) auto 0}
+.stance hr{border:0; border-top:1px solid var(--plate-hair); width:5rem; margin:var(--s3) auto 0}
 
 /* ─── 輸出格式 ─── */
 .formats{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--hair); margin-top:var(--s4)}
@@ -230,6 +362,7 @@ section.no-rule{border-top:0}
 .formats div + div{padding-left:var(--s2)}
 .formats b{display:block; font-family:var(--mono); font-size:1rem; letter-spacing:.1em; font-weight:400}
 .formats span{font-size:.78rem; color:var(--ink-faint)}
+.formats-note{margin-top:var(--s2); font-size:.82rem; color:var(--ink-faint); max-width:34rem}
 
 /* ─── CTA ─── */
 .cta{padding:var(--s5) 0 var(--s6); display:grid; grid-template-columns:1fr auto; gap:var(--s4); align-items:end}
@@ -282,6 +415,7 @@ main{display:block}
 .page-body .cta:hover{background:var(--accent)}
 .draft-flag{max-width:var(--measure); border-left:3px solid var(--accent);
   padding:.6rem 0 .6rem .9rem; color:var(--ink-dim); font-size:.9rem}
+
 .todo{color:var(--accent); font-family:var(--mono); font-size:.86em}
 /* 內容稿大量使用清單與資料流圖；沒有這幾條，項目符號會落到 .wrap 的內距之外。 */
 .page-body ul,.page-body ol{max-width:var(--measure); color:var(--ink-dim);
@@ -313,7 +447,7 @@ a.brand:hover{color:var(--plate-fg)}
 
 /* ═══ 全站識別：渾儀環組 ════════════════════════════════
    每一頁的頁首都帶同一枚環組標記，頁尾帶同一條四環色帶。
-   三環各有其色的邏輯因此在十三個介面上都看得見，而不只在首頁。 */
+   三環各有其色的邏輯因此在十四個介面上都看得見，而不只在首頁。 */
 a.brand{color:inherit; text-decoration:none;display:inline-flex; align-items:center; gap:.7rem}
 .mark{width:2rem; height:2rem; flex:0 0 auto; overflow:visible}
 .mark circle,.mark ellipse,.mark line{fill:none; stroke:var(--plate-dim); stroke-width:1}
@@ -328,10 +462,17 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
     var(--ring-3) 50% 75%, var(--ring-v) 75% 100%);
 }
 
-/* ═══ 導覽與網站地圖：十三個介面都要到得了 ═══════════════ */
+/* ═══ 導覽與網站地圖：十四個介面都要到得了 ═══════════════ */
 .site-nav{margin-left:auto; display:flex; gap:1.25rem; flex-wrap:wrap}
 .site-nav a{color:var(--plate-dim); text-decoration:none; font-size:.88rem; white-space:nowrap}
 .site-nav a:hover{color:var(--plate-fg)}
+/* 導覽列常駐入口：捲到哪一段都看得到。深底上用實心紙色，
+   與首屏的主按鈕同一個材質，不另立一種按鈕語彙。 */
+.site-nav a.nav-cta{
+  background:var(--paper); color:var(--plate);
+  padding:.5rem 1.15rem; margin-left:.6rem;
+}
+.site-nav a.nav-cta:hover{background:var(--accent-rev); color:var(--paper)}
 .sitemap{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
   gap:var(--s3); padding-top:var(--s4); padding-bottom:var(--s3)}
 .sitemap-col{display:flex; flex-direction:column; gap:.4rem}
@@ -358,4 +499,2018 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
   .site-nav a{font-size:.8rem}
   .dossier-table{font-size:.66rem}
   .dossier-section{padding-left:.7rem}
+}
+
+/* ─── 說明書版面（/features）─────────────────────────────
+   首頁是招牌：一個概念一個畫面、靠字級製造階層、從上讀到下。
+   這一頁是說明書：密、連續、靠位置與規線製造階層、預期讀者跳讀。
+   兩者共用同一組 token，資訊邏輯不同——把招牌的形式照搬到說明書，
+   正是前一版失敗的原因。
+
+   版面左窄右寬：左欄放節號、節名與邊註（交叉引用寫這裡，不塞進正文），
+   右欄放內容。這是紙本手冊排邊註的方式。
+   ──────────────────────────────────────────────────────── */
+.manual > section{
+  display:grid; grid-template-columns:11.5rem 1fr; gap:var(--s3);
+  padding:var(--s4) 0; border-top:1px solid var(--hair);
+}
+.manual .side{position:sticky; top:var(--s2); align-self:start}
+.manual .side b{
+  display:block; font-family:var(--mono); font-weight:400;
+  font-size:1.15rem; letter-spacing:.1em; color:var(--accent);
+}
+.manual .side span{
+  display:block; margin-top:.3rem; font-family:var(--serif);
+  font-size:1.02rem; line-height:1.5; color:var(--ink);
+}
+.manual .side i{
+  display:block; margin-top:var(--s2); font-style:normal;
+  font-size:.72rem; line-height:1.8; color:var(--ink-faint);
+}
+.manual .main > :first-child{margin-top:0}
+.manual .main h2{margin-top:0; font-size:1.32rem; line-height:1.55}
+@media (max-width:820px){
+  .manual > section{grid-template-columns:1fr; gap:var(--s2)}
+  .manual .side{position:static}
+  .manual .side i{display:none}   /* 單欄時邊註會插進閱讀動線，收起來 */
+}
+
+/* 目錄：說明書有目錄，招牌沒有。有目錄，長度就不是成本。 */
+.manual .toc{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+  margin:var(--s4) 0 0; border-top:1px solid var(--hair);
+}
+@media (max-width:640px){ .manual .toc{grid-template-columns:repeat(2,1fr)} }
+.manual .toc a{
+  display:block; padding:var(--s2) var(--s2) var(--s2) 0;
+  border-bottom:1px solid var(--hair-soft); text-decoration:none; color:var(--ink);
+}
+.manual .toc a:hover{background:var(--paper-2)}
+.manual .toc b{
+  font-family:var(--mono); font-weight:400; font-size:.72rem;
+  letter-spacing:.16em; color:var(--ink-faint);
+}
+.manual .toc span{display:block; margin-top:.2rem; font-size:.95rem}
+
+/* 表格編號沿用首頁 FIG 的傳統，改用 TAB。 */
+.manual .log{margin-top:var(--s3)}
+.manual .log caption{
+  caption-side:top; text-align:left; padding-bottom:.7rem;
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.16em;
+  color:var(--ink-faint);
+}
+.manual .note{margin-top:.7rem; font-size:.8rem; color:var(--ink-faint)}
+/* 每一節末尾的邊界。憲法要求界線被陳述；拆進每一節，
+   讀到哪一項就在那裡看到那一項的邊界，而不是另闢一段說教。 */
+.manual .limit{margin-top:var(--s3)}
+.manual .log th{white-space:nowrap}
+
+/* ═══════════════════════════════════════════════════════════════
+   /features — 對照頁（comparison sheet）
+   視覺語彙刻意與首頁分開：首頁是圖版＋資料帶，本頁是「同一個輸入，
+   並列的幾個答案」。因此主結構是對照面板與大字結論，不是密排表格。
+   每一節先給一句大字結論，證據放在它下面；細表收進 <details>。
+   字級全面以可讀性為準（資料表 .95rem，不再是 .78rem）。
+   全部走 token；附加於檔尾，不改動既有規則的層疊順序。
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── hero ─── */
+.feat-hero{padding:var(--s5) 0 var(--s4); border-bottom:1px solid var(--ink)}
+.feat-hero h1{margin:var(--s2) 0 var(--s3); line-height:1.18}
+.feat-hero .lede{max-width:38rem}
+.feat-promise{
+  margin-top:var(--s3); padding-left:var(--s2); border-left:2px solid var(--accent);
+  font-size:.95rem; color:var(--ink-dim); max-width:36rem;
+}
+.feat-promise b{color:var(--ink)}
+.feat-hero .hero-act{margin-top:var(--s4)}
+
+/* ─── 節 ─── */
+.feat{padding:var(--s5) 0 var(--s4)}
+.feat h2{margin:var(--s2) 0 var(--s3); line-height:1.26}
+.feat h3{font-size:1.05rem; margin:var(--s4) 0 var(--s2)}
+.feat > p{max-width:38rem}
+.feat-num{
+  display:flex; align-items:baseline; gap:.7rem;
+  font-family:var(--mono); font-size:.86rem; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--ink-faint);
+}
+/* 大字節號是本頁與首頁最明顯的分野：首頁用 FIG 標籤，本頁用序號。 */
+.dnum{
+  font-family:var(--serif); font-size:2.6rem; line-height:1;
+  letter-spacing:0; color:var(--accent);
+}
+
+/* ─── 大字結論：每一節的第一句，看一眼就懂 ─── */
+.verdict{
+  font-family:var(--serif); font-size:1.32rem; line-height:1.6;
+  color:var(--ink); max-width:34rem; margin:var(--s3) 0 var(--s4);
+  padding-left:var(--s3); border-left:3px solid var(--accent);
+}
+.verdict b{font-weight:700}
+
+/* ─── 對照面板：本頁的主結構 ─── */
+.versus{display:grid; gap:1px; background:var(--hair); margin:var(--s3) 0 var(--s3)}
+.versus.two{grid-template-columns:1fr 1fr}
+.versus.three{grid-template-columns:repeat(3,1fr)}
+.versus.four{grid-template-columns:repeat(4,1fr)}
+.versus > div{background:var(--paper-2); padding:var(--s3) var(--s2) var(--s2)}
+.vs-label{
+  display:block; font-family:var(--mono); font-size:.88rem; letter-spacing:.04em;
+  color:var(--ink-dim); line-height:1.55; min-height:2.6em;
+}
+.vs-answer{
+  display:block; margin:var(--s2) 0 var(--s2);
+  font-family:var(--serif); font-size:2.1rem; font-weight:400; line-height:1.15; color:var(--ink);
+}
+.vs-answer.sm{font-family:var(--mono); font-size:1.12rem; letter-spacing:-.01em}
+.vs-answer.alt{color:var(--accent)}
+.vs-src{display:block; font-size:.92rem; line-height:1.7; color:var(--ink-faint)}
+.vs-src b{color:var(--ink-dim)}
+
+/* ─── 大數字組 ─── */
+.bignum{display:grid; gap:var(--s3) var(--s4); margin:var(--s3) 0}
+.bignum{grid-template-columns:repeat(3,1fr)}
+.bignum > div{border-top:2px solid var(--ink); padding-top:var(--s2)}
+.bignum b{
+  display:block; font-family:var(--serif); font-size:2.3rem; line-height:1.1; color:var(--accent);
+}
+.bignum span{display:block; margin-top:.5rem; font-size:.92rem; line-height:1.6; color:var(--ink-dim)}
+.bignum span b{display:inline; font-family:inherit; font-size:inherit; color:var(--ink)}
+
+/* ─── 五點取樣讀數 ─── */
+.probe{display:grid; grid-template-columns:repeat(5,1fr); gap:1px; margin:var(--s3) 0 var(--s2); background:var(--hair)}
+.probe div{background:var(--paper-2); padding:var(--s2) .8rem}
+.probe span{display:block; font-family:var(--mono); font-size:.88rem; letter-spacing:.06em; color:var(--ink-faint)}
+.probe b{display:block; margin-top:.45rem; font-family:var(--mono); font-size:1rem; font-weight:400; color:var(--ink)}
+
+/* ─── 勾列 ─── */
+.ticks{list-style:none; padding:0; margin:var(--s2) 0 var(--s3); max-width:40rem}
+.ticks li{
+  position:relative; padding-left:1.6rem; margin-bottom:var(--s2);
+  font-size:1rem; line-height:1.85; color:var(--ink-dim);
+}
+.ticks li::before{
+  content:""; position:absolute; left:0; top:.85em;
+  width:.7rem; height:1px; background:var(--accent);
+}
+.ticks b{color:var(--ink)}
+
+/* ─── 細節收合 ─── */
+.more{margin:var(--s3) 0; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair)}
+.more summary{
+  cursor:pointer; padding:var(--s2) 0; font-family:var(--mono);
+  font-size:.95rem; letter-spacing:.06em; color:var(--ink-dim);
+}
+.more summary:hover{color:var(--accent)}
+.more[open] summary{border-bottom:1px solid var(--hair-soft); margin-bottom:var(--s2)}
+.more > *:last-child{margin-bottom:var(--s2)}
+
+/* ─── 表格：可讀性優先 ─── */
+.spec-scroll{
+  width:100%; max-width:100%; min-width:0; box-sizing:border-box;
+  overflow-x:auto; -webkit-overflow-scrolling:touch; margin:var(--s3) 0;
+}
+.specimens .spec-table{font-family:var(--mono); font-size:.95rem; line-height:1.7; margin-top:0}
+.specimens .spec-table th{font-family:var(--mono); font-size:.86rem; color:var(--ink-dim)}
+.specimens .spec-table td{color:var(--ink-dim); padding:.8rem 1.2rem .8rem 0}
+.specimens .spec-table td:first-child{color:var(--ink)}
+.specimens .spec-table td.num{color:var(--ink)}
+.specimens .spec-table td.count{color:var(--accent); font-weight:700; text-align:center; border-left:1px solid var(--hair)}
+.specimens .spec-table th:last-child{text-align:center}
+
+.spec-note{margin:var(--s2) 0 var(--s3); font-size:.95rem; line-height:1.8; color:var(--ink-faint); max-width:38rem}
+.spec-note b{color:var(--ink)}
+.spec-note .mono{overflow-wrap:anywhere; font-size:.9em}
+
+/* ─── 讀者分段 ─── */
+.who{display:grid; grid-template-columns:1fr 1fr; gap:var(--s4); margin-top:var(--s4)}
+.who > div{padding-top:var(--s2); border-top:1px solid var(--hair)}
+.who h3{font-size:1.05rem; line-height:1.5; margin:0 0 .6rem}
+.who p{font-size:.98rem; line-height:1.8; color:var(--ink-dim); margin:0}
+.who-not{border-top-color:var(--accent) !important}
+
+/* ─── 收尾 ─── */
+.feat-close{
+  display:grid; grid-template-columns:1fr auto; gap:var(--s4); align-items:end;
+  padding:var(--s5) 0 var(--s6) !important; border-top:1px solid var(--ink) !important;
+}
+.feat-close h2{margin-bottom:var(--s1)}
+.feat-close p{color:var(--ink-dim); margin:0}
+
+/* ─── .page-body 既有規則在本頁的還原（特異性衝突，非新樣式） ─── */
+.specimens .btn,.specimens .btn:hover{color:var(--paper)}
+.specimens section{border-top:0; padding-top:0}
+.specimens .feat + .feat{border-top:1px solid var(--hair); padding-top:var(--s5)}
+
+@media (max-width:60rem){
+  .versus.four{grid-template-columns:1fr 1fr}
+  .bignum{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:48rem){
+  .versus.two,.versus.three,.versus.four{grid-template-columns:1fr}
+  .bignum{grid-template-columns:1fr}
+  .probe{grid-template-columns:1fr 1fr}
+  .who{grid-template-columns:1fr}
+  .feat-close{grid-template-columns:1fr}
+  .vs-label{min-height:0}
+  .dnum{font-size:2rem}
+  .verdict{font-size:1.18rem; padding-left:var(--s2)}
+  .specimens .spec-table{font-size:.88rem}
+  .spec-scroll .spec-table{min-width:28rem}
+}
+
+/* ─── 07 隱私：每個 0 都附一句白話解釋 ───
+   使用者不知道 sessionStorage 或 IndexedDB 是什麼，就無法判斷「0」是好消息。
+   大字 0 負責一眼看到，術語與解釋負責看懂。b 必須用 > 子選擇器綁定，
+   否則說明文字裡的 <b> 也會被放成 2.4rem。 */
+.zeros{margin:var(--s3) 0 var(--s4); border-top:2px solid var(--ink)}
+.zeros > div{
+  display:grid; grid-template-columns:3.4rem 1fr; column-gap:var(--s2);
+  padding:var(--s3) 0 var(--s2); border-bottom:1px solid var(--hair);
+}
+.zeros > div > b{
+  grid-row:span 2; font-family:var(--serif); font-size:2.6rem;
+  line-height:.85; color:var(--accent);
+}
+.zeros dt{font-family:var(--mono); font-size:1.02rem; color:var(--ink); letter-spacing:.01em}
+.zeros dd{margin:.4rem 0 0; font-size:1rem; line-height:1.8; color:var(--ink-dim)}
+.zeros dd b{color:var(--ink)}
+
+/* ─── 08 資安：標頭表的續列（第一欄留空＝沿用上一列的標頭名） ─── */
+.specimens .spec-table td:empty{border-bottom-color:transparent}
+.specimens .spec-table td:first-child:empty + td{padding-left:1.4rem}
+
+@media (max-width:48rem){
+  .zeros > div{grid-template-columns:2.6rem 1fr}
+  .zeros > div > b{font-size:2.1rem}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   /roadmap — 階梯頁
+   本頁唯一的失效模式是腐爛：狀態寫「未開始」而東西早就做好了。
+   因此結構上每一列都有「依據」欄——沒有依據的狀態就是還沒查證的狀態。
+   狀態用色塊而非文字重量表達，讓一整欄的分布一眼可見。
+   純 CSS，無腳本、無外部資源；附加於檔尾，不動既有層疊。
+   ═══════════════════════════════════════════════════════════════ */
+
+.ladder .rm-hero{padding:var(--s5) 0 var(--s4); border-bottom:1px solid var(--ink)}
+.ladder .rm-hero h1{margin:var(--s2) 0 var(--s3); line-height:1.18}
+.rm-promise{
+  margin-top:var(--s3); padding-left:var(--s2); border-left:2px solid var(--accent);
+  font-size:.98rem; line-height:1.85; color:var(--ink-dim); max-width:38rem;
+}
+.rm-promise b{color:var(--ink)}
+
+.rm-sec{padding:var(--s5) 0 var(--s4)}
+.rm-sec h2{margin:var(--s2) 0 var(--s3); line-height:1.26}
+.rm-sec h3{font-size:1.05rem; margin:0 0 .6rem}
+.rm-sec > p{max-width:38rem}
+
+/* ─── 階梯本體 ─── */
+.rungs{list-style:none; padding:0; margin:var(--s3) 0 var(--s4); counter-reset:none}
+.rungs li{
+  display:grid; grid-template-columns:3.6rem 1fr auto; align-items:center;
+  gap:var(--s2); padding:var(--s3) var(--s2) var(--s3) 0;
+  border-top:1px solid var(--hair);
+}
+.rungs li:last-child{border-bottom:1px solid var(--hair)}
+.rung-n{
+  font-family:var(--serif); font-size:2.2rem; line-height:1;
+  color:var(--ink-faint); text-align:center;
+}
+.rungs b{display:block; font-size:1.1rem; margin-bottom:.3rem}
+.rungs span:not(.rung-n):not(.rung-s){display:block; font-size:.94rem; line-height:1.7; color:var(--ink-dim)}
+.rung-s{font-family:var(--mono); font-size:.88rem; color:var(--ink-faint); white-space:nowrap}
+.rungs .done{border-left:3px solid var(--ink); padding-left:var(--s2)}
+.rungs .done .rung-n{color:var(--ink)}
+.rungs .here{
+  border-left:3px solid var(--accent); padding-left:var(--s2);
+  background:var(--paper-2);
+}
+.rungs .here .rung-n,.rungs .here .rung-s{color:var(--accent)}
+.rungs .here .rung-s{font-weight:700}
+.rungs .blocked{border-left:3px solid var(--hair); padding-left:var(--s2); opacity:.72}
+
+/* ─── 現況表：狀態欄用色塊 ─── */
+.rm-table{width:100%}
+.ladder .rm-table{font-family:var(--sans); font-size:.98rem; line-height:1.75}
+.ladder .rm-table th{font-family:var(--mono); font-size:.9rem; color:var(--ink-dim)}
+.ladder .rm-table td{color:var(--ink-dim); vertical-align:top; padding:.9rem 1.2rem .9rem 0}
+.ladder .rm-table td:first-child{color:var(--ink); max-width:22rem}
+.ladder .rm-table td:last-child{font-size:.94rem; color:var(--ink-faint); max-width:24rem}
+.st{white-space:nowrap; font-family:var(--mono); font-size:.88rem}
+.st::before{
+  content:""; display:inline-block; width:.55rem; height:.55rem;
+  margin-right:.5rem; vertical-align:baseline;
+}
+.st.ok{color:var(--ink)}          .st.ok::before{background:var(--ink)}
+.st.wip{color:var(--accent)}      .st.wip::before{background:var(--accent)}
+.st.open{color:var(--accent)}     .st.open::before{background:transparent; border:1px solid var(--accent)}
+.st.pend{color:var(--ink-faint)}  .st.pend::before{background:transparent; border:1px solid var(--ink-faint)}
+.st.no{color:var(--ink-faint)}    .st.no::before{background:var(--hair)}
+
+/* ─── 說明框 ─── */
+.note-box{
+  margin:var(--s4) 0 var(--s3); padding:var(--s3);
+  background:var(--paper-2); border-left:2px solid var(--accent);
+}
+.note-box .nb-h{
+  font-family:var(--sans); font-size:1.05rem; font-weight:700; letter-spacing:.01em;
+  color:var(--accent); margin-bottom:var(--s2);
+}
+.note-box p{font-size:.98rem; line-height:1.85; color:var(--ink-dim); max-width:40rem}
+.note-box p:last-child{margin-bottom:0}
+.note-box b{color:var(--ink)}
+
+/* ─── 未決問題 ─── */
+.opens{list-style:none; padding:0; margin:var(--s4) 0 0}
+.opens li{
+  padding:var(--s3) 0; border-top:1px solid var(--hair);
+  display:grid; grid-template-columns:16rem 1fr; gap:var(--s3);
+}
+.opens li:last-child{border-bottom:1px solid var(--hair)}
+.opens b{font-size:1.02rem; line-height:1.6; color:var(--ink)}
+.opens span{font-size:.96rem; line-height:1.8; color:var(--ink-dim)}
+
+
+/* ─── 意圖卡 ─── */
+.intents{display:grid; grid-template-columns:1fr 1fr; gap:var(--s4); margin-top:var(--s4)}
+.intents > div{padding-top:var(--s2); border-top:1px solid var(--hair)}
+.intents p{font-size:.96rem; line-height:1.8; color:var(--ink-dim); margin:0}
+
+/* ─── .page-body 既有規則在本頁的還原 ─── */
+.ladder .btn,.ladder .btn:hover{color:var(--paper)}
+.ladder section{border-top:0; padding-top:0}
+.ladder .rm-sec + .rm-sec{padding-top:var(--s5)}
+
+@media (max-width:48rem){
+  .rungs li{grid-template-columns:2.4rem 1fr; row-gap:.4rem}
+  .rung-s{grid-column:2; white-space:normal}
+  .opens li{grid-template-columns:1fr; gap:.4rem}
+  .intents{grid-template-columns:1fr}
+  .ladder .rm-table{font-size:.9rem}
+  .spec-scroll .rm-table{min-width:32rem}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   /roadmap 的路徑語彙
+   本頁的主題是「沿著階段往下走」，所以版面主結構是一條真的路徑：
+   一條貫穿的軌，節點掛著步驟號，段落掛在軌的右側。
+   **現況段是實線＋實心節點，意圖段是虛線＋空心節點**——
+   現況與意圖的區別因此由結構承擔，不只由文字宣告（SD-24 要求兩者不得混排）。
+   這也是本頁與 /features 的分野：features 是並列對照，roadmap 是單向路徑。
+   純 CSS，無腳本、無外部資源。
+   ═══════════════════════════════════════════════════════════════ */
+
+.path{position:relative; padding-left:3.2rem; margin:var(--s4) 0}
+.path::before{
+  content:""; position:absolute; left:.69rem; top:0; bottom:0; width:2px;
+  background:var(--ink);
+}
+.path.intent::before{
+  width:0; border-left:2px dashed var(--ink-faint); background:none;
+}
+
+/* 路徑上的段落 */
+.path .rm-sec{padding:var(--s4) 0 var(--s5); position:relative}
+.path .rm-sec:first-child{padding-top:0}
+.path .rm-sec:last-child{padding-bottom:var(--s3)}
+
+/* 節點與步驟號 */
+.way-title{
+  position:relative; margin:0 0 var(--s3);
+  font-family:var(--sans); font-size:1.06rem; font-weight:700;
+  letter-spacing:.02em; color:var(--ink);
+}
+.way-title::before{
+  content:attr(data-step);
+  position:absolute; left:-3.2rem; top:50%; transform:translateY(-50%);
+  width:1.5rem; height:1.5rem; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:.78rem; line-height:1;
+  background:var(--ink); color:var(--paper); border:2px solid var(--paper);
+}
+.intent .way-title::before{
+  background:var(--paper); color:var(--ink-faint); border:2px solid var(--ink-faint);
+}
+.intent .way-title{color:var(--ink-dim)}
+
+
+
+@media (max-width:48rem){
+  .path{padding-left:2.2rem}
+  .path::before{left:.44rem}
+  .way-title::before{
+    left:-2.2rem; width:1.25rem; height:1.25rem; font-size:.7rem;
+  }
+}
+/* 實線路徑末端的箭頭：現況一路走到「以上為現況」那道橫欄才停。
+   意圖路徑刻意不加箭頭——它沒有指向任何確定的地方，那正是它的意思。 */
+.path:not(.intent)::after{
+  content:""; position:absolute; left:.24rem; bottom:-.55rem;
+  width:0; height:0;
+  border-left:.55rem solid transparent; border-right:.55rem solid transparent;
+  border-top:.62rem solid var(--ink);
+}
+@media (max-width:48rem){ .path:not(.intent)::after{left:-.01rem} }
+
+/* 意圖段開頭的免責敘述（原本在已刪除的分隔欄裡）。
+   結構上的區別由虛線軌與空心節點承擔；這段是它的文字對應。 */
+.intent-lead{
+  font-family:var(--serif); font-size:1.24rem; line-height:1.7;
+  color:var(--ink-dim); max-width:34rem; margin:0 0 var(--s4);
+}
+.intent-lead b{color:var(--ink); font-weight:700}
+@media (max-width:48rem){ .intent-lead{font-size:1.12rem} }
+
+/* ═══════════════════════════════════════════════════════════════
+   /about — 敘事頁
+   第三種語彙：features 是並列對照，roadmap 是單向路徑，本頁是連續散文。
+   因此沒有表格、沒有面板、沒有軌線；靠的是段落節奏、拉出的引句，
+   以及一組「情況／通常的做法／我們的做法」的判斷紀錄。
+   職業形象由那組判斷承擔，不由形容詞承擔。
+   純 CSS，無腳本、無外部資源；附加於檔尾。
+   ═══════════════════════════════════════════════════════════════ */
+
+.story{max-width:52rem}
+.story .ab-hero{padding:var(--s5) 0 var(--s4); border-bottom:1px solid var(--ink)}
+.story .ab-hero h1{margin:var(--s2) 0 var(--s3); line-height:1.15}
+.story .ab-hero .lede{max-width:32rem}
+
+.ab-sec{padding:var(--s5) 0 var(--s3)}
+.story .ab-sec + .ab-sec{border-top:1px solid var(--hair)}
+.ab-sec h2{margin:0 0 var(--s3); line-height:1.3}
+.ab-sec p{max-width:38rem; font-size:1.02rem; line-height:1.95}
+
+/* 拉出的引句：本頁的節奏由它斷開，取代其他頁的分節線 */
+.story .pull{
+  font-family:var(--serif); font-size:1.7rem; line-height:1.5;
+  color:var(--ink); margin:var(--s4) 0 var(--s4) !important;
+  padding-left:var(--s3); border-left:3px solid var(--accent);
+  max-width:30rem !important;
+}
+.story .pull b{font-weight:700}
+
+/* 來歷段落收尾的一句話，刻意留白 */
+.story .aside{
+  margin-top:var(--s4) !important; padding-top:var(--s3);
+  border-top:1px solid var(--hair);
+  font-family:var(--serif); font-size:1.2rem; color:var(--ink-dim);
+}
+
+
+/* ─── 署名區 ─── */
+.who-box{
+  margin-top:var(--s3); padding:var(--s4) var(--s3);
+  background:var(--paper-2); border-left:3px solid var(--ink);
+}
+.story .wb-name{
+  font-family:var(--serif); font-size:2.1rem; line-height:1;
+  color:var(--ink); margin:0 0 .6rem !important;
+}
+.story .wb-role{
+  font-family:var(--mono); font-size:.94rem; letter-spacing:.04em;
+  color:var(--accent); margin:0 0 var(--s3) !important;
+}
+.who-box p{font-size:1rem; line-height:1.9; color:var(--ink-dim); max-width:36rem}
+.who-box b{color:var(--ink)}
+/* 署名區的兩個轉折句：一句是代價，一句是承諾。
+   它們是整頁的情緒重心，字級與留白都刻意高於周圍段落。 */
+.story .wb-cost{
+  margin:var(--s3) 0 !important; padding:var(--s2) 0;
+  border-top:1px solid var(--hair); border-bottom:1px solid var(--hair);
+  font-family:var(--serif); font-size:1.24rem; line-height:1.7;
+  color:var(--ink-dim); max-width:32rem;
+}
+.story .wb-cost b{color:var(--ink)}
+.story .wb-vow{
+  margin-top:var(--s3) !important; padding-left:var(--s3);
+  border-left:3px solid var(--accent);
+  font-family:var(--serif); font-size:1.38rem; line-height:1.65;
+  color:var(--ink); max-width:30rem;
+}
+
+/* ─── .page-body 既有規則在本頁的還原 ─── */
+.story .btn,.story .btn:hover{color:var(--paper)}
+.story section{border-top:0; padding-top:0}
+.story .ab-sec + .ab-sec{padding-top:var(--s5)}
+
+@media (max-width:48rem){
+  .story .pull{font-size:1.34rem; padding-left:var(--s2)}
+  .story .aside{font-size:1.08rem}
+  .story .wb-name{font-size:1.7rem}
+  .story .wb-cost{font-size:1.12rem}
+  .story .wb-vow{font-size:1.2rem; padding-left:var(--s2)}
+  .who-box{padding:var(--s3) var(--s2)}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   /methods · 校勘欄 apparatus（色塊版）
+   ───────────────────────────────────────────────────────────────
+   第四套版面語彙。前三套各有分工：.specimens（功能）並列面板比答案、
+   .ladder（路線）用垂直路徑排時序、.story（關於）是單欄散文。
+   這一頁要回答「這條規則憑什麼這樣選」，形制取自校勘記：左側懸掛編號、
+   每組選擇並列為異文、被撤回的宣稱與現行宣稱並存。
+
+   2026-08-19 依 Sebastian 指示帶入候選卷 I（全食）與 K（電光）的色塊意象：
+   不對稱色塊首屏、巨數字格、厚規線、反白識別碼帶。
+   （候選 N 無存檔——它只在 V／W／X 的登錄註記裡以「M／N 主導」出現，
+   是方向名稱不是樣品，因此無從取用。）
+
+   **但沒有引進任何新顏色。** 色塊全部由既有 token 組成——--plate（黑）、
+   --accent（磚紅）、--paper-2、--paper。大膽來自面積與硬邊，不是新色盤，
+   這也是它不會跟其餘十三頁割裂的原因。tokens.css 是 calculate.css 也在載的
+   共用檔：新增 token 是安全的，改既有 token 的值會同時改掉計算頁。
+
+   選擇器一律以 .apparatus 起首：.page-body 的既有規則特異性是 (0,1,1)，
+   不加頁面範圍的單一 class 會被它蓋掉。
+   ═══════════════════════════════════════════════════════════════ */
+.apparatus{max-width:72rem}
+.apparatus section{border-top:0; padding:0}
+
+/* ─── 首屏：三塊不對稱色塊（借候選 K 的 .hero）───────────────────
+   黑塊直接接在站台頁首（也是 --plate）下方，因此是同一條黑帶的延續，
+   不是另起一個材質。 */
+.ap-hero{
+  display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+  margin:var(--s4) 0 0; border:2px solid var(--ink);
+}
+.mb{padding:var(--s3)}
+.mb-plate{background:var(--plate); color:var(--plate-fg)}
+.apparatus .mb-plate .eyebrow{color:var(--plate-dim); display:block; margin-bottom:var(--s3)}
+.apparatus .mb-plate h1{
+  font-family:var(--sans); font-weight:700; color:var(--plate-fg);
+  font-size:clamp(2.05rem, 5.2vw, 3.9rem); line-height:1.08; letter-spacing:-.045em;
+  margin:0; max-width:none;
+}
+.mb-accent{
+  background:var(--accent); color:var(--on-accent);
+  border-left:2px solid var(--ink);
+  display:flex; flex-direction:column; justify-content:flex-end;
+}
+.apparatus .mb-accent p{max-width:none; margin:0; color:var(--on-accent)}
+.apparatus .mb-lede{
+  font-size:clamp(1.2rem, 2.2vw, 1.7rem); line-height:1.5; font-weight:700;
+  letter-spacing:-.01em;
+}
+.apparatus .mb-sub{margin-top:var(--s2); font-size:1rem; line-height:1.85}
+.mb-paper{grid-column:1 / -1; background:var(--paper-2); border-top:2px solid var(--ink)}
+.apparatus .mb-paper p{margin:0; max-width:50rem; font-size:1.02rem; line-height:1.9}
+
+/* ─── 巨數字格（借候選 K 的 .mega）─────────────────────────────
+   八格，2px 硬規線。**填黑的四格就是「沒有預設值」的那四組**——
+   色塊在這裡承載論點，不是裝飾。這也是不把八格全填黑的理由：
+   全填就沒有對比，那句話也就看不出來了。 */
+.slabs{
+  display:grid; grid-template-columns:repeat(4, 1fr);
+  border:2px solid var(--ink); border-top:0; margin:0 0 var(--s3);
+}
+.sl{padding:var(--s2); border-right:2px solid var(--ink)}
+.slabs > .sl:nth-child(n+5){border-top:2px solid var(--ink)}
+.slabs > .sl:nth-child(4n){border-right:0}
+.sl.none{background:var(--plate); color:var(--plate-fg)}
+.apparatus .sl b{
+  display:block; font-family:var(--sans); font-weight:700;
+  font-size:clamp(1.9rem, 4vw, 3.1rem); line-height:.94; letter-spacing:-.05em;
+}
+.apparatus .sl span{
+  display:block; margin-top:.5rem; font-size:.98rem; font-weight:700; letter-spacing:.04em;
+}
+.apparatus .sl i{
+  display:block; margin-top:.4rem; font-style:normal;
+  font-family:var(--mono); font-size:.74rem; line-height:1.6;
+  letter-spacing:.04em; color:var(--ink-faint);
+}
+.apparatus .sl.none i{color:var(--accent-rev)}
+.ap-tally-note{
+  margin:0 0 var(--s3); font-size:.98rem; line-height:1.9; color:var(--ink-dim);
+  max-width:46rem;
+}
+.apparatus .ap-tally-note b{color:var(--ink)}
+
+/* ─── 識別碼帶（借候選 I 的 .ticker）───────────────────────────
+   反白單行，內容是本頁提到的規則識別碼本身——可讀的真資料，不是紋樣。
+   窄螢幕橫向捲動，不換行、不截斷：識別碼被截斷就失去它存在的理由。 */
+.rail{
+  background:var(--plate); color:var(--plate-dim);
+  border:2px solid var(--ink); margin:0 0 var(--s5);
+}
+/* 換行而不是橫向捲動。捲動版在桌機上會被容器切掉，看起來像壞掉的色帶，
+   而且把識別碼藏在畫面外——那正好違背這一頁存在的理由。 */
+.rail-row{
+  display:flex; flex-wrap:wrap; gap:.55rem var(--s3);
+  padding:var(--s2); align-items:baseline;
+}
+.apparatus .rail span{
+  font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  flex:0 0 auto; white-space:nowrap;
+}
+.apparatus .rail b{color:var(--accent-rev); font-weight:400}
+
+/* ─── 條目：編號改為實心方塊（借候選 I 的厚規線）─────────────── */
+.ap-entry{
+  display:grid; grid-template-columns:4.5rem 1fr; gap:0 var(--s2);
+  padding:var(--s5) 0 var(--s4); border-bottom:2px solid var(--ink);
+}
+.ap-entry > .sig{grid-column:1; grid-row:1}
+/* 不用 `grid-row:1 / span 99` 讓編號貫穿整格：那會強迫 grid 生出 99 個隱含列，
+   在條目短的地方留下數千像素的空白。編號掛第一列，其下留白即可。 */
+.ap-entry > :not(.sig){grid-column:2}
+.sig{
+  background:var(--ink); color:var(--paper);
+  font-family:var(--mono); font-size:.94rem; letter-spacing:.06em;
+  padding:.4rem .55rem; justify-self:start; align-self:start;
+}
+.apparatus .ap-entry h2{
+  margin:0 0 var(--s3); line-height:1.32; max-width:32rem;
+  font-family:var(--sans); font-weight:700; font-size:1.62rem; letter-spacing:-.02em;
+}
+.apparatus .ap-entry p{max-width:42rem; line-height:1.95}
+/* 子條目（05.1、07.2 …）：比 h2 小一階，並在上方留出足夠的斷點，
+   否則四個 07.x 讀起來會像同一段的續行。 */
+.apparatus .ap-entry h3{
+  font-family:var(--sans); font-weight:700; font-size:1.14rem; line-height:1.5;
+  letter-spacing:-.01em; margin:var(--s4) 0 var(--s2); padding-top:var(--s2);
+  border-top:2px solid var(--ink); max-width:32rem;
+}
+
+/* ─── 異文並列：一組選擇的所有具名選項 ─── */
+.readings{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(9.5rem, 1fr));
+  border:2px solid var(--ink); margin:var(--s3) 0 0;
+}
+/* 9.5rem 不是湊出來的：最寬的一組有四欄，而 48rem 斷點以上最窄的可用寬度是
+   768 − 2×--pad ＝ 624px，624 ÷ 4 ＝ 156px。下界訂在 152px，四欄就不會在
+   斷點以上換行。這件事要保證，是因為欄間的分隔線畫在 `div + div` 上——
+   一旦換行，第二列第一欄會多出一條沒有對象的直線。 */
+.readings > div{padding:var(--s2); min-width:0}
+.readings > div + div{border-left:1px solid var(--hair)}
+.rd-name{display:block; font-size:1.02rem; font-weight:700; line-height:1.5; color:var(--ink)}
+.rd-src{display:block; margin-top:.45rem; font-size:.88rem; line-height:1.7; color:var(--ink-dim)}
+.rd-id{
+  display:block; margin-top:.5rem; font-family:var(--mono); font-size:.74rem;
+  line-height:1.6; color:var(--ink-faint); overflow-wrap:anywhere;
+}
+.rd-flag{
+  display:inline-block; margin-top:.5rem; font-family:var(--mono);
+  font-size:.74rem; letter-spacing:.06em;
+  background:var(--accent); color:var(--on-accent); padding:.18rem .4rem;
+}
+
+/* ─── 「不設預設」：整條反白色塊 ─────────────────────────────
+   全頁出現八次，是這一頁最常重複的一句話，所以給它最重的處理。
+   節奏上它也是必要的：八個條目若全是紙面，會讀成一片。 */
+.nodef{
+  display:grid; grid-template-columns:auto 1fr; gap:var(--s2);
+  align-items:start; margin:var(--s3) 0 0; padding:var(--s2);
+  background:var(--plate); color:var(--plate-fg);
+  font-size:.98rem; line-height:1.85;
+}
+.apparatus .nodef{max-width:none}
+.nodef .nd-k{
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.12em;
+  color:var(--plate); background:var(--accent-rev); padding:.3rem .5rem;
+  white-space:nowrap;
+}
+.apparatus .nodef b{color:var(--accent-rev); font-weight:700}
+
+/* ─── 口徑對照：兩種做法，中間一條厚分界 ─── */
+.axis{
+  display:grid; grid-template-columns:1fr 1fr; gap:0;
+  margin:var(--s3) 0 var(--s2); border:2px solid var(--ink);
+}
+.axis > div{padding:var(--s2)}
+.axis > div + div{border-left:2px solid var(--ink)}
+.ax-k{
+  display:inline-block; font-family:var(--mono); font-size:.78rem; letter-spacing:.1em;
+  background:var(--ink); color:var(--paper); padding:.22rem .45rem; margin-bottom:.7rem;
+}
+.apparatus .axis b{display:block; font-size:1.08rem; font-weight:700; line-height:1.5; margin-bottom:.5rem}
+.apparatus .axis p{font-size:.96rem; line-height:1.85; color:var(--ink-dim); margin:0; max-width:none}
+.ax-take{margin:0 0 var(--s3); padding:var(--s2) 0 0; font-size:1.02rem; line-height:1.9}
+.apparatus .ax-take b{color:var(--ink); font-weight:700}
+
+/* ─── 撤回：被劃掉的舊宣稱與現行宣稱並存 ───────────────────────
+   標頭做成實心磚紅條。刻意不用候選 K 的旋轉貼紙——這一段的內容是
+   「我們撤回過一個宣稱」，用俏皮的角度呈現會與它要傳達的態度相反。 */
+.retract{margin:var(--s3) 0; border:2px solid var(--ink)}
+.rt-k{
+  display:block; background:var(--accent); color:var(--on-accent);
+  font-family:var(--mono); font-size:.78rem; letter-spacing:.16em;
+  padding:.45rem var(--s2);
+}
+.apparatus .retract p{max-width:40rem; padding:0 var(--s2)}
+.apparatus .rt-was{
+  padding-top:var(--s2); text-decoration:line-through;
+  text-decoration-color:var(--accent); text-decoration-thickness:2px;
+  color:var(--ink-faint); margin-bottom:.6rem;
+}
+.apparatus .rt-now{color:var(--ink); margin-bottom:0; padding-bottom:var(--s2)}
+
+/* ─── 出處行：掛在一則宣稱底下 ─── */
+.cite{
+  font-family:var(--mono); font-size:.82rem; line-height:1.8;
+  color:var(--ink-faint); padding-left:var(--s2);
+  border-left:2px solid var(--hair); overflow-wrap:anywhere;
+}
+.apparatus .cite{max-width:40rem; margin:calc(var(--s2) * -.4) 0 var(--s2)}
+
+/* ─── 不算的東西：清單而非表格，因為沒有狀態可報 ─── */
+.notdone{list-style:none; padding:0; margin:var(--s3) 0 var(--s2); max-width:42rem}
+.apparatus .notdone li{
+  padding:.75rem 0 .75rem var(--s3); border-top:1px solid var(--hair);
+  position:relative; color:var(--ink-dim); line-height:1.85; margin:0;
+}
+.apparatus .notdone li:last-child{border-bottom:1px solid var(--hair)}
+.notdone li::before{
+  content:"—"; position:absolute; left:0; top:.75rem;
+  font-family:var(--mono); color:var(--ink-faint);
+}
+.apparatus .notdone b{color:var(--ink)}
+
+/* ─── 收尾：黑塊 ─── */
+.ap-close{
+  margin-top:var(--s5); padding:var(--s4) var(--s3);
+  background:var(--plate); color:var(--plate-fg);
+  display:grid; grid-template-columns:1fr auto; gap:var(--s3); align-items:end;
+}
+.apparatus .ap-close h2{
+  margin-bottom:var(--s1); line-height:1.35; color:var(--plate-fg);
+  font-family:var(--sans); font-weight:700; font-size:1.62rem; letter-spacing:-.02em;
+}
+.apparatus .ap-close p{color:var(--plate-dim); margin:0; max-width:36rem}
+.apparatus .ap-close .btn{background:var(--accent-rev); color:var(--plate)}
+.apparatus .ap-close .btn:hover{background:var(--paper); color:var(--plate)}
+
+@media (max-width:48rem){
+  .ap-hero{grid-template-columns:1fr}
+  /* 色塊內距在窄螢幕收一階。首屏 h1 的第二行是八個漢字，--s3 的內距會讓它
+     少約 13px 而掉出一個「擇。」的孤字——標題斷行是設計的一部分，不能交給
+     剛好差幾像素的內距決定。 */
+  .mb{padding:var(--s2)}
+  .mb-accent{border-left:0; border-top:2px solid var(--ink)}
+  .slabs{grid-template-columns:repeat(2, 1fr)}
+  .slabs > .sl:nth-child(n+3){border-top:2px solid var(--ink)}
+  .slabs > .sl:nth-child(4n){border-right:2px solid var(--ink)}
+  .slabs > .sl:nth-child(2n){border-right:0}
+  .ap-entry{grid-template-columns:1fr; gap:0}
+  .ap-entry > .sig{grid-column:1; grid-row:auto; margin-bottom:var(--s2)}
+  .ap-entry > :not(.sig){grid-column:1}
+  .apparatus .rail span{
+    flex:1 1 100%; min-width:0; white-space:normal; overflow-wrap:anywhere;
+  }
+  .readings > div + div{border-left:0; border-top:1px solid var(--hair)}
+  .nodef{grid-template-columns:1fr}
+  .nodef .nd-k{justify-self:start}
+  .axis{grid-template-columns:1fr}
+  .axis > div + div{border-left:0; border-top:2px solid var(--ink)}
+  .ap-close{grid-template-columns:1fr; padding:var(--s3)}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   /trust · 執行層 strata
+   ───────────────────────────────────────────────────────────────
+   第五套版面語彙。這一頁的論點是「打勾符號不會告訴你保護由誰執行」，
+   所以版面本身必須拒絕使用打勾：承諾按執行層堆疊，由上而下反證難度遞增、
+   我們的控制力遞減，而那個梯度直接畫在材質上——層一實心墨底（可被測試
+   反證），往下逐層變淡、框線由實轉虛，層五只剩虛線（只是別人的一句承諾）。
+
+   刻意不用顏色編碼強度。顏色會讓讀者以為那是分類；虛實與濃淡讓人讀成程度，
+   而這一頁要傳達的正是程度。
+
+   選擇器一律以 .strata 起首：.page-body 的既有規則特異性是 (0,1,1)。
+   ═══════════════════════════════════════════════════════════════ */
+.strata{max-width:64rem}
+/* 只中和 .page-body section 的上框線與左右內距，**不要寫 padding:0**——
+   `.strata section` 的特異性是 (0,1,1)，會連同蓋掉 .tr-sec (0,1,0) 自己的
+   上下內距，結果整頁七個段落全部沒有留白。這是本輪第四次踩到同一個陷阱，
+   前三次是 .page-body a 蓋掉 .btn、.log td:nth-child(4) 蓋掉 .dif、
+   .ab-sec p 蓋掉 .pull。 */
+.strata section{border-top:0; padding-left:0; padding-right:0}
+
+/* ─── 首屏 ─── */
+.tr-hero{padding:var(--s5) 0 var(--s4); border-bottom:2px solid var(--ink)}
+.strata .tr-hero h1{margin:var(--s2) 0 var(--s3); line-height:1.2; max-width:35rem}
+/* 35rem 不是留白偏好：標題最長的一行是十個漢字，字級 51.2px，需要約 512px，
+   而 32rem 正好也是 512px——剛好等於就會換行，於是掉出一個「存。」孤字。
+   手寫的 <br> 要成立，容器就得放得下它兩側的完整片語，而且要留餘裕。 */
+.strata .tr-hero .lede{max-width:40rem}
+.strata .tr-sub{max-width:40rem; font-size:1.02rem; line-height:1.9; margin-top:var(--s2)}
+
+/* ─── 檢測名冊 ───────────────────────────────────────────────
+   原本這裡放的是「還有幾個未關閉的發現」。那個數字 24 小時內就會過期，
+   而且它把最傷的一句話放在讀者注意力最集中的位置。改列**跑過哪些檢測**：
+   名字不會過期，而內行的一看就知道分量。 */
+.audit{
+  margin:var(--s4) 0 0; padding:var(--s3);
+  background:var(--plate); color:var(--plate-fg);
+}
+.au-k{
+  font-family:var(--mono); font-size:.78rem; letter-spacing:.16em;
+  color:var(--accent-rev); margin:0 0 var(--s2);
+}
+.strata .au-line{
+  font-size:clamp(1.15rem, 2.4vw, 1.65rem); line-height:1.6; font-weight:700;
+  margin:0 0 var(--s2); max-width:38rem; color:var(--plate-fg);
+}
+.strata .au-line b{color:var(--accent-rev); font-weight:700}
+.strata .au-note{
+  font-size:.96rem; line-height:1.85; color:var(--plate-dim);
+  max-width:44rem; margin:0 0 var(--s2);
+}
+.strata .au-note b{color:var(--plate-fg)}
+.au-cmd{
+  margin:0 0 var(--s2); padding:.6rem .8rem;
+  border:1px solid var(--plate-hair); overflow-x:auto;
+}
+.strata .au-cmd .mono{font-size:.82rem; color:var(--plate-fg); white-space:nowrap}
+
+/* ─── 條目 ─── */
+.tr-sec{padding:var(--s5) 0 var(--s4); border-bottom:1px solid var(--hair)}
+.strata .sig{
+  display:inline-block; background:var(--ink); color:var(--paper);
+  font-family:var(--mono); font-size:.9rem; letter-spacing:.06em;
+  padding:.35rem .5rem; margin-bottom:var(--s2);
+}
+.strata .tr-sec h2{
+  margin:0 0 var(--s2); line-height:1.35; max-width:32rem;
+  font-family:var(--serif); font-weight:400; font-size:1.72rem;
+}
+.strata .tr-sec p{max-width:42rem; line-height:1.95}
+
+/* ─── 執行層堆疊 ─────────────────────────────────────────────
+   梯度是這個元件的全部意義：t-app 實心墨底，t-vendor 只有虛線。
+   邊框寬度、透明度與虛實三者同向變化，任何一個單獨看都不夠清楚。 */
+.stack{margin:var(--s3) 0 var(--s3)}
+.tier{border:2px solid var(--ink); border-bottom-width:0}
+.tier:last-child{border-bottom-width:2px}
+.tier-head{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem var(--s2);
+  padding:var(--s2); border-bottom:1px solid var(--hair);
+}
+.tier-n{
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.14em;
+  color:var(--ink-faint);
+}
+.strata .tier-head b{font-size:1.12rem; font-weight:700; letter-spacing:.02em}
+.tier-how{
+  font-family:var(--mono); font-size:.78rem; line-height:1.6;
+  color:var(--ink-dim); margin-left:auto;
+}
+.strata .claims{list-style:none; padding:var(--s2); margin:0; max-width:none}
+.strata .claims li{
+  padding:.7rem 0; margin:0; line-height:1.85; max-width:52rem;
+}
+.strata .claims li + li{border-top:1px solid var(--hair-soft)}
+.strata .claims b{display:block; color:var(--ink); font-size:1.02rem; margin-bottom:.25rem}
+.strata .claims span{color:var(--ink-dim); font-size:.96rem}
+.strata .claims span b{display:inline; font-size:inherit; margin:0}
+.strata .claims .mono{font-size:.88em; overflow-wrap:anywhere}
+
+/* 層一：實心墨底，最強 */
+.t-app{background:var(--plate); color:var(--plate-fg); border-color:var(--ink)}
+.t-app .tier-head{border-bottom-color:var(--plate-hair)}
+.strata .t-app .tier-n{color:var(--accent-rev)}
+.strata .t-app .tier-how{color:var(--plate-dim)}
+.strata .t-app .claims li + li{border-top-color:var(--plate-hair)}
+.strata .t-app .claims b{color:var(--plate-fg)}
+.strata .t-app .claims span{color:var(--plate-dim)}
+.strata .t-app .claims span b{color:var(--accent-rev)}
+
+/* 層二：深，仍是反白字 */
+.t-container{background:var(--stratum-2); color:var(--plate-fg); border-color:var(--ink)}
+.t-container .tier-head{border-bottom-color:var(--ink-faint)}
+.strata .t-container .tier-n{color:var(--stratum-4)}
+.strata .t-container .tier-how{color:var(--stratum-4)}
+.strata .t-container .claims li + li{border-top-color:var(--ink-faint)}
+.strata .t-container .claims b{color:var(--plate-fg)}
+.strata .t-container .claims span{color:var(--stratum-4)}
+
+/* 層三：中間調。字色在這一層翻回反白，因為底色仍偏深。 */
+.t-host{background:var(--stratum-3); color:var(--paper); border-color:var(--ink-dim)}
+.t-host .tier-head{border-bottom-color:var(--ink-dim)}
+.strata .t-host .tier-n,.strata .t-host .tier-how{color:var(--paper)}
+.strata .t-host .claims li + li{border-top-color:var(--ink-dim)}
+.strata .t-host .claims b{color:var(--paper)}
+.strata .t-host .claims span{color:var(--paper)}
+
+/* 層四：淺。字色翻回墨色，這是整個梯度唯一一次翻轉。
+   層號在這一層要用 --ink-dim 而非基準的 --ink-faint：後者對 --stratum-4
+   只有 3.67:1，低於 AA。中間調底色會讓「已經夠淡的字」掉出門檻，
+   每加一層底色都得重量一次。 */
+.t-client{background:var(--stratum-4); border-color:var(--ink-faint)}
+.t-client .tier-head{border-bottom-color:var(--ink-faint)}
+.strata .t-client .tier-n{color:var(--ink-dim)}
+
+/* 層五：紙面 ＋ 虛線——它不是我們執行的，是別人答應的 */
+.t-vendor{border-style:dashed; border-color:var(--ink-faint)}
+.strata .t-vendor .tier-head b{font-weight:400}
+
+/* ─── 層之外 ─── */
+.beyond{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(16rem, 1fr));
+  gap:0; border-top:2px solid var(--ink); margin:var(--s3) 0 0;
+}
+.beyond > div{padding:var(--s2); border-bottom:1px solid var(--hair)}
+.beyond > div + div{border-left:1px solid var(--hair-soft)}
+.strata .beyond b{display:block; color:var(--ink); font-size:1.02rem; margin-bottom:.4rem}
+.strata .beyond span{display:block; color:var(--ink-dim); font-size:.95rem; line-height:1.8}
+.strata .beyond .mono{font-size:.88em; overflow-wrap:anywhere}
+.strata .beyond.docs b{margin-bottom:.3rem}
+.strata .beyond a{border-bottom-color:var(--ink-faint)}
+
+/* ─── 四種強度 ─── */
+.grades{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr));
+  gap:0; border:2px solid var(--ink); margin:var(--s3) 0;
+}
+.grades > div{padding:var(--s2)}
+.grades > div + div{border-left:1px solid var(--hair)}
+.gr-k{
+  display:inline-block; font-family:var(--mono); font-size:.78rem;
+  letter-spacing:.08em; background:var(--ink); color:var(--paper);
+  padding:.22rem .45rem; margin-bottom:.6rem;
+}
+.strata .grades p{font-size:.95rem; line-height:1.8; color:var(--ink-dim); margin:0; max-width:none}
+
+/* ─── 收尾 ─── */
+.tr-close{
+  margin-top:var(--s5); padding:var(--s4) var(--s3);
+  background:var(--plate); color:var(--plate-fg);
+  display:grid; grid-template-columns:1fr auto; gap:var(--s3); align-items:end;
+}
+.strata .tr-close h2{
+  margin-bottom:var(--s1); line-height:1.4; color:var(--plate-fg);
+  font-family:var(--serif); font-weight:400; font-size:1.62rem;
+}
+.strata .tr-close p{color:var(--plate-dim); margin:0; max-width:34rem}
+.strata .tr-close .btn{background:var(--accent-rev); color:var(--plate)}
+.strata .tr-close .btn:hover{background:var(--paper); color:var(--plate)}
+
+/* .page-body 既有規則在本頁的還原（特異性衝突，非新樣式） */
+.strata .btn,.strata .btn:hover{color:var(--paper)}
+.strata .t-app .limit b,.strata .limit b{color:var(--ink)}
+
+@media (max-width:48rem){
+  .tier-how{margin-left:0; flex-basis:100%}
+  .beyond{grid-template-columns:1fr}
+  .beyond > div + div{border-left:0}
+  .grades{grid-template-columns:1fr}
+  .grades > div + div{border-left:0; border-top:1px solid var(--hair)}
+  .tr-close{grid-template-columns:1fr; padding:var(--s3)}
+  .strata .tr-hero h1{max-width:none}
+}
+
+/* ─── /trust 首屏事實條 ─────────────────────────────────────
+   四個硬數字，取代原本首屏那段只講「我們不打勾」的後設論證。
+   數字本身是重點，說明文字壓小；與 /methods 的 .slabs 刻意不同：
+   那裡是八格封閉方陣（在比較選項），這裡是一條開放的橫列（在陳述事實）。 */
+.facts{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));
+  gap:0; margin:var(--s4) 0 var(--s3);
+  border-top:2px solid var(--ink); border-bottom:1px solid var(--hair);
+}
+.facts > div{padding:var(--s2) var(--s2) var(--s2) 0}
+.facts > div + div{border-left:1px solid var(--hair-soft); padding-left:var(--s2)}
+.strata .facts b{
+  display:block; font-family:var(--sans); font-weight:700;
+  font-size:clamp(2rem, 4.2vw, 3rem); line-height:.95; letter-spacing:-.05em;
+}
+.strata .facts span{
+  display:block; margin-top:.35rem; font-size:1rem; font-weight:700; color:var(--ink);
+}
+.strata .facts i{
+  display:block; margin-top:.45rem; font-style:normal;
+  font-size:.88rem; line-height:1.7; color:var(--ink-dim);
+}
+
+/* ─── 檢測名冊 ─── */
+.roster{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(17rem, 1fr));
+  gap:0; margin:var(--s3) 0 var(--s2);
+  border-top:1px solid var(--plate-hair);
+}
+.roster > div{padding:var(--s2) var(--s2) var(--s2) 0}
+.roster > div + div{border-left:1px solid var(--plate-hair); padding-left:var(--s2)}
+.ro-k{
+  display:inline-block; font-family:var(--mono); font-size:.76rem; letter-spacing:.12em;
+  color:var(--plate); background:var(--accent-rev); padding:.2rem .45rem; margin-bottom:.7rem;
+}
+.strata .roster ul{list-style:none; padding:0; margin:0; max-width:none}
+.strata .roster li{
+  padding:.45rem 0 .45rem var(--s2); margin:0; position:relative;
+  font-size:.94rem; line-height:1.8; color:var(--plate-dim);
+}
+.strata .roster li::before{
+  content:"—"; position:absolute; left:0; font-family:var(--mono); color:var(--stratum-4);
+}
+.strata .roster b{color:var(--plate-fg); font-weight:700}
+
+/* ─── 資料承諾 ─── */
+.strata .vow{
+  font-size:clamp(1.12rem, 2.2vw, 1.42rem); line-height:1.65;
+  padding-left:var(--s2); border-left:3px solid var(--accent);
+  margin-bottom:var(--s3); max-width:38rem;
+}
+.strata .vow b{color:var(--ink); font-weight:700}
+
+@media (max-width:48rem){
+  .facts > div + div{border-left:0; padding-left:0; border-top:1px solid var(--hair-soft)}
+  .roster{grid-template-columns:1fr}
+  .roster > div + div{border-left:0; padding-left:0; border-top:1px solid var(--plate-hair)}
+}
+
+/* ─── /trust 六道防線 ─────────────────────────────────────────
+   與 .strata 的分工：.strata 講「這項承諾由誰執行」（並列的層），
+   .moat 講「有人來要資料時會依序碰到什麼」（有先後的序）。
+   前者用底色濃淡，後者用編號與懸掛的法源，兩者不共用視覺。
+
+   法源行（.mo-src）刻意用等寬字並掛在左側細線上：它要看起來像可以照著查的
+   東西，而不是像裝飾。條號本身就是這一段的說服力來源。 */
+.moat{list-style:none; padding:0; margin:var(--s3) 0; max-width:none; counter-reset:moat}
+.strata .moat > li{
+  margin:0; padding:var(--s3) 0; border-top:1px solid var(--hair); max-width:none;
+}
+.strata .moat > li:first-child{border-top:2px solid var(--ink)}
+.strata .moat > li:last-child{border-bottom:2px solid var(--ink)}
+.mo-h{display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem var(--s2); margin-bottom:var(--s2)}
+.mo-n{
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.14em;
+  background:var(--ink); color:var(--paper); padding:.25rem .5rem;
+}
+.strata .mo-h b{font-size:1.16rem; font-weight:700; line-height:1.5; letter-spacing:-.01em}
+.strata .moat p{max-width:44rem; font-size:1rem; line-height:1.9; margin-bottom:var(--s2)}
+.strata .moat p:last-child{margin-bottom:0}
+.mo-src{
+  font-family:var(--mono); font-size:.82rem; line-height:1.85;
+  color:var(--ink-faint); padding-left:var(--s2);
+  border-left:2px solid var(--accent); overflow-wrap:anywhere;
+}
+.strata .mo-src{max-width:46rem}
+
+/* 層五的行內條號 */
+.cite-x{
+  display:inline-block; margin-left:.4rem; font-family:var(--mono);
+  font-size:.82em; color:var(--ink-faint); white-space:nowrap;
+}
+.strata .t-vendor .cite-x{color:var(--ink-dim)}
+
+@media (max-width:48rem){
+  .cite-x{display:block; margin-left:0; margin-top:.3rem; white-space:normal}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   /security · 規格表 datasheet
+   ───────────────────────────────────────────────────────────────
+   第六套版面語彙，也是全站唯一一個**整頁深底**的內容頁。
+
+   理由是分工而非變化：/trust 用紙面談承諾與管轄權，/security 談的是設定檔裡
+   的實際數值與攻擊面——它的讀者是會開 terminal 的人，深底等寬的登錄表是那
+   個閱讀情境的自然形制。深底同時把兩頁的分工做成一眼可辨：**看到紙就是在講
+   保證，看到黑就是在講機制。**
+
+   仍然沒有新顏色：--plate 打底、--plate-fg 與 --plate-dim 承載文字、
+   --accent-rev 作強調、--stratum-2/-3 作分隔與面板。深底頁的對比方向相反，
+   因此每一條字色都重新量過（見交付紀錄）。
+   ═══════════════════════════════════════════════════════════════ */
+.datasheet{
+  max-width:none; background:var(--plate); color:var(--plate-fg);
+  padding-top:var(--s5); padding-bottom:var(--s6);
+}
+.datasheet section{border-top:0; padding-left:0; padding-right:0}
+.datasheet > *{max-width:64rem; margin-left:auto; margin-right:auto}
+
+/* ─── 首屏 ─── */
+.ds-hero{padding:0 0 var(--s4); border-bottom:2px solid var(--stratum-3)}
+.datasheet .ds-hero .eyebrow{color:var(--plate-dim)}
+.datasheet .ds-hero h1{
+  color:var(--plate-fg); margin:var(--s2) 0 var(--s3); line-height:1.2;
+  font-family:var(--sans); font-weight:700; letter-spacing:-.03em;
+  font-size:clamp(2rem, 4.6vw, 3.2rem); max-width:none;
+}
+.datasheet .lede{color:var(--paper-2); max-width:46rem; font-size:1.06rem}
+.datasheet .ds-note{
+  margin-top:var(--s2); max-width:46rem; font-size:.98rem; line-height:1.9;
+  color:var(--plate-dim);
+}
+.datasheet .ds-note b,.datasheet .lede b{color:var(--plate-fg)}
+
+/* ─── 段落與段頭 ─── */
+.ds-sec{padding:var(--s5) 0 0}
+.hdr{
+  display:flex; align-items:baseline; gap:var(--s2);
+  margin:0 0 var(--s3); padding-bottom:.6rem;
+  border-bottom:1px solid var(--stratum-3);
+  font-family:var(--sans); font-weight:700; font-size:1.3rem; letter-spacing:-.01em;
+  color:var(--plate-fg);
+}
+.hdr span{
+  font-family:var(--mono); font-size:.8rem; letter-spacing:.1em; font-weight:400;
+  color:var(--plate); background:var(--accent-rev); padding:.22rem .45rem;
+}
+.datasheet p{max-width:46rem; line-height:1.9; color:var(--paper-2)}
+.datasheet b{color:var(--plate-fg)}
+.datasheet a{color:var(--plate-fg); border-bottom-color:var(--stratum-3)}
+.datasheet a:hover{color:var(--accent-rev); border-bottom-color:var(--accent-rev)}
+.datasheet .mono{color:var(--accent-rev)}
+/* 既有的 `.limit` 自己帶 `background:var(--paper-2)`——在紙面頁上那是淡底標註，
+   搬到深底頁就變成一塊亮底，裡面所有淺色字全部失效（實測 2.47 與 1.12）。
+   **背景要顯式清掉，不能只改字色。** */
+.datasheet .limit{
+  background:transparent;
+  border-left:3px solid var(--accent-rev); padding-left:var(--s2);
+  color:var(--plate-dim); max-width:46rem;
+}
+.datasheet .limit b{color:var(--plate-fg)}
+
+/* ─── 資料流 ─── */
+/* 選擇器必須是 `.datasheet pre.flow`（0,2,1）：既有的 `.page-body pre.flow`
+   也是 (0,2,1) 且設了 color，`.datasheet .flow`（0,2,0）贏不了它，結果是
+   --ink-dim 壓在深底上，對比 1.58。這是本輪第五次踩特異性。 */
+.datasheet pre.flow{
+  background:var(--stratum-2); color:var(--paper-2); border:0;
+  padding:var(--s2); margin:var(--s3) 0; font-size:.86rem; line-height:1.9;
+  overflow-x:auto; max-width:none;
+}
+
+/* ─── 規格表 ─── */
+.datasheet .spec-scroll{margin:var(--s3) 0}
+.spec{width:100%; border-collapse:collapse; font-size:.94rem; line-height:1.75}
+.spec th{
+  text-align:left; font-family:var(--mono); font-size:.76rem; letter-spacing:.12em;
+  color:var(--plate); background:var(--accent-rev); padding:.4rem .7rem; font-weight:400;
+}
+.spec td{
+  padding:.7rem .7rem .7rem 0; vertical-align:top;
+  border-bottom:1px solid var(--stratum-2); color:var(--paper-2);
+}
+.spec td + td{padding-left:.7rem}
+.spec td.mono{color:var(--accent-rev); white-space:nowrap}
+.spec td.val{color:var(--paper-2); white-space:normal; overflow-wrap:anywhere}
+.spec.threats td:first-child{white-space:nowrap}
+.datasheet .absent{
+  font-size:.94rem; line-height:1.85; color:var(--plate-dim);
+  border-left:1px solid var(--stratum-3); padding-left:var(--s2); max-width:46rem;
+}
+
+/* ─── 失敗關閉／邊界標註 ─── */
+.fail{
+  margin:var(--s3) 0; padding:var(--s2);
+  background:var(--stratum-2); border-left:3px solid var(--accent-rev);
+}
+/* --accent-rev 直接壓在 --stratum-2 上只有 3.15:1。改成反白色塊——
+   accent 當底、--plate 當字，與 .hdr span 同一個作法，量得 7.0 以上。 */
+.fail-k{
+  display:inline-block; font-family:var(--mono); font-size:.76rem; letter-spacing:.12em;
+  color:var(--plate); background:var(--accent-rev); padding:.2rem .45rem;
+  margin-bottom:.6rem;
+}
+.datasheet .fail p{margin:0; color:var(--paper-2)}
+
+/* ─── 信任邊界 ─── */
+.bounds{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(15rem, 1fr));
+  gap:0; border-top:1px solid var(--stratum-3); margin:var(--s3) 0;
+}
+.bounds > div{padding:var(--s2) var(--s2) var(--s2) 0; border-bottom:1px solid var(--stratum-2)}
+.bounds > div + div{border-left:1px solid var(--stratum-2); padding-left:var(--s2)}
+.bd-k{
+  display:inline-block; font-family:var(--mono); font-size:.9rem;
+  background:var(--stratum-3); color:var(--paper); padding:.15rem .5rem; margin-bottom:.6rem;
+}
+.datasheet .bounds b{display:block; font-size:1.02rem; margin-bottom:.4rem}
+.datasheet .bounds span:not(.bd-k){display:block; font-size:.92rem; line-height:1.8; color:var(--plate-dim)}
+.datasheet .bounds span b{display:inline; font-size:inherit}
+
+/* ─── 判斷案例 ─── */
+.case{
+  margin:var(--s3) 0; padding:var(--s3); border:1px solid var(--stratum-3);
+}
+.case-t{
+  font-family:var(--sans); font-weight:700; font-size:1.08rem; line-height:1.5;
+  color:var(--plate-fg); margin:0 0 var(--s2) !important; max-width:none;
+}
+.datasheet .case p{font-size:.98rem; margin-bottom:var(--s2)}
+.datasheet .case p:last-child{margin-bottom:0}
+.datasheet .case-no{
+  border-left:3px solid var(--stratum-4); padding-left:var(--s2); color:var(--plate-dim);
+}
+.datasheet .case-no b{color:var(--stratum-4)}
+
+/* ─── 紅隊問題與弱點清單 ─── */
+.asks,.weak{list-style:none; padding:0; margin:var(--s3) 0; max-width:46rem}
+.datasheet .asks li,.datasheet .weak li{
+  padding:.8rem 0 .8rem var(--s3); margin:0; position:relative;
+  border-top:1px solid var(--stratum-2); line-height:1.85; color:var(--paper-2);
+}
+.datasheet .asks li:last-child,.datasheet .weak li:last-child{border-bottom:1px solid var(--stratum-2)}
+.asks li::before{content:"?"; position:absolute; left:0; top:.8rem; font-family:var(--mono); color:var(--accent-rev)}
+.weak li::before{content:"!"; position:absolute; left:0; top:.8rem; font-family:var(--mono); color:var(--accent-rev)}
+
+/* ─── 通報 ─── */
+.datasheet .contact{
+  margin:var(--s3) 0; padding:var(--s2); border:1px solid var(--accent-rev);
+  display:inline-block;
+}
+.datasheet .contact .mono{font-size:1.1rem; color:var(--accent-rev)}
+
+@media (max-width:48rem){
+  .datasheet .contact{display:block; max-width:100%; box-sizing:border-box}
+  .datasheet .contact .mono{overflow-wrap:anywhere}
+}
+
+/* ─── 收尾 ─── */
+.ds-close{
+  margin-top:var(--s5); padding:var(--s4) 0 0; border-top:2px solid var(--stratum-3);
+  display:grid; grid-template-columns:1fr auto; gap:var(--s3); align-items:end;
+}
+.datasheet .ds-close h2{
+  color:var(--plate-fg); margin-bottom:var(--s1); line-height:1.35;
+  font-family:var(--sans); font-weight:700; font-size:1.5rem; letter-spacing:-.02em;
+}
+.datasheet .ds-close p{color:var(--plate-dim); margin:0}
+.datasheet .ds-close .btn{background:var(--accent-rev); color:var(--plate)}
+.datasheet .ds-close .btn:hover{background:var(--paper); color:var(--plate)}
+
+@media (max-width:48rem){
+  .bounds{grid-template-columns:1fr}
+  .bounds > div + div{border-left:0; padding-left:0}
+  .ds-close{grid-template-columns:1fr}
+  .case{padding:var(--s2)}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   /legal/privacy · 公報 statute
+   ───────────────────────────────────────────────────────────────
+   第七套版面語彙。與前六套的分工：這一頁的內容形式是**法定告知**，
+   所以形制取自法典與公報——漢數字條次懸掛於左欄、通篇襯線、寬行距、
+   一條貫穿全頁的裝訂線。
+
+   刻意「安靜」，但不是刻意樸素：真正吵的地方集中在兩處——
+   頁首的版本戳（因為生效日刻意留空，那件事必須看得見）與 §十的
+   法規對照表（Sebastian 的要求是「看起來厲害」，而讓它厲害的是
+   密排的條號與可查證的對應，不是裝飾）。
+
+   與 .apparatus（方法）的區別要說清楚：那一頁是粗黑體 ＋ 色塊 ＋ 等寬；
+   這一頁是襯線 ＋ 細規線 ＋ 漢數字。兩者都密，但聲音完全不同。
+   ═══════════════════════════════════════════════════════════════ */
+.statute{max-width:58rem}
+.statute section{border-top:0; padding-left:0; padding-right:0}
+
+/* ─── 頁首 ─── */
+.st-head{padding:var(--s5) 0 var(--s4); border-bottom:2px solid var(--ink)}
+.statute .st-head h1{
+  font-family:var(--serif); font-weight:400; margin:var(--s2) 0 var(--s3);
+  font-size:clamp(2rem, 4.4vw, 2.9rem); line-height:1.25; letter-spacing:.02em;
+}
+.statute .lede{max-width:40rem}
+
+/* 版本戳：生效日刻意留空，因此這一塊必須顯眼 */
+.stamp{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));
+  gap:0; border:2px solid var(--ink); margin:var(--s3) 0 var(--s2);
+}
+.stamp > div{padding:var(--s2); border-right:1px solid var(--hair)}
+.stamp > div:last-child{border-right:0}
+.statute .stamp span{
+  display:block; font-family:var(--mono); font-size:.74rem; letter-spacing:.12em;
+  color:var(--ink-faint); margin-bottom:.4rem;
+}
+.statute .stamp b{
+  display:block; font-family:var(--serif); font-size:1.06rem; line-height:1.5;
+  color:var(--ink); font-weight:400;
+}
+.statute .stamp b.todo{font-family:var(--mono); font-size:.94rem; color:var(--accent)}
+.stamp-note{
+  max-width:42rem; font-size:.94rem; line-height:1.85; color:var(--ink-dim);
+  border-left:3px solid var(--accent); padding-left:var(--s2); margin-bottom:var(--s3);
+}
+.statute .stamp-note b{color:var(--ink)}
+
+/* ─── 條：漢數字懸掛於左欄，並有一條貫穿的裝訂線 ─── */
+.art{
+  display:grid; grid-template-columns:3.6rem 1fr; gap:0 var(--s2);
+  padding:var(--s5) 0 var(--s3); border-bottom:1px solid var(--hair);
+  position:relative;
+}
+.art > *{grid-column:2; min-width:0}
+.art > .art-n{grid-column:1; grid-row:1}
+.art-n{
+  font-family:var(--serif); font-size:1.5rem; line-height:1.2; color:var(--ink-faint);
+  text-align:right; padding-top:.15rem; margin:0;
+}
+/* 裝訂線：左欄與正文之間的一條細線，貫穿整條 */
+.art::before{
+  content:""; position:absolute; top:var(--s5); bottom:var(--s3);
+  left:calc(3.6rem + var(--s2) / 2); width:1px; background:var(--hair-soft);
+}
+.statute .art h2{
+  font-family:var(--serif); font-weight:400; font-size:1.5rem; line-height:1.4;
+  margin:0 0 var(--s2); letter-spacing:.02em; max-width:32rem;
+}
+.statute .art p{max-width:42rem; line-height:2.05; font-size:1.01rem}
+.art-src{
+  font-size:.94rem !important; color:var(--ink-dim); line-height:1.9 !important;
+  padding-bottom:var(--s2); border-bottom:1px solid var(--hair-soft);
+}
+
+/* ─── 六項告知 ─── */
+.items{list-style:none; padding:0 !important; margin:var(--s2) 0 var(--s3); max-width:none}
+.statute .items > li{
+  display:grid; grid-template-columns:11rem 1fr; gap:0 var(--s2);
+  padding:var(--s2) 0; margin:0; border-top:1px solid var(--hair-soft);
+  color:var(--ink-dim);
+}
+.statute .items > li:last-child{border-bottom:1px solid var(--hair-soft)}
+.it-k{
+  font-family:var(--serif); font-size:1.02rem; color:var(--ink); line-height:1.6;
+}
+/* 只作用於 li > div 的直接子 span。原本寫 `.items span:not(.it-k)`，
+   結果把段落裡行內的 <span class="mono"> 也變成 block——條號與標頭名稱
+   各自斷成一行。**後代選擇器碰到會巢狀的元素時，一律用子選擇器。** */
+.statute .items > li > div > span{display:block; line-height:1.95; font-size:.98rem}
+.statute .items > li > div > span + span{margin-top:.6rem}
+.statute .items .mono{display:inline; font-size:.9em}
+.statute .items b{color:var(--ink)}
+.statute .items .note{
+  margin-top:.7rem; padding-left:var(--s2); border-left:1px solid var(--hair);
+  font-size:.94rem; color:var(--ink-faint);
+}
+.statute .items .pend{
+  margin-top:.7rem; font-size:.94rem; color:var(--ink-faint);
+}
+
+/* ─── 單句承諾 ─── */
+.statute .vow{
+  font-family:var(--serif); font-size:clamp(1.14rem, 2.2vw, 1.44rem);
+  line-height:1.75; color:var(--ink); max-width:38rem;
+  padding-left:var(--s2); border-left:3px solid var(--accent);
+  margin-bottom:var(--s3);
+}
+
+/* ─── 法規對照表：這一頁唯一「大聲」的地方 ─── */
+.conform{width:100%; border-collapse:collapse; font-size:.95rem; line-height:1.8}
+.conform th{
+  text-align:left; font-family:var(--mono); font-size:.74rem; letter-spacing:.12em;
+  background:var(--ink); color:var(--paper); padding:.5rem .7rem; font-weight:400;
+}
+.conform td{
+  padding:.8rem .7rem .8rem 0; vertical-align:top; color:var(--ink-dim);
+  border-bottom:1px solid var(--hair-soft);
+}
+.conform td + td{padding-left:.7rem}
+.conform td.mono{color:var(--accent); white-space:nowrap; font-size:.9rem}
+.conform td:nth-child(2){color:var(--ink); white-space:nowrap}
+.statute .conform b{color:var(--ink)}
+.statute .conform tr.mark td{background:var(--paper-2)}
+.statute .conform tr.mark td.mono{color:var(--accent)}
+
+/* ─── 主管機關 ─── */
+.authority{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(16rem, 1fr));
+  gap:0; border:1px solid var(--ink); margin:var(--s2) 0 var(--s3);
+}
+.authority > div{padding:var(--s2); border-right:1px solid var(--hair)}
+.authority > div:last-child{border-right:0}
+.statute .authority span{
+  display:block; font-family:var(--mono); font-size:.72rem; letter-spacing:.12em;
+  color:var(--ink-faint); margin-bottom:.5rem;
+}
+.statute .authority b{
+  display:block; font-family:var(--serif); font-size:1.06rem; line-height:1.55;
+  color:var(--ink); font-weight:400;
+}
+.statute .authority i{
+  display:block; margin-top:.5rem; font-style:normal;
+  font-size:.9rem; line-height:1.8; color:var(--ink-dim);
+}
+
+/* ─── 尚未做到 ─── */
+.notyet{
+  margin:var(--s3) 0; padding:var(--s2) var(--s3);
+  background:var(--paper-2); border-left:3px solid var(--accent);
+}
+.ny-k{
+  display:inline-block; font-family:var(--mono); font-size:.76rem; letter-spacing:.14em;
+  color:var(--on-accent); background:var(--accent); padding:.22rem .5rem; margin-bottom:.7rem;
+}
+.statute .notyet p{margin-bottom:var(--s2); max-width:40rem}
+.statute .notyet p:last-child{margin-bottom:0}
+
+/* ─── .page-body 既有規則在本頁的還原 ─── */
+.statute .draft-flag{max-width:42rem; font-size:.96rem}
+.statute .ticks{max-width:42rem}
+.statute .limit{max-width:42rem}
+
+@media (max-width:48rem){
+  .art{grid-template-columns:1fr; gap:0}
+  .art > .art-n{grid-column:1; grid-row:auto; text-align:left; margin-bottom:.4rem}
+  .art > *{grid-column:1}
+  .art::before{display:none}
+  .statute .items > li{grid-template-columns:1fr; gap:.4rem}
+  .authority{grid-template-columns:1fr; min-width:0}
+  .authority > div{min-width:0; border-right:0; border-bottom:1px solid var(--hair)}
+  .authority > div:last-child{border-bottom:0}
+  .stamp > div{border-right:0; border-bottom:1px solid var(--hair)}
+  .stamp > div:last-child{border-bottom:0}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   .covenant — /legal/terms
+
+   第八套版面語彙。與 .statute（隱私政策）同屬 /legal，必須分得開：
+   那一頁的內容形式是**法定告知**，所以取法典與公報——漢數字懸掛左欄、
+   通篇襯線、一條貫穿的裝訂線。
+
+   這一頁的內容形式是**約定**，而且是一份刪到只剩必要條文的約定。
+   所以形制取**註釋本**：正文在左，右欄放依據與對照——條號、法規名稱，
+   以及個別選擇的理由。右欄不是裝飾，它承載正文放不下、又不該用整段
+   去強調的東西。
+
+   全頁沒有大聲的地方，這是設計而非疏漏。曾經有一段黑底的
+   〈沒有寫的四件事〉清單，2026-08-20 由 Sebastian 裁示整段刪除：
+   用一整段去展示自己刪了多少，本身就是另一種炫耀。
+   ═══════════════════════════════════════════════════════════════ */
+.covenant{max-width:70rem}
+.covenant section{border-top:0; padding:0}
+
+/* ─── 頁首 ─── */
+.covenant .cv-head{padding:var(--s5) 0 var(--s4); border-bottom:2px solid var(--ink)}
+.covenant .cv-head h1{
+  font-family:var(--serif); font-weight:400; margin:var(--s2) 0 var(--s3);
+  font-size:clamp(2rem, 4.4vw, 2.9rem); line-height:1.25; letter-spacing:.02em;
+}
+
+/* 版本列：與 .statute 的 .stamp 同資訊、不同重量——那是 2px 實框，這是上下兩條規線。
+   注意 .cv-head 不能用 <header>：page.css 第 28 行的 `header{background:var(--plate)}`
+   是無範圍的元素選擇器，會把整個頁首塗成導覽列的黑底。 */
+.cv-meta{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));
+  gap:0; border-top:1px solid var(--ink); border-bottom:1px solid var(--ink);
+  margin:var(--s3) 0 var(--s2);
+}
+.cv-meta > div{padding:var(--s2); border-right:1px solid var(--hair)}
+.cv-meta > div:last-child{border-right:0}
+.covenant .cv-meta span{
+  display:block; font-family:var(--mono); font-size:.72rem; letter-spacing:.14em;
+  color:var(--ink-faint); margin-bottom:.45rem;
+}
+.covenant .cv-meta b{
+  display:block; font-family:var(--serif); font-size:1.04rem; line-height:1.5;
+  color:var(--ink); font-weight:400;
+}
+.covenant .cv-meta b.todo{font-family:var(--mono); font-size:.92rem; color:var(--accent)}
+
+.covenant .cv-headnote{
+  max-width:42rem; font-size:.94rem; line-height:1.85; color:var(--ink-dim);
+  border-left:3px solid var(--accent); padding-left:var(--s2); margin-bottom:var(--s3);
+}
+.covenant .cv-headnote b{color:var(--ink)}
+
+/* 承諾接受的時點——這一頁唯一的「你要做什麼」，所以它在頁首而不在條文裡 */
+.covenant .cv-accept{
+  font-family:var(--serif); font-size:clamp(1.1rem, 2vw, 1.34rem);
+  line-height:1.8; color:var(--ink); max-width:40rem; margin:0;
+}
+.covenant .cv-accept b{
+  font-weight:400;
+  /* 不用 border-bottom：.page-body a 正是用它，兩者會混淆。 */
+  box-shadow:inset 0 -.42em 0 var(--paper-2);
+}
+
+/* ─── 條：正文在左，依據與對照在右 ─── */
+.covenant .cv-art{
+  display:grid; grid-template-columns:1fr 15rem; gap:0 var(--s4);
+  padding:var(--s5) 0 var(--s4); border-bottom:1px solid var(--hair);
+}
+.cv-main{min-width:0}
+.covenant .cv-n{
+  font-family:var(--mono); font-size:.74rem; letter-spacing:.18em;
+  color:var(--accent); margin:0 0 .8rem;
+}
+.covenant .cv-art h2{
+  font-family:var(--serif); font-weight:400; font-size:1.6rem; line-height:1.4;
+  margin:0 0 var(--s2); letter-spacing:.02em; max-width:28rem;
+}
+.covenant .cv-art h3{
+  font-family:var(--sans); font-weight:700; font-size:1rem; letter-spacing:.02em;
+  color:var(--ink); margin:var(--s3) 0 var(--s2);
+}
+.covenant .cv-main p{max-width:42rem; line-height:2; font-size:1.01rem}
+.covenant .cv-main b{color:var(--ink)}
+
+/* 右欄 */
+.covenant .cv-side{
+  min-width:0; border-left:1px solid var(--hair); padding-left:var(--s2);
+}
+.covenant .cv-side:empty{border-left:0}
+.covenant .cv-side p{
+  font-size:.9rem; line-height:1.85; color:var(--ink-faint);
+  max-width:none; margin-bottom:.9rem;
+}
+.covenant .cv-side p:last-child{margin-bottom:0}
+.covenant .cv-side b{color:var(--ink-dim)}
+.covenant .cv-side .cv-sk{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.14em;
+  color:var(--ink-faint); margin-bottom:.8rem;
+}
+.covenant .cv-side .cv-cite{
+  font-family:var(--mono); font-size:.78rem; line-height:1.7;
+  color:var(--accent); margin-bottom:.6rem;
+}
+
+/* 做／不做：兩格對照，右格上紙二色 */
+.cv-split{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(15rem, 1fr));
+  gap:0; border:1px solid var(--ink); margin:var(--s2) 0 var(--s3);
+}
+.cv-split > div{padding:var(--s2)}
+.cv-split > div + div{border-left:1px solid var(--hair)}
+.cv-dont{background:var(--paper-2)}
+.covenant .cv-split p{margin:0; max-width:none; font-size:.98rem; line-height:1.9}
+.cv-k{
+  display:inline-block; font-family:var(--mono); font-size:.72rem; letter-spacing:.16em;
+  background:var(--ink); color:var(--paper); padding:.2rem .55rem; margin-bottom:.8rem;
+}
+.cv-dont .cv-k{background:var(--accent); color:var(--on-accent)}
+
+/* 單句立場 */
+.covenant .cv-vow{
+  font-family:var(--serif); font-size:clamp(1.06rem, 1.8vw, 1.26rem);
+  line-height:1.8; color:var(--ink); max-width:38rem;
+  padding-left:var(--s2); border-left:3px solid var(--accent);
+  margin:var(--s3) 0;
+}
+.covenant .cv-forward{
+  margin-top:var(--s3); padding:var(--s2); background:var(--paper-2);
+  font-size:.96rem; line-height:1.9; max-width:42rem;
+}
+.covenant .cv-mail{
+  font-size:1.16rem; color:var(--ink); padding:var(--s2) 0;
+  border-top:1px solid var(--hair); border-bottom:1px solid var(--hair);
+  margin-bottom:var(--s2); max-width:42rem;
+}
+
+@media (max-width:60rem){
+  .covenant .cv-art{grid-template-columns:1fr; gap:0}
+  .covenant .cv-side{
+    border-left:0; border-top:1px solid var(--hair);
+    padding-left:0; padding-top:var(--s2); margin-top:var(--s3);
+  }
+  .covenant .cv-side:empty{border-top:0; margin-top:0; padding-top:0}
+}
+@media (max-width:48rem){
+  /* auto-fit 在此寬度會排成 3＋1，落單那格很難看；直接指定 2×2，只留內部規線 */
+  .cv-meta{grid-template-columns:repeat(2, 1fr)}
+  .cv-meta > div{border-right:1px solid var(--hair); border-bottom:1px solid var(--hair)}
+  .cv-meta > div:nth-child(2n){border-right:0}
+  .cv-meta > div:nth-last-child(-n+2){border-bottom:0}
+  .cv-split > div + div{border-left:0; border-top:1px solid var(--hair)}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   .ledger — /legal/copyright
+
+   第九套版面語彙。三個 /legal 子頁各有形制：
+   .statute（隱私）取法典與公報、.covenant（條款）取註釋本、
+   這一頁取**物料清單與保管鏈**——因為它的內容本來就是這個：
+   每一塊料從哪來、依什麼授權、怎麼驗。
+
+   所以這一頁的紋理是**等寬字**：摘要值、鎖定檔路徑、映像釘選、
+   40 位建置識別。那些字串本身就是證據，把它們印出來比描述它們有力。
+   全頁只有一處填色（物料表頭），其餘靠規線與等寬字分層。
+
+   注意不要用 <header> 當區塊容器：page.css 第 28 行的
+   `header{background:var(--plate)}` 是無範圍元素選擇器，會塗成導覽列黑底。
+   ═══════════════════════════════════════════════════════════════ */
+.ledger{max-width:68rem}
+.ledger section{border-top:0; padding:0}
+
+/* ─── 頁首 ─── */
+.ledger .lg-head{padding:var(--s5) 0 var(--s4); border-bottom:2px solid var(--ink)}
+.ledger .lg-head h1{
+  font-family:var(--serif); font-weight:400; margin:var(--s2) 0 var(--s3);
+  font-size:clamp(2rem, 4.4vw, 2.9rem); line-height:1.25; letter-spacing:.02em;
+}
+.ledger .lg-decl{
+  font-family:var(--serif); font-size:clamp(1.08rem, 2vw, 1.3rem);
+  line-height:1.8; color:var(--ink); max-width:42rem;
+}
+.lg-meta{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(13rem, 1fr));
+  gap:0; border-top:1px solid var(--ink); border-bottom:1px solid var(--ink);
+  margin-top:var(--s3);
+}
+.lg-meta > div{padding:var(--s2); border-right:1px solid var(--hair); min-width:0}
+.lg-meta > div:last-child{border-right:0}
+.ledger .lg-meta span{
+  display:block; font-family:var(--mono); font-size:.72rem; letter-spacing:.14em;
+  color:var(--ink-faint); margin-bottom:.45rem;
+}
+.ledger .lg-meta b{
+  display:block; font-size:1.02rem; line-height:1.5; color:var(--ink);
+  font-weight:400; overflow-wrap:anywhere;
+}
+.ledger .lg-meta b.mono{font-size:.9rem; line-height:1.7}
+
+/* ─── 節：等寬編號懸掛左欄 ─── */
+.ledger .lg-sec{
+  display:grid; grid-template-columns:4.5rem 1fr; gap:0 var(--s2);
+  padding:var(--s5) 0 var(--s4); border-bottom:1px solid var(--hair);
+}
+.ledger .lg-sec > *{grid-column:2; min-width:0}
+.ledger .lg-sec > .lg-n{grid-column:1; grid-row:1}
+.lg-n{
+  font-family:var(--mono); font-size:1.6rem; line-height:1.2; letter-spacing:.02em;
+  color:var(--ink-faint); text-align:right; margin:0; padding-top:.2rem;
+}
+.ledger .lg-sec h2{
+  font-family:var(--serif); font-weight:400; font-size:1.6rem; line-height:1.4;
+  margin:0 0 var(--s2); letter-spacing:.02em; max-width:30rem;
+}
+.ledger .lg-sec h3{
+  font-family:var(--sans); font-weight:700; font-size:1rem; letter-spacing:.02em;
+  color:var(--ink); margin:var(--s3) 0 var(--s2);
+}
+.ledger .lg-sec p{max-width:42rem; line-height:2; font-size:1.01rem}
+.ledger .lg-sec b{color:var(--ink)}
+.ledger .lg-sub{
+  font-size:.96rem !important; color:var(--ink-dim);
+  padding-bottom:var(--s2); border-bottom:1px solid var(--hair-soft);
+}
+.ledger .lg-vow{
+  font-family:var(--serif); font-size:clamp(1.06rem, 1.8vw, 1.26rem);
+  line-height:1.8; color:var(--ink); max-width:38rem;
+  padding-left:var(--s2); border-left:3px solid var(--accent);
+  margin:var(--s3) 0;
+}
+.ledger .lg-note{
+  margin-top:var(--s3); padding:var(--s2); background:var(--paper-2);
+  font-size:.96rem !important; line-height:1.9; max-width:42rem;
+}
+
+/* ─── 編號步驟：.ledger 與 .dispatch 共用 ─── */
+.page-body .steps{
+  list-style:none; counter-reset:step; padding:0; margin:var(--s2) 0 var(--s3);
+  max-width:44rem;
+}
+.page-body .steps > li{
+  display:grid; grid-template-columns:2.6rem 1fr; gap:0 var(--s2);
+  padding:var(--s2) 0; margin:0; border-top:1px solid var(--hair-soft);
+}
+.page-body .steps > li:last-child{border-bottom:1px solid var(--hair-soft)}
+.page-body .steps > li::before{
+  counter-increment:step; content:counter(step,decimal-leading-zero);
+  font-family:var(--mono); font-size:.86rem; color:var(--accent); padding-top:.3rem;
+}
+/* ::before 佔掉 (row1,col1)，b 落在 (row1,col2)，若不明寫，span 會自動排到
+   (row2,col1)——那一欄只有 2.6rem，中文會一行一個字。 */
+.page-body .steps > li > b,
+.page-body .steps > li > span{grid-column:2}
+/* 子選擇器，不是後代選擇器：正文裡的 <b> 是巢狀的行內強調，
+   `.steps b{display:block}` 會把它們一個個切成獨立的行。
+   這與 .statute .items 上那條註解是同一條規則——寫過還是再犯了一次。 */
+.page-body .steps > li > b{display:block; font-size:1.02rem; line-height:1.7; margin-bottom:.4rem}
+.page-body .steps > li > span{
+  display:block; font-size:.95rem; line-height:1.9; color:var(--ink-dim);
+}
+.page-body .steps > li > span b{color:var(--ink)}
+.page-body .steps .hl{display:inline; box-shadow:inset 0 -.42em 0 var(--paper-2)}
+.page-body .steps .cmd{
+  margin-top:.6rem; padding:.7rem var(--s2); background:var(--paper-2);
+  font-size:.84rem; line-height:1.7; color:var(--ink); overflow-wrap:anywhere;
+}
+
+/* ─── 物料清單：全頁唯一填色處 ─── */
+.bom{width:100%; border-collapse:collapse; font-size:.95rem; line-height:1.8; margin:var(--s2) 0}
+.bom th{
+  text-align:left; font-family:var(--mono); font-size:.74rem; letter-spacing:.12em;
+  background:var(--ink); color:var(--paper); padding:.5rem .7rem; font-weight:400;
+}
+.bom td{
+  padding:.85rem .7rem .85rem 0; vertical-align:top; color:var(--ink-dim);
+  border-bottom:1px solid var(--hair-soft); overflow-wrap:anywhere;
+}
+.bom td + td{padding-left:.7rem}
+/* 不給寬度時，授權欄會被擠到一行兩三個字（「政府資料開放授權條款 1.0」斷成四行） */
+.bom th:nth-child(1){width:32%}
+.bom th:nth-child(2){width:22%}
+.ledger .bom b{color:var(--ink); font-weight:700}
+.ledger .bom .sub{display:block; font-size:.87rem; color:var(--ink-faint); line-height:1.7}
+.ledger .bom .mono{font-size:.85rem}
+.ledger .bom td.lic{color:var(--accent); white-space:normal}
+.ledger .bom td.lic .sub{color:var(--ink-faint)}
+
+/* ─── 摘要值：字串本身就是證據，所以印出來 ─── */
+.digest{border-top:1px solid var(--hair); margin:var(--s2) 0 var(--s3); max-width:44rem}
+.digest > div{
+  display:grid; grid-template-columns:9rem 1fr; gap:0 var(--s2);
+  padding:.7rem 0; border-bottom:1px solid var(--hair-soft);
+}
+.ledger .digest b{font-size:.84rem; color:var(--ink); font-weight:400}
+.ledger .digest span{
+  font-size:.78rem; line-height:1.7; color:var(--ink-dim);
+  word-break:break-all;   /* 64 位十六進位在窄欄一定要斷，否則整頁被撐開 */
+}
+
+/* ─── 兩格對照 ─── */
+.ledger .split{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(15rem, 1fr));
+  gap:0; border:1px solid var(--ink); margin:var(--s2) 0 var(--s3);
+}
+.ledger .split > div{padding:var(--s2); min-width:0}
+.ledger .split > div + div{border-left:1px solid var(--hair); background:var(--paper-2)}
+.ledger .split p{margin:0; max-width:none; font-size:.97rem; line-height:1.9}
+.sp-k{
+  display:inline-block; font-family:var(--mono); font-size:.72rem; letter-spacing:.14em;
+  background:var(--ink); color:var(--paper); padding:.2rem .55rem; margin-bottom:.8rem;
+}
+
+/* ─── 官方依據 ─── */
+.ledger .refs{list-style:none; padding:0; margin:var(--s2) 0 var(--s3); max-width:44rem}
+.ledger .refs > li{
+  display:grid; grid-template-columns:14rem 1fr; gap:0 var(--s2);
+  padding:.7rem 0; margin:0; border-top:1px solid var(--hair-soft);
+  font-size:.94rem; line-height:1.8;
+}
+.ledger .refs > li:last-child{border-bottom:1px solid var(--hair-soft)}
+.ledger .refs span{color:var(--ink-dim)}
+.ledger .refs a{font-family:var(--mono); font-size:.84rem; overflow-wrap:anywhere}
+.ledger .limit{max-width:42rem}
+
+@media (max-width:60rem){
+  .ledger .lg-sec{grid-template-columns:1fr; gap:0}
+  .ledger .lg-sec > *{grid-column:1}
+  .ledger .lg-sec > .lg-n{grid-row:auto; text-align:left; margin-bottom:.5rem; padding-top:0}
+  .ledger .refs > li{grid-template-columns:1fr; gap:.3rem}
+  .digest > div{grid-template-columns:1fr; gap:.3rem}
+}
+@media (max-width:48rem){
+  .lg-meta > div{border-right:0; border-bottom:1px solid var(--hair)}
+  .lg-meta > div:last-child{border-bottom:0}
+  .ledger .split > div + div{border-left:0; border-top:1px solid var(--hair)}
+  .bom{font-size:.9rem}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   .dispatch — /contact
+
+   第十套版面語彙。這一頁的內容只有一件事：**一個地址**。
+   原稿把它排成三節、三個信箱、五個 [待填]，讀起來像有三條管道；
+   實際上只有一條，另外兩個信箱不存在。
+
+   所以形制取**信封與信頭**：地址本身是頁面的紀念碑（大字等寬、上下實線），
+   其餘都是圍著它的註記。全頁唯一的重點色區塊留給那條與本站其他頁**相反**
+   的規則——寄信是這個產品裡唯一會留下使用者資料的地方。那不是裝飾性的強調，
+   是唯一可能傷到使用者的一段。
+   ═══════════════════════════════════════════════════════════════ */
+.dispatch{max-width:62rem}
+.dispatch section{border-top:0; padding:0}
+
+.dispatch .ds-head{padding:var(--s5) 0 var(--s3)}
+.dispatch .ds-head h1{
+  font-family:var(--serif); font-weight:400; margin:var(--s2) 0 var(--s3);
+  font-size:clamp(2rem, 4.4vw, 2.9rem); line-height:1.25; letter-spacing:.02em;
+}
+.dispatch .lede{max-width:40rem; font-size:1.06rem; line-height:1.9}
+.dispatch .lede b{color:var(--ink)}
+
+/* ─── 地址：頁面的紀念碑 ─── */
+.dispatch .ds-addr{
+  border-top:2px solid var(--ink); border-bottom:2px solid var(--ink);
+  padding:var(--s3) 0; margin-bottom:var(--s4);
+}
+.ad-k{
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.16em;
+  color:var(--ink-faint); margin:0 0 var(--s2);
+}
+.dispatch .ad-mail{
+  font-size:clamp(1.05rem, 3.4vw, 1.85rem); line-height:1.4; color:var(--ink);
+  margin:0 0 var(--s3); overflow-wrap:anywhere; letter-spacing:.01em;
+}
+.ds-uses{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));
+  gap:0; border-top:1px solid var(--hair); margin-bottom:var(--s2);
+}
+.ds-uses > div{padding:.8rem var(--s2) .8rem 0; border-right:1px solid var(--hair); min-width:0}
+.ds-uses > div:last-child{border-right:0}
+.ds-uses > div + div{padding-left:var(--s2)}
+.dispatch .ds-uses span{
+  font-family:var(--mono); font-size:.78rem; letter-spacing:.06em; color:var(--ink-dim);
+}
+.dispatch .ad-note{max-width:42rem; font-size:.94rem; line-height:1.9; color:var(--ink-dim); margin:0}
+.dispatch .ad-note b{color:var(--ink)}
+
+/* ─── 唯一的重點色區塊 ─── */
+.dispatch .caution{
+  background:var(--paper-2); border-left:3px solid var(--accent);
+  padding:var(--s3); margin-bottom:var(--s4);
+}
+.ca-k{
+  display:inline-block; font-family:var(--mono); font-size:.74rem; letter-spacing:.14em;
+  color:var(--on-accent); background:var(--accent); padding:.22rem .5rem; margin:0 0 var(--s2);
+}
+.dispatch .caution .ca-lede{
+  font-family:var(--serif); font-size:clamp(1.1rem, 2vw, 1.36rem); line-height:1.75;
+  color:var(--ink); max-width:38rem; margin-bottom:var(--s2);
+}
+.dispatch .caution p{max-width:42rem; line-height:1.95; font-size:.99rem}
+.dispatch .caution b{color:var(--ink)}
+.dispatch .caution .ca-rule{
+  margin:var(--s2) 0 0; padding-top:var(--s2); border-top:1px solid var(--hair);
+  font-size:1.04rem;
+}
+
+/* ─── 一般段落 ─── */
+.dispatch .ds-sec{padding:var(--s4) 0; border-top:1px solid var(--hair)}
+.dispatch .ds-sec h2{
+  font-family:var(--serif); font-weight:400; font-size:1.5rem; line-height:1.4;
+  margin:0 0 var(--s2); letter-spacing:.02em; max-width:28rem;
+}
+.dispatch .ds-sec h3{
+  font-family:var(--sans); font-weight:700; font-size:1rem; letter-spacing:.02em;
+  color:var(--ink); margin:var(--s3) 0 var(--s2);
+}
+.dispatch .ds-sec p{max-width:42rem; line-height:2; font-size:1.01rem}
+.dispatch .ds-sec b{color:var(--ink)}
+.dispatch .ds-sub{
+  font-size:.97rem !important; color:var(--ink-dim);
+  padding-bottom:var(--s2); border-bottom:1px solid var(--hair-soft);
+}
+.dispatch .ds-note{
+  margin-top:var(--s3); padding:var(--s2); background:var(--paper-2);
+  font-size:.95rem !important; line-height:1.9; max-width:42rem;
+}
+
+/* ─── 另外兩種信：兩格 ─── */
+.kinds{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(17rem, 1fr));
+  gap:0; border:1px solid var(--ink); margin-top:var(--s2);
+}
+.kinds > .kind{padding:var(--s3); min-width:0}
+.kinds > .kind + .kind{border-left:1px solid var(--hair); background:var(--paper-2)}
+.dispatch .kind p{max-width:none; font-size:.96rem; line-height:1.9}
+.dispatch .kind p:last-child{margin-bottom:0}
+.k-n{
+  display:inline-block; font-family:var(--mono); font-size:.74rem; letter-spacing:.14em;
+  background:var(--ink); color:var(--paper); padding:.22rem .55rem; margin-bottom:var(--s2);
+}
+
+/* ─── 信的路徑：三站 ─── */
+.hop{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(13rem, 1fr));
+  gap:0; border-top:1px solid var(--ink); border-bottom:1px solid var(--ink);
+  margin:var(--s2) 0 var(--s3);
+}
+.hop > div{padding:var(--s2); border-right:1px solid var(--hair); min-width:0}
+.hop > div:last-child{border-right:0}
+.dispatch .hop span{
+  display:block; font-family:var(--mono); font-size:.72rem; letter-spacing:.14em;
+  color:var(--accent); margin-bottom:.5rem;
+}
+.dispatch .hop b{
+  display:block; font-size:1.04rem; line-height:1.5; color:var(--ink); margin-bottom:.4rem;
+}
+/* 子選擇器：<i> 裡還有巢狀的 <b> 行內強調，用後代選擇器會把它們各自切成一行 */
+.dispatch .hop > div > i{
+  display:block; font-style:normal; font-size:.9rem; line-height:1.85; color:var(--ink-dim);
+}
+.dispatch .hop i b{display:inline; margin:0; font-size:inherit}
+
+/* ─── 不會發生的事 ─── */
+.dispatch .never{list-style:none; padding:0; margin:var(--s2) 0 0; max-width:44rem}
+.dispatch .never > li{
+  padding:var(--s2) 0; margin:0; border-top:1px solid var(--hair-soft);
+  font-size:.99rem; line-height:1.9; color:var(--ink-dim);
+}
+.dispatch .never > li:last-child{border-bottom:1px solid var(--hair-soft)}
+
+@media (max-width:48rem){
+  /* 三格在此寬度會排成 2＋1，落單那格很難看；改成單欄清單 */
+  .ds-uses{grid-template-columns:1fr}
+  .ds-uses > div{border-right:0; border-bottom:1px solid var(--hair)}
+  .ds-uses > div:last-child{border-bottom:0}
+  .ds-uses > div + div{padding-left:0}
+  .kinds > .kind + .kind{border-left:0; border-top:1px solid var(--hair)}
+  .hop{grid-template-columns:1fr}
+  .hop > div{border-right:0; border-bottom:1px solid var(--hair)}
+  .hop > div:last-child{border-bottom:0}
+  .dispatch .caution{padding:var(--s2)}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   .desk — /blog
+
+   第十一套版面語彙。這一頁的內容有一個特殊性質：**它現在是空的**。
+   十個選題已經排定，一篇都還沒寫。原稿把它排成部落格首頁的樣子，
+   於是讀起來像目錄——點進去卻什麼都沒有。
+
+   所以形制取**編輯檯的選題板**：頁首把「0」做成一個看得見的數字，
+   選題依「誰是主角」分組（我們自己的錯／方法差異／為什麼不做），
+   而不是排成一張資料表。分組本身就是編輯立場。
+
+   全頁沒有填色區塊。這一頁不需要大聲：**那個 0 已經夠大聲了。**
+   ═══════════════════════════════════════════════════════════════ */
+.desk{max-width:64rem}
+.desk section{border-top:0; padding:0}
+
+/* ─── 頁首與那個 0 ─── */
+.desk .dk-head{padding:var(--s5) 0 var(--s4); border-bottom:2px solid var(--ink)}
+.desk .dk-head h1{
+  font-family:var(--serif); font-weight:400; margin:var(--s2) 0 var(--s3);
+  font-size:clamp(1.9rem, 4.2vw, 2.8rem); line-height:1.35; letter-spacing:.02em;
+  max-width:24rem;
+}
+.dk-count{
+  /* 8rem 而非 11rem：三個數字在窄幅要留在同一列，排成 2＋1 會落單 */
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(8rem, 1fr));
+  gap:0; border-top:1px solid var(--ink); border-bottom:1px solid var(--ink);
+  margin-bottom:var(--s3);
+}
+.dk-count > div{padding:var(--s2); border-right:1px solid var(--hair); min-width:0}
+.dk-count > div:last-child{border-right:0}
+.desk .dk-count b{
+  display:block; font-family:var(--serif); font-weight:400;
+  font-size:clamp(2.2rem, 6vw, 3.4rem); line-height:1; color:var(--ink);
+  margin-bottom:.5rem;
+}
+.desk .dk-count > div:first-child b{color:var(--accent)}
+.desk .dk-count span{
+  display:block; font-family:var(--mono); font-size:.72rem; letter-spacing:.12em;
+  color:var(--ink-faint); line-height:1.6;
+}
+.desk .lede{max-width:42rem; font-size:1.04rem; line-height:1.95}
+.desk .lede b{color:var(--ink)}
+
+/* ─── 一般段落 ─── */
+.desk .dk-sec{padding:var(--s5) 0 var(--s4); border-top:1px solid var(--hair)}
+.desk .dk-sec h2{
+  font-family:var(--serif); font-weight:400; font-size:1.5rem; line-height:1.4;
+  margin:0 0 var(--s2); letter-spacing:.02em; max-width:30rem;
+}
+.desk .dk-sec p{max-width:42rem; line-height:2; font-size:1.01rem}
+.desk .dk-sec b{color:var(--ink)}
+.desk .dk-sub{
+  font-size:.97rem !important; color:var(--ink-dim);
+  padding-bottom:var(--s2); border-bottom:1px solid var(--hair-soft);
+}
+.desk .dk-note{
+  margin-top:var(--s3); padding:var(--s2); background:var(--paper-2);
+  font-size:.98rem !important; line-height:1.95; max-width:42rem;
+}
+
+/* ─── 選題板 ─── */
+.group{margin-top:var(--s4)}
+.gp-k{
+  font-family:var(--mono); font-size:.74rem; letter-spacing:.16em;
+  color:var(--accent); margin:0 0 var(--s2) !important;
+}
+.desk .slate{list-style:none; padding:0; margin:0; max-width:none}
+.desk .slate > li{
+  display:grid; grid-template-columns:2.8rem 1fr 2.6rem; gap:0 var(--s2);
+  padding:var(--s2) 0; margin:0; border-top:1px solid var(--hair-soft);
+  align-items:baseline;
+}
+.desk .slate > li:last-child{border-bottom:1px solid var(--hair-soft)}
+.tp-n{
+  font-family:var(--mono); font-size:.86rem; color:var(--ink-faint); line-height:1.7;
+}
+/* 子選擇器：標題與說明裡都還有巢狀的 <b>，用後代選擇器會把它們切成獨立的行 */
+.desk .slate > li > div > b{
+  display:block; font-size:1.06rem; line-height:1.65; color:var(--ink); margin-bottom:.4rem;
+}
+.desk .slate > li > div > .tp-why{
+  display:block; font-size:.94rem; line-height:1.9; color:var(--ink-dim);
+}
+.desk .slate .tp-why b{color:var(--ink)}
+.tp-tier{
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.06em;
+  color:var(--accent); text-align:right; line-height:1.7;
+}
+
+/* ─── 三層定義 ─── */
+.tiers{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(15rem, 1fr));
+  gap:0; border:1px solid var(--ink); margin-top:var(--s2);
+}
+.tiers > .tier-def{padding:var(--s3) var(--s2); min-width:0}
+.tiers > .tier-def + .tier-def{border-left:1px solid var(--hair)}
+.td-k{
+  display:inline-block; font-family:var(--mono); font-size:.78rem; letter-spacing:.12em;
+  background:var(--ink); color:var(--paper); padding:.22rem .55rem; margin-bottom:var(--s2);
+}
+.desk .tier-def > b{
+  display:block; font-size:1.02rem; line-height:1.6; color:var(--ink); margin-bottom:.6rem;
+}
+.desk .tier-def p{margin:0; max-width:none; font-size:.94rem; line-height:1.9}
+
+@media (max-width:60rem){
+  .desk .slate > li{grid-template-columns:2.4rem 1fr; gap:0 var(--s2)}
+  .desk .slate > li > .tp-tier{
+    grid-column:2; text-align:left; margin-top:.5rem;
+  }
+}
+@media (max-width:48rem){
+  .tiers > .tier-def + .tier-def{border-left:0; border-top:1px solid var(--hair)}
 }

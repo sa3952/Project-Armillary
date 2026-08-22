@@ -25,6 +25,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from packaging.requirements import InvalidRequirement, Requirement
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # `CLA-2026-08-06-B`, second half.  The guard now compares artifact hashes
@@ -40,31 +41,53 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_LOCK = PROJECT_ROOT / "deploy" / "requirements.lock"
 DEV_LOCK = PROJECT_ROOT / "backend" / "requirements-dev.lock"
 
-_PINNED = re.compile(r"^(?P<name>[A-Za-z0-9._-]+)(?:\[[^\]]*\])?==(?P<version>[^\s\\]+)")
 _HASH = re.compile(r"--hash=sha256:([0-9a-f]{64})")
 
 
 def _components(lock: Path, scope: str) -> list[dict]:
     components: list[dict] = []
-    current: dict | None = None
-    for line in lock.read_text(encoding="utf-8").splitlines():
-        pinned = _PINNED.match(line.strip())
-        if pinned:
-            current = {
-                "type": "library",
-                "name": pinned.group("name"),
-                "version": pinned.group("version"),
-                "purl": f"pkg:pypi/{pinned.group('name')}@{pinned.group('version')}",
-                "scope": scope,
-                "hashes": [],
-            }
-            components.append(current)
+    logical: list[str] = []
+    buffer = ""
+    for raw in lock.read_text(encoding="utf-8").splitlines():
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
             continue
-        digest = _HASH.search(line)
-        if digest and current is not None:
-            current["hashes"].append(
-                {"alg": "SHA-256", "content": digest.group(1)}
-            )
+        if stripped.startswith(("--", "-r", "-c")) and not buffer:
+            raise ValueError(f"unsupported top-level lock directive: {stripped}")
+        buffer += (" " if buffer else "") + stripped.removesuffix("\\").strip()
+        if not stripped.endswith("\\"):
+            logical.append(buffer)
+            buffer = ""
+    if buffer:
+        raise ValueError("unterminated lock requirement continuation")
+    for record in logical:
+        requirement_text = record.split("--hash=", 1)[0].strip()
+        try:
+            requirement = Requirement(requirement_text)
+        except InvalidRequirement as error:
+            raise ValueError(f"cannot parse lock requirement: {requirement_text}") from error
+        pins = list(requirement.specifier)
+        if len(pins) != 1 or pins[0].operator != "==" or "*" in pins[0].version:
+            raise ValueError(f"lock requirement is not exactly pinned: {requirement_text}")
+        hashes = _HASH.findall(record)
+        if not hashes:
+            raise ValueError(f"lock requirement has no SHA-256: {requirement_text}")
+        component = {
+            "type": "library",
+            "name": requirement.name,
+            "version": pins[0].version,
+            "purl": f"pkg:pypi/{requirement.name}@{pins[0].version}",
+            "scope": scope,
+            "hashes": [
+                {"alg": "SHA-256", "content": digest}
+                for digest in hashes
+            ],
+        }
+        if requirement.marker is not None:
+            component["properties"] = [
+                {"name": "pep508_marker", "value": str(requirement.marker)}
+            ]
+        components.append(component)
     return components
 
 

@@ -6,6 +6,7 @@ import threading
 import swisseph as swe
 
 EPHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ephe")
+AMBIENT_EPHEMERIS_PATHS = ("SE_EPHE_PATH", "SE_EP_PATH")
 
 
 class FullEphemerisRequiredError(Exception):
@@ -23,7 +24,17 @@ class FullEphemerisRequiredError(Exception):
         )
 
 
+def _refuse_ambient_ephemeris_path() -> None:
+    inherited = [name for name in AMBIENT_EPHEMERIS_PATHS if name in os.environ]
+    if inherited:
+        raise RuntimeError(
+            "ambient Swiss ephemeris path would override the bundled dataset: "
+            + ", ".join(inherited)
+        )
+
+
 def init_ephemeris():
+    _refuse_ambient_ephemeris_path()
     swe.set_ephe_path(EPHE_DIR)
 
 
@@ -45,8 +56,19 @@ def ensure_ephemeris_initialized_for_thread() -> bool:
 
     if getattr(_THREAD_STATE, "initialized", False):
         return False
+    _refuse_ambient_ephemeris_path()
     swe.set_ephe_path(EPHE_DIR)
     _THREAD_STATE.initialized = True
+    return True
+
+
+def release_ephemeris_for_thread() -> bool:
+    """Close Swiss files and clear this thread's initialization flag."""
+
+    if not getattr(_THREAD_STATE, "initialized", False):
+        return False
+    swe.close()
+    _THREAD_STATE.initialized = False
     return True
 
 

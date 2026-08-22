@@ -167,9 +167,64 @@ def test_chunked_body_limit_catches_forged_small_content_length():
 
     asyncio.run(ChartRequestBoundary(downstream)(scope, receive, send))
 
-    assert downstream_called
+    assert not downstream_called
     assert sent[0]["status"] == 413
     assert json.loads(sent[1]["body"])["detail"]["code"] == "request_body_too_large"
+
+
+def test_streamed_body_limit_survives_the_assembled_fastapi_stack():
+    """The framework must not translate the boundary's overflow into a 400."""
+    from app.main import create_app
+    from app.settings import AppProfile, AppSettings
+
+    application = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    scope = {
+        "type": "http",
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/chart",
+        "raw_path": b"/api/chart",
+        "query_string": b"",
+        "server": ("testserver", 80),
+        "client": ("127.0.0.1", 1234),
+        "headers": [(b"content-type", b"application/json")],
+        "state": {},
+    }
+    messages = iter([
+        {"type": "http.request", "body": b"x" * 10_000, "more_body": True},
+        {"type": "http.request", "body": b"x" * 7_000, "more_body": False},
+    ])
+    sent = []
+
+    async def receive():
+        return next(messages)
+
+    async def send(message):
+        sent.append(message)
+
+    asyncio.run(application(scope, receive, send))
+    starts = [item for item in sent if item["type"] == "http.response.start"]
+    bodies = [item for item in sent if item["type"] == "http.response.body"]
+    assert [item["status"] for item in starts] == [413]
+    assert json.loads(bodies[-1]["body"])["detail"]["code"] == "request_body_too_large"
+
+
+def test_capacity_boundary_wraps_unsupported_api_method_boundary():
+    """A cheap 405 still occupies and releases an application capacity slot."""
+    from app.main import create_app
+    from app.request_limits import ApiMethodBoundary, RequestCapacityBoundary
+    from app.settings import AppProfile, AppSettings
+
+    application = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    application.middleware_stack = application.build_middleware_stack()
+    current = application.middleware_stack
+    seen = []
+    while hasattr(current, "app"):
+        if isinstance(current, (RequestCapacityBoundary, ApiMethodBoundary)):
+            seen.append(type(current))
+        current = current.app
+    assert seen == [RequestCapacityBoundary, ApiMethodBoundary]
 
 
 def test_known_oversized_content_length_never_calls_downstream():
@@ -298,25 +353,19 @@ def test_request_boundary_never_starts_second_response_after_late_oversize():
     async def send(message):
         sent.append(message)
 
-    with pytest.raises(Exception) as raised:
-        asyncio.run(
-            ChartRequestBoundary(downstream, max_body_bytes=16)(
-                scope,
-                receive,
-                send,
-            )
+    asyncio.run(
+        ChartRequestBoundary(downstream, max_body_bytes=16)(
+            scope,
+            receive,
+            send,
         )
-    assert raised.type.__name__ == "_RequestBodyTooLarge"
+    )
 
-    assert [
+    response_starts = [
         message for message in sent if message["type"] == "http.response.start"
-    ] == [
-        {
-            "type": "http.response.start",
-            "status": 200,
-            "headers": [],
-        }
     ]
+    assert len(response_starts) == 1
+    assert response_starts[0]["status"] == 413
 
 
 def test_hosted_chart_rejects_a_declared_empty_body_as_a_framing_fault():

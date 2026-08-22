@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 from pathlib import Path
 import re
+import shlex
 import shutil
 import sys
 
@@ -31,9 +33,9 @@ ALLOWED_FILES = (
     Path("deploy/entrypoint.sh"),
     Path("deploy/container_healthcheck.py"),
     Path("third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz"),
-    Path("third_party/pyswisseph/LICENSE.txt"),
     Path("scripts/verification/verify_ephemeris_integrity.py"),
     Path("scripts/verification/verify_place_catalog.py"),
+    Path("scripts/verification/capture_build_evidence.py"),
     Path("scripts/publication/verify_linux_source_build.py"),
 )
 ALTERNATIVE_ALLOWED_FILES = (
@@ -120,11 +122,11 @@ EXPECTED_DOCKERIGNORE_POLICY = (
     "!third_party/",
     "!third_party/pyswisseph/",
     "!third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz",
-    "!third_party/pyswisseph/LICENSE.txt",
     "!scripts/",
     "!scripts/verification/",
     "!scripts/verification/verify_ephemeris_integrity.py",
     "!scripts/verification/verify_place_catalog.py",
+    "!scripts/verification/capture_build_evidence.py",
     "!scripts/publication/",
     "!scripts/publication/verify_linux_source_build.py",
     "!build-context-probe-8f38f069.txt",
@@ -133,9 +135,15 @@ EXPECTED_DOCKERIGNORE_POLICY = (
     "**/*.py[cod]",
     "frontend/tests",
     "frontend/tests/**",
+    "**/.env",
+    "**/.env.*",
+    "**/*.pem",
+    "**/*.key",
+    "**/*secret*",
+    "**/*token*",
 )
 PUBLIC_DOCKERIGNORE_POLICY_SHA256 = (
-    "4d63eb595c9e820a81ad29f4ff728aaa8033681af8b85cabc0f0a4cfad8ec7b4"
+    "5ce270c762c7e516c08910e05249e447aa6f49bf695f69ccc116aa44e10fad3d"
 )
 
 
@@ -225,14 +233,72 @@ def context_file_paths(root: Path) -> list[Path]:
     return sorted(paths, key=lambda item: item.as_posix())
 
 
-def _dockerfile_copy_sources(root: Path) -> set[Path]:
-    sources: set[Path] = set()
-    dockerfile = (root / "deploy/Dockerfile").read_text(encoding="utf-8")
-    for line in dockerfile.splitlines():
-        match = re.match(r"^COPY\s+(?!.*--from=)(\S+)\s+\S+", line)
-        if match:
-            sources.add(Path(match.group(1)))
+def dockerfile_copy_source_strings(dockerfile: str) -> set[str]:
+    """Return local COPY/ADD sources from Dockerfile logical lines."""
+    logical_lines: list[str] = []
+    continued = ""
+    for raw_line in dockerfile.splitlines():
+        line = raw_line.strip()
+        if not line or (line.startswith("#") and not continued):
+            continue
+        continued += (" " if continued else "") + line
+        if continued.endswith("\\"):
+            continued = continued[:-1].rstrip()
+            continue
+        logical_lines.append(continued)
+        continued = ""
+    if continued:
+        raise DockerContextFailure("unterminated Dockerfile line continuation")
+
+    sources: set[str] = set()
+    for line in logical_lines:
+        match = re.match(r"^(COPY|ADD)\s+(.+)$", line, re.IGNORECASE)
+        if match is None:
+            continue
+        instruction, arguments = match.groups()
+        options: list[str] = []
+        while arguments.startswith("--"):
+            option_match = re.match(r"^(--[^\s]+)\s+(.+)$", arguments)
+            if option_match is None:
+                raise DockerContextFailure(
+                    f"invalid Dockerfile {instruction} options: {line}"
+                )
+            option, arguments = option_match.groups()
+            options.append(option)
+        if any(
+            option == "--from" or option.startswith("--from=")
+            for option in options
+        ):
+            continue
+        try:
+            if arguments.startswith("["):
+                values = json.loads(arguments)
+                if (
+                    not isinstance(values, list)
+                    or len(values) < 2
+                    or not all(isinstance(value, str) for value in values)
+                ):
+                    raise ValueError("expected a JSON string array")
+            else:
+                values = shlex.split(arguments, posix=True)
+                if len(values) < 2:
+                    raise ValueError("expected at least one source and a destination")
+        except (json.JSONDecodeError, ValueError) as error:
+            raise DockerContextFailure(
+                f"invalid Dockerfile JSON {instruction}: {line}"
+            ) from error
+        for source in values[:-1]:
+            if instruction.upper() == "ADD" and re.match(
+                r"^(?:https?|git)://", source
+            ):
+                continue
+            sources.add(source)
     return sources
+
+
+def _dockerfile_copy_sources(root: Path) -> set[Path]:
+    dockerfile = (root / "deploy/Dockerfile").read_text(encoding="utf-8")
+    return {Path(source) for source in dockerfile_copy_source_strings(dockerfile)}
 
 
 def verify(root: Path = PROJECT_ROOT) -> dict:

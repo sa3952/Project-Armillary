@@ -46,7 +46,9 @@
                 "speed_distance": 0.0002209261912306967,
                 "speed_latitude": 3.7080021676744435e-05,
                 "speed_longitude": 0.9642981906000891,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": 0.9874352767440657,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -83,7 +85,9 @@
                 "speed_distance": 6.607884807038888e-05,
                 "speed_latitude": 1.0429294695146751,
                 "speed_longitude": 16.92776680215502,
+                "speed_position_derivative_status": "known_internal_disagreement_for_sun_moon",
                 "speed_ra": 17.858250791391583,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -117,7 +121,9 @@
                 "speed_distance": 0.00898056335173519,
                 "speed_latitude": -0.19693985008275236,
                 "speed_longitude": -0.1374872456814575,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": -0.06854440224515984,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -151,7 +157,9 @@
                 "speed_distance": 0.007407222528404235,
                 "speed_latitude": -0.030665040581203718,
                 "speed_longitude": 1.140267420127444,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": 1.0636702848352313,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -185,7 +193,9 @@
                 "speed_distance": -0.005906651481881437,
                 "speed_latitude": -0.010432446544457213,
                 "speed_longitude": 0.7428043436226343,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": 0.6913586261249264,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -219,7 +229,9 @@
                 "speed_distance": 0.011576787309089842,
                 "speed_latitude": 0.001405353859515364,
                 "speed_longitude": 0.18890703970483255,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": 0.20517771782042774,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -253,7 +265,9 @@
                 "speed_distance": -0.014627969800389986,
                 "speed_latitude": -0.001146601453017681,
                 "speed_longitude": -0.016537041018113822,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": -0.01718798459328311,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -287,7 +301,9 @@
                 "speed_distance": -0.011886991526192485,
                 "speed_latitude": -0.000352837590787306,
                 "speed_longitude": -0.024430345730887416,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": -0.026536317267532503,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -321,7 +337,9 @@
                 "speed_distance": -0.013178386996800425,
                 "speed_latitude": 0.00022162731264788768,
                 "speed_longitude": -0.014619955497902404,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": -0.015680580493434647,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -355,7 +373,9 @@
                 "speed_distance": 0.0020253654562597838,
                 "speed_latitude": -0.0020725325074570406,
                 "speed_longitude": -0.02773873017595457,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": -0.026211004886703002,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -391,7 +411,9 @@
                 "speed_distance": 0.010657182387523301,
                 "speed_latitude": 0.006321365455693102,
                 "speed_longitude": 0.07973541669497944,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": 0.0828538361922008,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             }
         ],
@@ -2211,7 +2233,9 @@
                     "speed_distance": 0.0,
                     "speed_latitude": 0.002582125734204171,
                     "speed_longitude": 0.11204820534971094,
+                    "speed_position_derivative_status": "not_evaluated",
                     "speed_ra": 0.11753521157015805,
+                    "speed_source": "swiss_ephemeris_flg_speed_analytic",
                     "swiss_body_id": 12,
                     "used_full_ephemeris": true
                 },
@@ -2249,7 +2273,9 @@
                     "speed_distance": -8.801996884595337e-09,
                     "speed_latitude": -0.0020135072685417634,
                     "speed_longitude": -0.08370634416379029,
+                    "speed_position_derivative_status": "not_evaluated",
                     "speed_ra": -0.08757209905573625,
+                    "speed_source": "swiss_ephemeris_flg_speed_analytic",
                     "swiss_body_id": 21,
                     "used_full_ephemeris": true
                 },
@@ -2287,7 +2313,9 @@
                     "speed_distance": 9.417756354125748e-08,
                     "speed_latitude": -0.009490779083531777,
                     "speed_longitude": 0.5233507291244137,
+                    "speed_position_derivative_status": "not_evaluated",
                     "speed_ra": 0.550435364556249,
+                    "speed_source": "swiss_ephemeris_flg_speed_analytic",
                     "swiss_body_id": 22,
                     "used_full_ephemeris": true
                 }
@@ -2536,7 +2564,9 @@
                 "speed_distance": -5.746800578497445e-07,
                 "speed_latitude": 0.0,
                 "speed_longitude": -0.03032866449405725,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": -0.03064990998069017,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -2570,7 +2600,9 @@
                 "speed_distance": 0.0,
                 "speed_latitude": 0.0,
                 "speed_longitude": -0.05293309781741551,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": -0.05331837537361826,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             {
@@ -2711,7 +2743,9 @@
                 "speed_distance": -2.667063869627556e-05,
                 "speed_latitude": 1.0436637723902906,
                 "speed_longitude": 12.30311000343183,
+                "speed_position_derivative_status": "not_evaluated",
                 "speed_ra": 12.911639121894742,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             },
             "global_center": "geocentric",
@@ -2755,13 +2789,21 @@
                 "speed_distance": 6.607884807038888e-05,
                 "speed_latitude": 1.0429294695146751,
                 "speed_longitude": 16.92776680215502,
+                "speed_position_derivative_status": "known_internal_disagreement_for_sun_moon",
                 "speed_ra": 17.858250791391583,
+                "speed_source": "swiss_ephemeris_flg_speed_analytic",
                 "used_full_ephemeris": true
             }
         },
         "time": {
             "apparent_solar_time": "1990-05-15 14:36:24",
             "ayanamsa": null,
+            "delta_t_model": {
+                "accuracy_status": "not_independently_established_for_this_epoch",
+                "far_epoch_warning_year": 2100,
+                "source": "swiss_ephemeris_internal_delta_t",
+                "status": "model_value"
+            },
             "delta_t_seconds": 57.105182111263275,
             "dst_warning": null,
             "ecl_nut_retflag": 2,
@@ -2774,11 +2816,13 @@
             "jd_et": 2448026.7714951853,
             "jd_ut": 2448026.7708342457,
             "last_hours": 6.060282380701658,
+            "leap_second_input": false,
             "lmst_hours": 6.0600833379414,
             "lst_hours": 6.060282380701658,
             "mean_obliquity": 23.44053263706711,
             "nutation_longitude": 0.0032542394199027314,
             "nutation_obliquity": 0.0016304647231617782,
+            "swiss_time_input_semantics": "utc",
             "timezone_label": "Asia/Taipei",
             "true_obliquity": 23.44216310179027,
             "utc_offset_hours": 8.0,
@@ -3039,6 +3083,463 @@
                 "partile_profile": "lilly_1677_three_degrees_v1",
                 "triplicity_include_research_comparison": true,
                 "triplicity_profile": "lilly_triplicity_compact_1647_v1"
+            },
+            "option_states": {
+                "antiscia_include_nodes": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_geometry.antiscia.scope"
+                    ],
+                    "source": "derived_geometry.antiscia.scope"
+                },
+                "aspect_angle_orb_degrees": {
+                    "applicable": false,
+                    "available": false,
+                    "executed": false,
+                    "input_presence": "explicit",
+                    "reason_code": "configuration_not_selected",
+                    "requested": false,
+                    "requested_value": null,
+                    "response_paths": [
+                        "derived_methods.aspects.degree_based.angle_participation"
+                    ],
+                    "source": null
+                },
+                "aspect_fixed_orb_degrees": {
+                    "applicable": false,
+                    "available": false,
+                    "executed": false,
+                    "input_presence": "explicit",
+                    "reason_code": "configuration_not_selected",
+                    "requested": false,
+                    "requested_value": null,
+                    "response_paths": [
+                        "derived_methods.aspects.degree_based.orb_receipt"
+                    ],
+                    "source": null
+                },
+                "aspect_include_angles": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.aspects.degree_based.angle_participation"
+                    ],
+                    "source": "derived_methods.aspects.degree_based.angle_participation"
+                },
+                "aspect_include_nodes": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.aspects.participants"
+                    ],
+                    "source": "derived_methods.aspects.participants"
+                },
+                "aspect_orb_profile": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "lilly_1647_experience_v1",
+                    "response_paths": [
+                        "derived_methods.aspects.degree_based.orb_receipt"
+                    ],
+                    "source": "derived_methods.aspects.degree_based.orb_receipt"
+                },
+                "aspect_orb_scale_percent": {
+                    "applicable": false,
+                    "available": false,
+                    "executed": false,
+                    "input_presence": "explicit",
+                    "reason_code": "configuration_not_selected",
+                    "requested": false,
+                    "requested_value": null,
+                    "response_paths": [
+                        "derived_methods.aspects.degree_based.orb_receipt"
+                    ],
+                    "source": null
+                },
+                "aspect_set_profile": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "modern_minor_combined_v1",
+                    "response_paths": [
+                        "derived_methods.aspects.degree_based"
+                    ],
+                    "source": "derived_methods.aspects.degree_based"
+                },
+                "body_selection_preset": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "custom",
+                    "response_paths": [
+                        "calculation_dossier.calculation_policy.body_selection"
+                    ],
+                    "source": "calculation_dossier.calculation_policy.body_selection"
+                },
+                "bounds_profile": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "lilly_received_bounds_1647_v1",
+                    "response_paths": [
+                        "derived_methods.essential_dignities.profile_results"
+                    ],
+                    "source": "derived_methods.essential_dignities.profile_results"
+                },
+                "decan_profile": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "manilius_sign_decans_astronomica_iv_v1",
+                    "response_paths": [
+                        "derived_methods.essential_dignities.profile_results"
+                    ],
+                    "source": "derived_methods.essential_dignities.profile_results"
+                },
+                "declination_aspect_orb_degrees": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": 1.0,
+                    "response_paths": [
+                        "derived_methods.declination_aspects"
+                    ],
+                    "source": "derived_methods.declination_aspects"
+                },
+                "house_system": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "P",
+                    "response_paths": [
+                        "derived_methods.house_division"
+                    ],
+                    "source": "derived_methods.house_division"
+                },
+                "include_anti_vertex": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.extra_angles.angles.anti_vertex"
+                    ],
+                    "source": "astronomical_data.extra_angles.angles.anti_vertex"
+                },
+                "include_antiscia": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_geometry.antiscia"
+                    ],
+                    "source": "derived_geometry.antiscia"
+                },
+                "include_aspect_perfection": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.aspects.perfection"
+                    ],
+                    "source": "derived_methods.aspects.perfection"
+                },
+                "include_aspects": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.aspects"
+                    ],
+                    "source": "derived_methods.aspects"
+                },
+                "include_chiron": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.bodies"
+                    ],
+                    "source": "astronomical_data.bodies"
+                },
+                "include_declination_aspects": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.declination_aspects"
+                    ],
+                    "source": "derived_methods.declination_aspects"
+                },
+                "include_domicile_exaltation": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.essential_dignities"
+                    ],
+                    "source": "derived_methods.essential_dignities.profile_results"
+                },
+                "include_eclipses": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.lunar_events.eclipses"
+                    ],
+                    "source": "astronomical_data.lunar_events.eclipses"
+                },
+                "include_extra_angles": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.extra_angles"
+                    ],
+                    "source": "astronomical_data.extra_angles"
+                },
+                "include_fixed_stars": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.fixed_stars"
+                    ],
+                    "source": "astronomical_data.fixed_stars"
+                },
+                "include_houses": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.house_division"
+                    ],
+                    "source": "derived_methods.house_division"
+                },
+                "include_lilith_priapus": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.lunar_apsides"
+                    ],
+                    "source": "astronomical_data.lunar_apsides"
+                },
+                "include_lots": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.lots"
+                    ],
+                    "source": "derived_methods.lots"
+                },
+                "include_lunar_phases": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.lunar_events"
+                    ],
+                    "source": "astronomical_data.lunar_events"
+                },
+                "include_outer_planets": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.bodies"
+                    ],
+                    "source": "astronomical_data.bodies"
+                },
+                "include_rise_set_transits": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.horizon_events"
+                    ],
+                    "source": "astronomical_data.horizon_events"
+                },
+                "include_south_nodes": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "astronomical_data.nodes"
+                    ],
+                    "source": "astronomical_data.nodes"
+                },
+                "include_void_of_course": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.void_of_course"
+                    ],
+                    "source": "derived_methods.void_of_course"
+                },
+                "moon_position_profile": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "moon_only_topocentric_v1",
+                    "response_paths": [
+                        "astronomical_data.parallax_moon"
+                    ],
+                    "source": "astronomical_data.parallax_moon"
+                },
+                "partile_profile": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "lilly_1677_three_degrees_v1",
+                    "response_paths": [
+                        "derived_methods.aspects.degree_based"
+                    ],
+                    "source": "derived_methods.aspects.degree_based"
+                },
+                "triplicity_include_research_comparison": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": true,
+                    "response_paths": [
+                        "derived_methods.essential_dignities.profile_results"
+                    ],
+                    "source": "derived_methods.essential_dignities.profile_results"
+                },
+                "triplicity_profile": {
+                    "applicable": true,
+                    "available": true,
+                    "executed": true,
+                    "input_presence": "explicit",
+                    "reason_code": null,
+                    "requested": true,
+                    "requested_value": "lilly_triplicity_compact_1647_v1",
+                    "response_paths": [
+                        "derived_methods.essential_dignities.profile_results"
+                    ],
+                    "source": "derived_methods.essential_dignities.profile_results"
+                }
             }
         },
         "dossier_version": "0.6.0",
@@ -3104,7 +3605,7 @@
                 "available": true,
                 "reason_code": null,
                 "source": "zoneinfo_file:+VERSION",
-                "version": "2026b"
+                "version": "2026c"
             }
         },
         "input_receipt": {
@@ -3428,7 +3929,7 @@
                             "type": "node_test_reference"
                         },
                         {
-                            "reference": "tests/integration/test_frontend_contract.py::test_privacy_lifecycle_precedes_handlers_and_blocks_browser_persistence",
+                            "reference": "tests/integration/test_frontend_contract.py::test_privacy_lifecycle_guards_requests_exports_and_page_exit",
                             "semantics": "repository_pointer_not_test_execution_result",
                             "type": "static_contract_reference"
                         }
@@ -3455,17 +3956,20 @@
                 }
             ],
             "contains_sensitive_birth_data": true,
+            "deployment_profile": "local",
+            "deployment_profile_status": "declared_by_running_process",
             "evidence_semantics": "repository_test_references_not_execution_attestation",
-            "privacy_attestation_version": "1.2.0",
+            "privacy_attestation_version": "1.3.0",
+            "uncovered_layer_semantics": "these layers are named so the reader can see what this product does not control; presence of a layer is not a claim about its behaviour",
             "uncovered_layers": [
                 {
                     "layer": "reverse_proxy_cdn_waf",
-                    "note": "目前本機產品路徑不存在此層；不提供未來部署保證。",
+                    "note": "本機執行路徑不存在此層。此陳述只涵蓋本機 profile；託管部署的形態另行敘述於該 profile 的收據。",
                     "status": "outside_current_control_scope"
                 },
                 {
                     "layer": "hosting_supervisor",
-                    "note": "Infomaniak provider已選且identity verification已通過；真實VPS尚未部署或驗證，host log與retention仍待deployment canary。",
+                    "note": "本機執行，無 hosting supervisor。Infomaniak provider 已選且identity verification 已通過，但本機 profile 下不涉及該主機。",
                     "status": "outside_current_control_scope"
                 },
                 {
@@ -5096,6 +5600,12 @@
                 "system": "gregorian"
             },
             "conversion_function": "swe.utc_to_jd",
+            "delta_t_model": {
+                "accuracy_status": "not_independently_established_for_this_epoch",
+                "far_epoch_warning_year": 2100,
+                "source": "swiss_ephemeris_internal_delta_t",
+                "status": "model_value"
+            },
             "delta_t_seconds": 57.105182111263275,
             "dst_warning": null,
             "ecl_nut_retflag": {
@@ -5109,13 +5619,15 @@
             "input_semantics": "exact_birth_time",
             "jd_tt": 2448026.7714951853,
             "jd_ut1": 2448026.7708342457,
+            "leap_second_input": false,
             "resolved_utc_offset_hours": 8.0,
+            "swiss_time_input_semantics": "utc",
             "timezone_label": "Asia/Taipei",
             "timezone_mode": "iana",
             "utc_iso_8601": "1990-05-15T06:30:00.000Z"
         },
         "trace_receipt": {
-            "python_json_serialization_sha256": "97fc1d6ec787001af0e6c6dce536a0a99915ff3e9dfb72c47c30ddab12faf74f",
+            "python_json_serialization_sha256": "537297e226df46d56341fe5b34512fcddca80286cbfa60b821f96f9456e21f1b",
             "response_path": "calculation_trace",
             "serialization_recipe": {
                 "encoding": "UTF-8",
@@ -5132,6 +5644,15 @@
             "step_count": 98
         },
         "warnings": [
+            {
+                "affected_paths": [
+                    "astronomical_data.bodies"
+                ],
+                "code": "topocentric_analytic_speed_limitation",
+                "message": "站心speed_*是Swiss FLG_SPEED解析值；太陽／月亮部分欄位已知不等於同次站心position的有限差分導數。位置仍可使用，但這些speed欄位不得解讀為已驗證的導數精度。",
+                "severity": "warning",
+                "source": "RT-2026-08-21-VALIDATOR-V2-PRODUCT-E-005"
+            },
             {
                 "affected_paths": [
                     "astronomical_data.parallax_moon",
@@ -5223,7 +5744,7 @@
             "title": "本地時間 -> UTC"
         },
         {
-            "formula": "JD_UT, JD_ET = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
+            "formula": "JD_ET, JD_UT = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
             "inputs": {
                 "UTC": "1990-05-15 06:30:00.000"
             },
@@ -5589,7 +6110,7 @@
                 "氣壓(hPa；0=依海拔估算)": 0.0,
                 "溫度(°C)": 15.0
             },
-            "note": "",
+            "note": "站心speed_*是Swiss FLG_SPEED解析值；已知太陽／月亮部分欄位不等於同次站心position的有限差分導數，故不作導數精度宣稱。",
             "result": {
                 "motion_sign": "positive",
                 "方位角Az(Swiss原始,南=0,向西)": 88.51514496840605,
@@ -7611,6 +8132,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 2,
                         "days_from_chart_moment": [
@@ -7689,6 +8211,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -7737,6 +8260,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": -0.17596922952735494,
                     "separation_degrees": 41.61817229335446,
@@ -7776,6 +8300,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -7841,6 +8366,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -7906,6 +8432,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -7971,6 +8498,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 0.9946268550941464,
                     "separation_degrees": 103.91111128695127,
@@ -8010,6 +8538,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 1.0172312884175048,
                     "separation_degrees": 102.823854300795,
@@ -8049,6 +8578,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -8114,6 +8644,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -8179,6 +8710,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 0.9920369207760437,
                     "separation_degrees": 171.99862007993863,
@@ -8218,6 +8750,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 6.449267918954831,
@@ -8257,6 +8790,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 113.14920012682211,
@@ -8296,6 +8830,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 126.65003389606635,
@@ -8332,6 +8867,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 36.65447993237751,
@@ -8368,6 +8904,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 17.065254047836476,
                     "separation_degrees": 104.06763836132603,
@@ -8407,6 +8944,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 2,
                         "days_from_chart_moment": [
@@ -8485,6 +9023,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 16.184962458532386,
                     "separation_degrees": 54.18926900944575,
@@ -8524,6 +9063,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 16.738859762450186,
                     "separation_degrees": 165.5240554977666,
@@ -8563,6 +9103,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 2,
                         "days_from_chart_moment": [
@@ -8641,6 +9182,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 16.958095466649077,
                     "separation_degrees": 16.289654690160262,
@@ -8680,6 +9222,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 16.980699899972436,
                     "separation_degrees": 17.376911676316524,
@@ -8719,6 +9262,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 16.952197147885908,
                     "separation_degrees": 14.784873026853802,
@@ -8758,6 +9302,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 16.942386757652923,
                     "separation_degrees": 9.618121841833329,
@@ -8797,6 +9342,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 2,
                         "days_from_chart_moment": [
@@ -8875,6 +9421,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 126.65003389606636,
@@ -8914,6 +9461,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 7.051565850289421,
@@ -8953,6 +9501,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 113.14920012682211,
@@ -8989,6 +9538,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 156.8552459094891,
@@ -9025,6 +9575,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": -1.2777546658089016,
                     "separation_degrees": 25.485044677568965,
@@ -9064,6 +9615,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 2,
                         "days_from_chart_moment": [
@@ -9142,6 +9694,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.32639428538629006,
                     "separation_degrees": 61.45641713644059,
@@ -9181,6 +9734,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.12095020466334369,
                     "separation_degrees": 102.78876377658952,
@@ -9220,6 +9774,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.10715858118740026,
                     "separation_degrees": 87.77798367116577,
@@ -9259,6 +9814,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.084554147864042,
                     "separation_degrees": 86.69072668500951,
@@ -9298,6 +9854,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.1130568999505701,
                     "separation_degrees": 118.85251138817983,
@@ -9337,6 +9894,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.1228672901835551,
                     "separation_degrees": 113.68576020315936,
@@ -9376,6 +9934,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.10974851550550294,
                     "separation_degrees": 171.8682523042758,
@@ -9415,6 +9974,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 22.58239553474033,
@@ -9454,6 +10014,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 97.01607251103661,
@@ -9493,6 +10054,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 142.78316151185186,
@@ -9529,6 +10091,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 52.78760754816305,
@@ -9565,6 +10128,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -9630,6 +10194,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 0.9513603804226115,
                     "separation_degrees": 86.94146181400954,
@@ -9669,6 +10234,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 1.156804461145558,
                     "separation_degrees": 77.30371909902055,
@@ -9708,6 +10274,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 1.1705960846215013,
                     "separation_degrees": 62.292938993596806,
@@ -9747,6 +10314,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 1.1932005179448595,
                     "separation_degrees": 61.205682007440544,
@@ -9786,6 +10354,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 1.1646977658583315,
                     "separation_degrees": 93.36746671061087,
@@ -9825,6 +10394,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -9890,6 +10460,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 1.1680061503033987,
                     "separation_degrees": 146.38320762670685,
@@ -9929,6 +10500,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 48.06744021230929,
@@ -9968,6 +10540,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 71.53102783346765,
@@ -10007,6 +10580,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 168.26820618942082,
@@ -10043,6 +10617,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 78.272652225732,
@@ -10079,6 +10654,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 0.5538973039178017,
                     "separation_degrees": 111.33478648832084,
@@ -10118,6 +10694,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -10183,6 +10760,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -10248,6 +10826,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 0.7957374414400498,
                     "separation_degrees": 36.81235733312923,
@@ -10287,6 +10866,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -10352,6 +10932,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 0.7574242991205367,
                     "separation_degrees": 63.80739085127908,
@@ -10391,6 +10972,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 0.7705430737985888,
                     "separation_degrees": 121.98988295239553,
@@ -10430,6 +11012,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 72.46076488662061,
@@ -10469,6 +11052,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 47.13770315915633,
@@ -10508,6 +11092,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 167.33846913626786,
@@ -10544,6 +11129,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 102.66597690004335,
@@ -10580,6 +11166,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 0.20544408072294637,
                     "separation_degrees": 164.24518091303008,
@@ -10619,6 +11206,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -10684,6 +11272,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -10749,6 +11338,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": 0.21333738543571998,
                     "separation_degrees": 179.6910714753796,
@@ -10788,6 +11378,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -10853,6 +11444,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 1,
                         "days_from_chart_moment": [
@@ -10918,6 +11510,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 38.874021601700235,
@@ -10957,6 +11550,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 158.47248964747718,
@@ -10996,6 +11590,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 81.32674437541128,
@@ -11032,6 +11627,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 8.668809588277554,
@@ -11068,6 +11664,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 0.01379162347594343,
                     "separation_degrees": 15.010780105423748,
@@ -11107,6 +11704,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": 0.03639605679930169,
                     "separation_degrees": 16.09803709158001,
@@ -11146,6 +11744,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -11194,6 +11793,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -11242,6 +11842,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -11290,6 +11891,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 125.37115931132985,
@@ -11329,6 +11931,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 5.772691265552908,
@@ -11368,6 +11971,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 114.42807471155862,
@@ -11404,6 +12008,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 155.57637132475259,
@@ -11440,6 +12045,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -11488,6 +12094,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 3,
                         "days_from_chart_moment": [
@@ -11579,6 +12186,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": -0.015708708996154848,
                     "separation_degrees": 25.90777653199359,
@@ -11618,6 +12226,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.0025899343181026817,
                     "separation_degrees": 84.0902686331101,
@@ -11657,6 +12266,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 110.3603792059061,
@@ -11696,6 +12306,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 9.23808883987084,
@@ -11735,6 +12346,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 129.43885481698237,
@@ -11771,6 +12383,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 140.56559121932878,
@@ -11807,6 +12420,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -11855,6 +12469,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": -0.038313142319513105,
                     "separation_degrees": 26.995033518149853,
@@ -11894,6 +12509,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.02519436764146094,
                     "separation_degrees": 85.17752561926636,
@@ -11933,6 +12549,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 109.27312221974984,
@@ -11972,6 +12589,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 10.325345826027103,
@@ -12011,6 +12629,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 130.52611180313863,
@@ -12047,6 +12666,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 139.47833423317252,
@@ -12083,6 +12703,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": -0.009810390232985012,
                     "separation_degrees": 5.166751185020473,
@@ -12122,6 +12743,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -12170,6 +12792,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 141.43490692292016,
@@ -12209,6 +12832,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 21.836438877143223,
@@ -12248,6 +12872,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 98.3643270999683,
@@ -12284,6 +12909,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 171.6401189363429,
@@ -12320,6 +12946,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": {
                         "crossing_count": 0,
                         "days_from_chart_moment": [],
@@ -12368,6 +12995,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 136.2681557378997,
@@ -12407,6 +13035,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 16.66968769212275,
@@ -12446,6 +13075,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 103.53107828498878,
@@ -12482,6 +13112,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 166.47336775132237,
@@ -12518,6 +13149,7 @@
                     "partile": false,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 165.54935216098386,
@@ -12557,6 +13189,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 74.85217979323923,
@@ -12596,6 +13229,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 45.3485861838723,
@@ -12632,6 +13266,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 135.34414014756112,
@@ -12668,6 +13303,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 119.59846804577694,
@@ -12707,6 +13343,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 120.20076597711153,
@@ -12743,6 +13380,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 30.20521201342271,
@@ -12779,6 +13417,7 @@
                     "partile": true,
                     "partile_reason_code": null,
                     "partile_rule": "absolute_offset_within_threshold",
+                    "partile_rule_implies_aspect": true,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 120.20076597711153,
@@ -12815,6 +13454,7 @@
                     "partile": null,
                     "partile_reason_code": "partile_profile_not_applicable_to_modern_minor_aspect",
                     "partile_rule": null,
+                    "partile_rule_implies_aspect": null,
                     "perfection": null,
                     "relative_longitude_speed": null,
                     "separation_degrees": 149.80368005919968,
@@ -13108,6 +13748,23 @@
                 }
             ],
             "classification_ruling": "MTH-Q-004 A1 (2026-08-03)",
+            "declination_sides": {
+                "冥王星": "south",
+                "凱龍星": "north",
+                "北交點(密切)": "south",
+                "北交點(平均)": "south",
+                "南交點(密切)": "north",
+                "南交點(平均)": "north",
+                "土星": "south",
+                "天王星": "south",
+                "太陽": "north",
+                "月亮": "south",
+                "木星": "north",
+                "水星": "north",
+                "海王星": "south",
+                "火星": "south",
+                "金星": "north"
+            },
             "method": "parallel_contra_parallel_fixed_orb_v1",
             "method_authority": null,
             "method_classification": "research_only",
@@ -14257,7 +14914,7 @@
             "available": true,
             "reason_code": null,
             "source": "zoneinfo_file:+VERSION",
-            "version": "2026b"
+            "version": "2026c"
         }
     },
     "output_contract": {

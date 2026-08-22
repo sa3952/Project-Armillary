@@ -35,12 +35,13 @@ test("非數字的時或分是錯誤，不得變成 0", () => {
   }
 });
 
-test("秒保留小數，且守住 0 <= second < 60", () => {
+test("秒保留小數，並把60留給後端的UTC閏秒驗證", () => {
   assert.deepEqual(RequestInput.readSecond("0.25"), { state: VALUE, value: 0.25 });
   assert.deepEqual(RequestInput.readSecond("59.999"), { state: VALUE, value: 59.999 });
   assert.deepEqual(RequestInput.readSecond("0"), { state: VALUE, value: 0 });
   assert.equal(RequestInput.readSecond("").state, EMPTY);
-  assert.equal(RequestInput.readSecond("60").state, INVALID);
+  assert.deepEqual(RequestInput.readSecond("60"), { state: VALUE, value: 60 });
+  assert.equal(RequestInput.readSecond("60.001").state, INVALID);
   assert.equal(RequestInput.readSecond("-0.5").state, INVALID);
   assert.equal(RequestInput.readSecond("abc").state, INVALID);
 });

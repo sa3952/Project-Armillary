@@ -26,6 +26,8 @@ REQUIREMENTS = (
     PROJECT_ROOT / "deploy/requirements.lock",
     PROJECT_ROOT / "deploy/build-requirements.lock",
 )
+MAX_REQUIREMENT_INCLUDE_DEPTH = 8
+MAX_REQUIREMENT_FILES = 64
 
 FORBIDDEN_ROOT_MODULES = frozenset(
     {
@@ -179,7 +181,7 @@ def check_python_source(path: Path) -> None:
 
 def _requirement_name(line: str) -> str | None:
     line = line.split("#", maxsplit=1)[0].strip()
-    if not line or line.startswith(("-r", "--requirement", "-c", "--constraint")):
+    if not line:
         return None
     if line.startswith(("-e", "--editable", "git+", "http:", "https:", "file:")):
         raise PrivacyDependencyFailure(
@@ -188,14 +190,66 @@ def _requirement_name(line: str) -> str | None:
     match = re.match(r"(?P<name>[A-Za-z0-9_.-]+)", line)
     if not match:
         raise PrivacyDependencyFailure(f"cannot parse requirement line: {line}")
+    remainder = line[match.end() :].lstrip()
+    if remainder.startswith("@"):
+        raise PrivacyDependencyFailure(
+            "named direct-URL requirements require explicit privacy review"
+        )
     return re.sub(r"[-_.]+", "-", match.group("name")).lower()
 
 
-def check_requirements(path: Path) -> None:
+def _include_target(line: str) -> str | None:
+    stripped = line.split("#", maxsplit=1)[0].strip()
+    for option in ("-r", "--requirement", "-c", "--constraint"):
+        if stripped == option:
+            raise PrivacyDependencyFailure(f"{option} requires a path")
+        if stripped.startswith(option + "="):
+            return stripped.split("=", 1)[1].strip()
+        if stripped.startswith(option + " "):
+            return stripped[len(option) :].strip()
+    return None
+
+
+def check_requirements(
+    path: Path,
+    *,
+    _root: Path | None = None,
+    _seen: set[Path] | None = None,
+    _depth: int = 0,
+) -> None:
+    root = (_root or path.parent).resolve()
+    seen = _seen if _seen is not None else set()
+    resolved = path.resolve()
+    if _depth > MAX_REQUIREMENT_INCLUDE_DEPTH:
+        raise PrivacyDependencyFailure("requirement include depth exceeds bounded limit")
+    if resolved in seen:
+        raise PrivacyDependencyFailure(f"requirement include cycle at {path}")
+    if len(seen) >= MAX_REQUIREMENT_FILES:
+        raise PrivacyDependencyFailure("requirement include graph exceeds bounded limit")
+    try:
+        resolved.relative_to(root)
+    except ValueError as error:
+        raise PrivacyDependencyFailure(
+            f"requirement include escapes its reviewed root: {path}"
+        ) from error
+    seen.add(resolved)
     for line_number, line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(),
+        resolved.read_text(encoding="utf-8").splitlines(),
         start=1,
     ):
+        include = _include_target(line)
+        if include is not None:
+            if not include or include.startswith(("http:", "https:", "file:")):
+                raise PrivacyDependencyFailure(
+                    f"{path}: line {line_number}: requirement include must be local"
+                )
+            check_requirements(
+                resolved.parent / include,
+                _root=root,
+                _seen=seen,
+                _depth=_depth + 1,
+            )
+            continue
         try:
             name = _requirement_name(line)
         except PrivacyDependencyFailure as error:
@@ -208,6 +262,7 @@ def check_requirements(path: Path) -> None:
                 f"{path}: line {line_number} adds privacy-sensitive dependency "
                 f"{name!r}; complete privacy review first"
             )
+    seen.remove(resolved)
 
 
 def check_repository() -> None:

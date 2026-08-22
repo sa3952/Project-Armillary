@@ -12,20 +12,34 @@ _BOUNDARY_TOLERANCE_DEGREES = 1e-9
 
 
 def _forward_distance(start: float, end: float) -> float:
-    return (end - start) % 360.0
+    distance = (end - start) % 360.0
+    return 0.0 if distance >= 360.0 else distance
 
 
 def _house_for_longitude(longitude: float, cusps: list[float]) -> int:
     """Return the 1-based house for [cusp_n, cusp_n+1) in zodiacal order."""
 
-    normalized = longitude % 360.0
-    for index, start in enumerate(cusps):
-        end = cusps[(index + 1) % 12]
-        span = _forward_distance(start, end)
+    normalized_cusps = [cusp % 360.0 for cusp in cusps]
+    unwrapped = [normalized_cusps[0]]
+    for cusp in normalized_cusps[1:]:
+        while cusp <= unwrapped[-1]:
+            cusp += 360.0
+        unwrapped.append(cusp)
+
+    point = longitude % 360.0
+    if point < unwrapped[0]:
+        point += 360.0
+        # Adding one full circle can round the ULP immediately below the
+        # first cusp onto the numeric value of the closing boundary.  The
+        # original ordering still proves that point belongs to house 12.
+        if point >= unwrapped[0] + 360.0:
+            return 12
+    for index, start in enumerate(unwrapped):
+        end = unwrapped[index + 1] if index < 11 else unwrapped[0] + 360.0
+        span = end - start
         if span <= _BOUNDARY_TOLERANCE_DEGREES:
             raise ValueError("house cusps contain a zero-width interval")
-        offset = _forward_distance(start, normalized)
-        if offset < span:
+        if start <= point < end:
             return index + 1
     raise RuntimeError("longitude did not match any house interval")
 

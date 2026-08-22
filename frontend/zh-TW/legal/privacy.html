@@ -6,10 +6,12 @@
 <meta name="robots" content="noindex, nofollow">
 <title>隱私政策｜渾儀 Armillary</title>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
 </head>
 <body>
+
+<a class="skip-link" href="#main-content">跳到主要內容</a>
 
 <header>
   <div class="wrap">
@@ -24,135 +26,182 @@
       <span>渾儀<small>ARMILLARY</small></span>
     </a>
     <nav class="site-nav" aria-label="主要導覽">
-      <a href="/zh-TW/calculate">計算</a>
       <a href="/zh-TW/features">功能</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>
       <a href="/zh-TW/about">關於</a>
+      <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
   </div>
 </header>
 
-<main>
-<div class="wrap page-body">
-  <div class="eyebrow">法律 · LEGAL</div>
-  <h1>隱私政策</h1>
-  <p class="draft-flag"><strong>本文尚未經合格法律查核，Sebastian 亦尚未逐字審閱。</strong>在查核完成前，不得視為正式版本。</p>
-  <p class="mono">生效日：<span class="todo">〔待填〕</span>　版本：<span class="todo">〔待填〕</span></p>
-  <p class="lede">這份政策說明本服務<strong>實際</strong>如何處理資料。它描述的是程式與部署設定，不是一份願望清單；每一項控制在<a href="/zh-TW/trust">〈信任中心〉</a>都可以查到它由哪一層執行、涵蓋到哪裡。</p>
-  <p>本服務把「出生日期時間 ＋ 精確地理座標」視為高度敏感資料。<strong>請只輸入你自己的資料，或你已取得合法權限處理的第三人資料。</strong></p>
+<main id="main-content">
+<div class="wrap page-body statute">
 
-  <section>
+  <section class="st-head">
+    <p class="eyebrow">法律 · LEGAL</p>
+    <h1>隱私政策</h1>
+    <p class="draft-flag"><b>本版文案已由 Sebastian 認可，但尚未經合格法律查核。</b>在 verified release producer 填入生效日與版本之前，本文仍未生效；不得把產品認可誤稱為法律專業審閱。</p>
+    <div class="stamp">
+      <div><span>生效日</span><b class="todo">未生效</b></div>
+      <div><span>版本</span><b class="todo">未發布</b></div>
+      <div><span>準據法</span><b>中華民國（臺灣）法</b></div>
+      <div><span>個資法引用版本</span><b>2023-05-31 生效版</b></div>
+    </div>
+    <p class="stamp-note">生效日與版本<b>刻意留空</b>。依內部裁決，這兩格只能由發布流程在本政策<b>真正生效時</b>寫入，<b>禁止手動填寫推測的日期</b>——一份標著未來日期的政策，等於還沒生效就先假裝生效了。</p>
+    <p class="lede">這份政策說明本服務<b>實際</b>如何處理資料。它描述的是程式與部署設定，不是願望清單；每一項控制在〈<a href="/zh-TW/trust">信任</a>〉可以查到它由哪一層執行，機制細節在〈<a href="/zh-TW/security">安全</a>〉。</p>
+    <p>本服務把「出生日期時間 ＋ 精確地理座標」視為高度敏感資料。若資料涉及第三人，請留意使用情境與對方的合理期待；本服務不以勾選框或年齡閘門阻擋，營運者依法應負的告知與處理義務也不會因此轉嫁給你。</p>
+  </section>
+
+  <!-- ═══ 個資法 §8 ═══ -->
+  <section class="art" id="pdpa-8">
+    <p class="art-n">一</p>
     <h2>個人資料保護法第 8 條告知</h2>
+    <p class="art-src">個資法第 8 條列舉<b>六項</b>應告知事項。以下逐項對應，順序與條文相同。</p>
 
-    <h2>蒐集者名稱與聯絡方式</h2>
-    <dl class="legal-terms">
-      <dt>名稱</dt><dd><span class="todo">待填。法定告知欄位。</span></dd>
-      <dt>隱私聯絡信箱</dt><dd><span class="mono">privacy@</span><span class="todo">〔正式網域待定〕</span></dd>
-      <dt>通訊地址</dt><dd><span class="todo">待裁決。</span></dd>
-    </dl>
-
-    <h2>蒐集目的</h2>
-    <ol>
-      <li>提供你要求的天文與幾何計算、結果呈現，以及你主動執行的匯出；</li>
-      <li>服務存取驗證、濫用防護、資訊安全與故障排除；</li>
-      <li>回覆你提出的權利請求或聯絡。</li>
+    <ol class="items">
+      <li>
+        <span class="it-k">名稱</span>
+        <div><b>Sebastian</b></div>
+      </li>
+      <li>
+        <span class="it-k">蒐集之目的</span>
+        <div>
+          <span>1. 提供你要求的天文與幾何計算、結果呈現，以及你主動執行的匯出；<br>2. 服務存取驗證、濫用防護、資訊安全與故障排除；<br>3. 回覆你提出的權利請求或聯絡。</span>
+          <span class="pend">對照主管機關公告的特定目的代號：<b>一三五 資（通）訊服務</b>（本次暫時計算與呈現）、<b>一三七 資通安全與管理</b>（存取驗證與濫用防護）、<b>○九○ 消費者、客戶管理與服務</b>（只在你主動寄信時回覆聯絡）。不使用概括代號替代實際用途。</span>
+        </div>
+      </li>
+      <li>
+        <span class="it-k">個人資料之類別</span>
+        <div>
+          <span><b>你送進計算的：</b>出生日期、出生時間、時間精確度、時區；地點名稱、緯度、經度、海拔，以及你提供的大氣參數；你選擇的計算選項。這些構成本次計算結果與計算卷宗。</span>
+          <span><b>我們的應用程式收不到的：你的 IP 位址。</b>反向代理在把請求交給應用程式之前，會剝除 <span class="mono">x-forwarded-for</span>、<span class="mono">x-real-ip</span>、<span class="mono">forwarded</span> 等標頭；<b>應用程式從頭到尾沒有機會知道你的位址</b>。這一點已在線上主機以正反對照實測驗證。</span>
+          <span><b>你主動提供才會有的：</b>如果你寄信給我們，那封信的內容與寄件地址。</span>
+          <span><b>不經過我們、但網路上必然存在的：</b>你的裝置與伺服器之間要送達封包就需要位址，因此主機商與沿途的網路業者會處理連線 metadata。<b>那是他們為了讓連線成立而處理的，我們既不接收也不保存。</b></span>
+        </div>
+      </li>
+      <li>
+        <span class="it-k">利用之期間、地區、對象及方式</span>
+        <div>
+          <span><b>期間：</b>你的出生資料與計算結果<b>只存在於本次請求、伺服器行程記憶體與你的瀏覽器</b>。計算結束後，我們這裡就沒有了。</span>
+          <span><b>我們實際保存的只有三樣：</b>受邀憑證的<b>雜湊值</b>（供代理層驗證，不含明文，可隨時撤銷）；<b>你寄給我們的信</b>（你主動提供，處理完畢後刪除）；以及主機的<b>系統日誌</b>——保留上限為 <b>7 天或 50 MB，先到者為準</b>，且該日誌不含出生資料、IP 位址或請求內容。</span>
+          <span><b>地區：</b>你的裝置所在地、位於瑞士的虛擬主機，以及 DNS、TLS 憑證、Internet 轉送或依法處理所不可避免的其他地區。<b>「主機在瑞士」不等於所有 metadata 只在瑞士處理。</b></span>
+          <span><b>對象：</b>營運者本人、受保密義務拘束且有必要權限的維運者、主機供應商及其依合約使用的次處理者、網路與憑證服務商，以及依法有權的機關。</span>
+          <span><b>方式：</b>你主動輸入後，經<b>加密連線</b>進行驗證、天文計算、方法計算與回應，以及你明示執行的複製或下載。連線以 <b>TLS 1.3</b> 建立（<span class="mono">TLS_AES_256_GCM_SHA384</span>），相容情形下降為 <b>TLS 1.2</b>（<span class="mono">ECDHE-ECDSA-AES256-GCM-SHA384</span>）；<b>兩者皆具前向保密，更舊的版本一律不提供</b>。工作階段票證（session ticket）已停用。</span>
+        </div>
+      </li>
+      <li>
+        <span class="it-k">你依第 3 條得行使之權利及方式</span>
+        <div>
+          <span>查詢或請求閱覽、請求製給複製本、請求補充或更正、請求停止蒐集處理利用、請求刪除。<b>這些權利不得預先拋棄，也不得以特約限制。</b></span>
+          <span>請寄至 <b class="mono">privacy@projectarmillary.com</b>。依個資法第 13 條，查詢或閱覽請求原則上 <b>15 日</b>內決定（必要時延長一次、最長 15 日）；更正、停止或刪除請求原則上 <b>30 日</b>內決定（必要時延長一次、最長 30 日）。</span>
+          <span><b>那是法律給的上限，不是我們的目標。</b>我們會盡快回覆——實務上多數請求不需要查找，因為<b>沒有紀錄可以查</b>。</span>
+          <span class="note"><b>一個誠實的說明：</b>因為本服務不保存命盤，對「請刪除我的命盤」這類請求，我們會說明查找結果——沒有可刪除的紀錄。<b>我們不會虛構一份紀錄來配合流程。</b></span>
+        </div>
+      </li>
+      <li>
+        <span class="it-k">不提供的影響</span>
+        <div><span>出生時間、時區或地點資料不足時，可能無法計算，或結果具有較高的不確定性。拒絕提供非必要資料不影響核心功能；<b>本服務不要求行銷、健康、宗教或其他非必要資料。</b></span></div>
+      </li>
     </ol>
-    <p>特定目的代號：<span class="todo">待填，須對應主管機關公告，不得自行杜撰。</span></p>
 
-    <h2>個人資料類別</h2>
-    <ul>
-      <li>出生日期、出生時間、時間精確度、時區</li>
-      <li>出生地點名稱、緯度、經度、海拔，以及你提供的大氣參數</li>
-      <li>你選擇的計算選項、本次計算結果與計算卷宗</li>
-      <li>存取憑證的別名與其雜湊值，以及必要的安全與聯絡紀錄</li>
-      <li>主機、網路與供應商為建立連線、維護安全或履行契約所處理的 IP 位址、時間與連線 metadata</li>
+  </section>
+
+  <!-- ═══ 申訴 ═══ -->
+  <section class="art" id="complaint">
+    <p class="art-n">二</p>
+    <h2>如果你認為我們做錯了</h2>
+    <p>可以先寄信給我們：<b class="mono">privacy@projectarmillary.com</b>。你不必先經過我們，也可以直接找主管機關。</p>
+    <p>依<b>現行</b>個資法，對非公務機關行使檢查（第 22 條）、處分（第 25 條）與裁罰（第 48 條）權限的，是<b>中央目的事業主管機關</b>或<b>直轄市、縣（市）政府</b>。<b>向你所在地的直轄市或縣（市）政府反映，是最直接的一條路。</b></p>
+    <div class="authority">
+      <div><span>諮詢（非申訴）</span><b>個人資料保護委員會籌備處</b><i>個資法諮詢專線 <span class="mono">02-3356-8015</span></i></div>
+      <div><span>申訴與裁罰</span><b>中央目的事業主管機關<br>或直轄市、縣（市）政府</b><i>依個資法第 22、25、48 條</i></div>
+    </div>
+    <p class="limit"><b>為什麼要分這兩欄：</b>個資法第 1-1 條已規定主管機關為<b>個人資料保護委員會</b>，但同條明定該權責<b>「自個人資料保護委員會成立之日起」</b>才移轉，而該會目前<b>尚未成立</b>（現為籌備處），其施行日期由行政院另定。<b>籌備處提供的是諮詢專線，不是申訴管道。</b>委員會成立後本頁會更新。</p>
+    <p>若你位於<b>歐洲經濟區（European Economic Area, EEA）</b>，亦得向你居住地、工作地或違法行為發生地的資料保護監管機關提出申訴。</p>
+  </section>
+
+  <!-- ═══ 揭露條件 ═══ -->
+  <section class="art" id="disclosure">
+    <p class="art-n">三</p>
+    <h2>什麼情況下我們會交出資料</h2>
+    <p class="vow">只有在收到<b>依法有拘束力的請求</b>，且該請求來自<b>有管轄權的機關</b>時，我們才會交出我們所持有的資料。</p>
+    <p><b>而我們持有的資料極少。</b>沒有帳號、沒有命盤資料庫、計算過程不寫任何檔案——請求送達時，我們能交出的不包含任何人的出生資料，因為那些資料在計算結束時就已經不在我們這裡了。</p>
+    <p>主機位於瑞士。依瑞士刑法第 271 條，<b>未經授權在瑞士境內代表外國執行公權力構成犯罪</b>；外國當局只能循司法互助程序。相關法源逐條列於〈<a href="/zh-TW/trust">信任</a>〉。</p>
+  </section>
+
+  <!-- ═══ 別頁的完整說明 ═══ -->
+  <section class="art" id="elsewhere">
+    <p class="art-n">四</p>
+    <h2>技術細節寫在別的頁面</h2>
+    <p>以下三件事都有完整說明，這裡不重複：</p>
+    <ul class="ticks">
+      <li><b>我們實際不做什麼</b>——不建帳號資料庫、不寫檔、不用第三方分析、不記 IP、不用瀏覽器儲存、不用定位、匯出檔名不含個資。每一項由哪一層執行、能被反證到什麼程度，見〈<a href="/zh-TW/trust">信任</a>〉。</li>
+      <li><b>Cookie</b>——本服務<b>不使用任何 cookie</b>，因此沒有同意橫幅。機制與實測見〈<a href="/zh-TW/security">安全</a>〉。</li>
+      <li><b>我們控制不了什麼</b>——記憶體與 swap、瀏覽器的還原與擴充套件、你複製或下載之後的副本、連線 metadata。<b>那些事發生在你的電腦上</b>，說明見〈<a href="/zh-TW/trust">信任</a>〉。</li>
     </ul>
-    <p>個資法第 2 條明列出生年月日為個人資料。精確座標與其他資料結合後，也可能直接或間接識別特定個人。</p>
-
-    <h2>利用期間、地區、對象及方式</h2>
-    <dl class="legal-terms">
-      <dt>期間</dt>
-      <dd>你的出生資料與計算結果<strong>只存在於本次請求、伺服器行程記憶體與你的瀏覽器</strong>，不寫入應用程式資料庫。存取憑證、安全、聯絡、供應商或法定紀錄，依其必要目的與法定期間保存。主機系統日誌採短期保留上限。</dd>
-
-      <dt>地區</dt>
-      <dd>你的裝置所在地、位於瑞士的虛擬主機，以及 DNS、TLS 憑證、Internet 轉送或依法處理所不可避免的其他地區。<strong>「主機在瑞士」不等於所有 metadata 只在瑞士處理。</strong></dd>
-
-      <dt>對象</dt>
-      <dd>營運者本人、受保密義務拘束且有必要權限的維運者、主機供應商及其依合約使用的次處理者、網路與憑證服務商，以及依法有權的機關。</dd>
-
-      <dt>方式</dt>
-      <dd>你主動輸入後，以加密連線進行驗證、天文計算、方法計算與回應，以及你明示執行的複製或下載。</dd>
-    </dl>
-    <p><strong>本服務不將出生資料用於廣告、不販售、不建立跨次命盤剖繪，也不送往第三方 AI。</strong></p>
-
-    <h2>你的權利與行使方式</h2>
-    <p>依個資法第 3 條，你就自己的個人資料得行使：查詢或請求閱覽、請求製給複製本、請求補充或更正、請求停止蒐集處理利用、請求刪除。<strong>這些權利不得預先拋棄，也不得以特約限制。</strong></p>
-    <p>請寄至 <span class="mono">privacy@</span><span class="todo">〔正式網域待定〕</span>。</p>
-    <p>依現行第 13 條，查詢或閱覽請求原則上 15 日內決定（必要時延長一次、最長 15 日）；更正、停止或刪除請求原則上 30 日內決定（必要時延長一次、最長 30 日）。</p>
-    <p><strong>一個誠實的說明：</strong>因為本服務不保存命盤，對「請刪除我的命盤」這類請求，我們會說明查找結果——沒有可刪除的紀錄。<strong>我們不會虛構一份紀錄來配合流程。</strong></p>
-
-    <h2>不提供資料的影響</h2>
-    <p>出生時間、時區或地點資料不足時，可能無法計算，或結果具有較高的不確定性。</p>
-    <p>拒絕提供非必要資料不影響核心功能；<strong>本服務不要求行銷、健康、宗教或其他非必要資料。</strong></p>
   </section>
 
-  <section>
-    <h2>我們實際不做什麼</h2>
-    <ul>
-      <li>不建立帳號資料庫、不要求 email、不設密碼與忘記密碼流程</li>
-      <li>不把命盤請求或回應寫入資料庫、快取、背景佇列或檔案</li>
-      <li>不使用第三方分析、錯誤追蹤、應用效能監控、廣告或遠端日誌轉送</li>
-      <li>應用程式日誌不記錄 IP 位址、User-Agent、referrer 或請求內容</li>
-      <li>前端不使用 localStorage、sessionStorage、IndexedDB、Cache Storage 或 beacon</li>
-      <li>不使用瀏覽器或 IP 定位；地名搜尋只讀內建的唯讀資料庫，不保存搜尋字串</li>
-      <li>匯出檔名不嵌入出生日期、時間、姓名或座標</li>
-    </ul>
-    <p>這些是應用程式層的控制，有失敗優先的測試作為反證。詳見<a href="/zh-TW/trust">〈信任中心〉</a>與<a href="/zh-TW/security">〈安全〉</a>。</p>
-  </section>
-
-  <section>
-    <h2>我們控制不了什麼</h2>
-    <ul>
-      <li>記憶體、swap、當機傾印的安全抹除</li>
-      <li>瀏覽器的工作階段還原、快照、擴充套件、無障礙介面</li>
-      <li>你按下複製或下載之後的剪貼簿與檔案，包含其同步與備份</li>
-      <li>網路上必然存在的連線 metadata</li>
-      <li>已取得你裝置或帳號權限的攻擊者</li>
-    </ul>
-    <p><code>autocomplete="off"</code> 只是給瀏覽器的提示，<strong>瀏覽器可以忽略。</strong></p>
-  </section>
-
-  <section>
-    <h2>Cookie 與追蹤</h2>
-    <p>本服務<strong>不使用</strong>分析型或廣告型 cookie，也不置入第三方追蹤器。</p>
-    <p><span class="todo">待確認：存取驗證在代理層進行，是否產生任何 cookie，須於主機設定完成後核對後填寫。</span></p>
-  </section>
-
-  <section>
-    <h2>第三人的出生資料</h2>
-    <p>如果你輸入的是別人的出生資料，對營運者而言可能構成「非由當事人提供」的蒐集。依個資法第 9 條，原則上應在處理或利用前向該當事人告知資料來源及法定事項。</p>
-    <p><strong>你在使用條款中聲明「我已取得同意」，不能自動使營運者符合第 9 條。</strong></p>
-    <p><span class="todo">待裁決：禁止輸入第三人資料／建立可證明的授權告知流程／其他經法律查核的設計。</span></p>
-  </section>
-
-  <section>
+  <!-- ═══ 國際傳輸 ═══ -->
+  <section class="art" id="transfer">
+    <p class="art-n">五</p>
     <h2>國際傳輸</h2>
-    <p>資料傳送至瑞士主機屬個資法所稱的國際傳輸。我們會揭露實際的接收者與地區，並持續確認是否有第 21 條的限制命令。</p>
-    <p>主機供應商的一般條款就客戶傳送的資料，描述為存放於其自有的瑞士資料中心。<strong>這項承諾只涵蓋該供應商代管的資料</strong>，不能延伸為 DNS、憑證簽發、Internet 轉送、付款或客服的所有 metadata 都只在瑞士處理。</p>
+    <p>資料傳送至瑞士主機屬個資法所稱的國際傳輸。我們揭露實際的接收者與地區，並持續確認是否有<b>個資法第 21 條</b>的限制命令。</p>
+    <p>主機供應商的使用條款載明，客戶傳送的資料<b>僅存放於其自有的瑞士資料中心</b>；資料處理協議另約定<b>未經我方事前書面同意，不得將資料移出歐盟／歐洲經濟區</b>。</p>
+    <p class="limit"><b>這些承諾只涵蓋該供應商代管的資料</b>，不能延伸為 DNS、憑證簽發、Internet 轉送或客服的所有 metadata 都只在瑞士處理。</p>
   </section>
 
-  <section>
+  <!-- ═══ 事故通知 ═══ -->
+  <section class="art" id="breach">
+    <p class="art-n">六</p>
     <h2>資料事故通知</h2>
-    <p>若因違反個資法致個人資料被竊取、洩漏、竄改或遭其他侵害，我們會於查明後<strong>以適當方式個別通知當事人</strong>。</p>
-    <p>通知內容與對主管機關的義務，將依事故發生時有效的法規重新查核。</p>
+    <p>若因違反個資法致個人資料被<b>竊取、竄改、毀損、滅失或洩漏</b>，我們會於查明後<b>以適當方式個別通知當事人</b>。</p>
+    <p class="limit">通知內容與對主管機關的義務，將依<b>事故發生時有效的法規</b>重新查核。個資法尚有修正條文未生效，本頁引用的是頁首標示的版本。</p>
   </section>
 
-  <section>
-    <h2>政策變更</h2>
-    <p>重大的契約、隱私或資料用途變更會事先告知。<strong>我們不會用事後修改的政策去追認已經發生的不一致處理。</strong></p>
+  <!-- ═══ 國際法規 ═══ -->
+  <section class="art" id="international">
+    <p class="art-n">七</p>
+    <h2>其他法域的隱私法規</h2>
+    <p>本服務由台灣營運，準據法為中華民國法。<b>但我們依歐盟《一般資料保護規則》（General Data Protection Regulation, GDPR）的要求設計，並朝完整符合努力。</b>下表逐條列出 <b>GDPR</b> 的相關條文、該條的要求，以及我們目前的作為——<b>包括還沒做到的那一條。</b></p>
+
+    <div class="spec-scroll">
+      <table class="conform">
+        <thead><tr><th>條文</th><th>要求</th><th>我們的作為</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Art. 5(1)(c)</td><td>資料最小化</td><td>不要求姓名、email 或帳號；只取計算所需</td></tr>
+          <tr><td class="mono">Art. 5(1)(e)</td><td>儲存限制</td><td><b>不儲存</b>。出生資料不寫入任何資料庫、快取或檔案</td></tr>
+          <tr><td class="mono">Art. 25</td><td>設計及預設之資料保護</td><td>應用程式裡<b>沒有可保存出生資料的位置</b>；請求處理期間任何帶寫入旗標的檔案呼叫都會使測試失敗</td></tr>
+          <tr><td class="mono">Art. 32</td><td>處理之安全</td><td>內容安全政策、跨來源隔離標頭、唯讀容器、能力全數丟棄、限流與請求大小上限；細節見〈<a href="/zh-TW/security">安全</a>〉</td></tr>
+          <tr><td class="mono">Art. 28</td><td>處理者契約</td><td><b>已與主機供應商簽署資料處理協議</b>，同時援引瑞士《聯邦資料保護法》第 9 條與 GDPR 第 28 條</td></tr>
+          <tr><td class="mono">Art. 44–49</td><td>國際傳輸</td><td>主機位於<b>瑞士</b>——歐盟執委會認定其保護水準適足（2024 年 1 月重新確認）</td></tr>
+          <tr><td class="mono">Art. 12–14</td><td>透明性與告知</td><td>本頁；每一項宣稱均對應可查證的設定或測試</td></tr>
+          <tr><td class="mono">Art. 15–20</td><td>查閱、更正、刪除、可攜</td><td><b>多數由構造滿足</b>——沒有紀錄可查閱、更正、刪除或攜出，而我們不會虛構一份來配合流程</td></tr>
+          <tr><td class="mono">Art. 77</td><td>向監管機關申訴之權利</td><td>見本頁第二節，已具名管道</td></tr>
+          <tr><td>ePrivacy 指令</td><td>終端設備存取之同意</td><td><b>不使用任何 cookie</b>，因此無需同意橫幅</td></tr>
+          <tr class="mark"><td class="mono">Art. 27</td><td>歐盟境內代表</td><td><b>尚未指定。</b>見下方說明</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notyet">
+      <span class="ny-k">尚未做到</span>
+      <p><b>我們尚未指定 GDPR 第 27 條的歐盟境內代表。</b>本服務不保存出生資料、不建立帳號、不公開任何人的資料，我們認為處理風險極低；<b>但我們不主張適用第 27 條第 2 項的豁免</b>——該豁免要求處理屬「業務常規之外的偶發處理」，而<b>計算本身就是本服務的業務</b>。</p>
+      <p>這是現況陳述，不是法律結論。<b>與其宣稱一個站不住的豁免，我們寧可寫出還沒做到。</b></p>
+      <p><b>我們正在規劃指定歐盟境內代表</b>，並會在服務規模與資源允許時完成。完成後這一列會改，改動也會記在版本紀錄裡。</p>
+    </div>
+
+    <p class="limit"><b>本頁不構成任何法規的合規認證，也不是第三方查核結果。</b></p>
   </section>
+
+  <!-- ═══ 變更 ═══ -->
+  <section class="art" id="changes">
+    <p class="art-n">八</p>
+    <h2>政策變更</h2>
+    <p>重大的契約、隱私或資料用途變更會事先告知。<b>我們不會用事後修改的政策去追認已經發生的不一致處理。</b></p>
+  </section>
+
 </div>
 </main>
 
@@ -168,6 +217,7 @@
     </div>
     <div class="sitemap-col">
       <h2>可查證性</h2>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>

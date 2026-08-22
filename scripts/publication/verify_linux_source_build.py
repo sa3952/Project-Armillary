@@ -13,6 +13,17 @@ import sys
 import zipfile
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _external_receipt_path(path: Path) -> Path:
+    output = path.resolve()
+    root = PROJECT_ROOT.resolve()
+    if output == root or root in output.parents:
+        raise ValueError("Linux source-build receipt must be outside source")
+    return output
+
+
 EXPECTED_PYTHON = "3.13.14"
 EXPECTED_PACKAGE_VERSION = "2.10.3.2"
 EXPECTED_SOURCE_SHA256 = (
@@ -128,8 +139,13 @@ def main() -> int:
     except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
-    args.receipt.parent.mkdir(parents=True, exist_ok=True)
-    args.receipt.write_text(
+    try:
+        receipt_path = _external_receipt_path(args.receipt)
+    except ValueError as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
+        return 1
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(
         json.dumps(receipt, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )

@@ -204,6 +204,9 @@ TRIPLICITY_SOURCES = {
 
 def _location(longitude: float) -> tuple[int, str, float]:
     normalized = longitude % 360.0
+    # IEEE-754 can round a subnormal negative remainder up to exactly 360.
+    if normalized >= 360.0:
+        normalized = 0.0
     sign_index = int(normalized // 30.0)
     return sign_index, SIGNS[sign_index], normalized - sign_index * 30.0
 

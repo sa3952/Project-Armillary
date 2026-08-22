@@ -74,6 +74,7 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
             "key": key, "name": zh_name,
             "longitude": None, "latitude": None, "distance_au": None, "distance_km": None,
             "speed_longitude": None, "speed_latitude": None, "speed_distance": None,
+            "speed_source": None, "speed_position_derivative_status": "not_applicable",
             "motion_sign": None,
             "right_ascension": None, "declination": None, "speed_ra": None, "speed_dec": None,
             "longitude_dms": None, "latitude_dms": None, "right_ascension_hms": None, "declination_dms": None,
@@ -94,6 +95,13 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
         return result
 
     motion_sign = _motion_sign(speed_lon)
+    speed_position_derivative_status = (
+        "known_internal_disagreement_for_sun_moon"
+        if ctx.mode.center == "topocentric" and key in {"sun", "moon"}
+        else "not_independently_established"
+        if ctx.mode.center == "topocentric"
+        else "not_evaluated"
+    )
 
     az = az_raw = true_alt = app_alt = None
     horizontal_retflag = None
@@ -169,6 +177,13 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
                 else "position_mode=true 下不輸出視高度：幾何方向與大氣折射是互斥前提，"
                      "混合後的數值無法被正確解讀或複算（MTH-Q-009 A1）。"
             )
+            + (
+                "站心speed_*是Swiss FLG_SPEED解析值；已知太陽／月亮部分欄位"
+                "不等於同次站心position的有限差分導數，故不作導數精度宣稱。"
+                if speed_position_derivative_status
+                == "known_internal_disagreement_for_sun_moon"
+                else ""
+            )
         ) if ctx.horizon_meaningful
         else "地平座標於 heliocentric/barycentric 模式下無物理意義，故不計算",
     )
@@ -183,6 +198,8 @@ def compute_body(body_id: int, key: str, zh_name: str, jd_ut: float, ctx, atmosp
         "speed_longitude": speed_lon,
         "speed_latitude": speed_lat,
         "speed_distance": speed_dist,
+        "speed_source": "swiss_ephemeris_flg_speed_analytic",
+        "speed_position_derivative_status": speed_position_derivative_status,
         "motion_sign": motion_sign,
         "right_ascension": ra,
         "declination": dec,

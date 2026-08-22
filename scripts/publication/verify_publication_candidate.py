@@ -58,6 +58,7 @@ SECRET_PATTERNS = {
     "generic API token": re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
 }
 LITERAL_REMOTE_URL = re.compile(r"https?://", re.IGNORECASE)
+QUOTED_CANDIDATE_PATH = re.compile(r"`([A-Za-z0-9_./-]+)`")
 PUBLIC_FILE_INVENTORY = "PUBLICATION_FILES.json"
 RECONSTRUCTION_PLATFORM = "linux/amd64"
 RECONSTRUCTION_BUILDER_IMAGE = (
@@ -68,6 +69,26 @@ RECONSTRUCTION_BUILDER_IMAGE = (
 
 class CandidateFailure(RuntimeError):
     """Raised when a public candidate is unsafe or incomplete."""
+
+
+def _verify_notice_paths(root: Path, notice_path: Path) -> None:
+    named = {
+        token
+        for token in QUOTED_CANDIDATE_PATH.findall(
+            notice_path.read_text(encoding="utf-8")
+        )
+        if "/" in token and not token.startswith(("http:", "https:"))
+    }
+    if not named:
+        raise CandidateFailure("third-party notices name no candidate paths")
+    for relative in sorted(named):
+        candidate = root / relative.rstrip("/")
+        try:
+            candidate.resolve().relative_to(root)
+        except ValueError as error:
+            raise CandidateFailure(f"notice path escapes candidate: {relative}") from error
+        if not candidate.exists():
+            raise CandidateFailure(f"notice path is absent from candidate: {relative}")
 
 
 def _has_forbidden_path_part(relative: Path) -> bool:
@@ -224,7 +245,8 @@ for attempt in range(100):
             assert response.status == 200
             payload = json.load(response)
             assert payload["status"] == "ok"
-            assert payload["ready"] is True
+            if payload.get("status") != "ok" or payload.get("ready") is not True:
+                raise RuntimeError("candidate health response is not ready")
             break
     except Exception:
         if attempt == 99: raise
@@ -467,6 +489,7 @@ def verify_candidate(root: Path) -> None:
     if missing:
         raise CandidateFailure(f"required files missing: {missing}")
     _verify_public_file_inventory(root)
+    _verify_notice_paths(root, files["THIRD_PARTY_NOTICES.md"])
 
     for path in root.rglob("*"):
         relative = path.relative_to(root).as_posix()
@@ -554,6 +577,16 @@ def verify_candidate(root: Path) -> None:
             raise CandidateFailure(
                 f"build wheel index mismatch for {artifact.get('filename')}"
             )
+        source_path = root / "third_party" / "sources" / str(
+            artifact.get("source_sdist_filename", "")
+        )
+        if (
+            not source_path.is_file()
+            or _sha256(source_path) != artifact.get("source_sdist_sha256")
+        ):
+            raise CandidateFailure(
+                f"build wheel lacks retained sdist binding for {artifact.get('filename')}"
+            )
         build_wheel_paths.add(relative)
     dependency_wheel_index = source_manifest.get("dependency_wheel_index")
     if not isinstance(
@@ -567,6 +600,17 @@ def verify_candidate(root: Path) -> None:
         if not path.is_file() or _sha256(path) != artifact.get("sha256"):
             raise CandidateFailure(
                 f"dependency wheel index mismatch for {artifact.get('filename')}"
+            )
+        source_path = root / "third_party" / "sources" / str(
+            artifact.get("source_sdist_filename", "")
+        )
+        if (
+            not source_path.is_file()
+            or _sha256(source_path) != artifact.get("source_sdist_sha256")
+        ):
+            raise CandidateFailure(
+                "dependency wheel lacks retained sdist binding for "
+                f"{artifact.get('filename')}"
             )
         dependency_wheel_paths.add(relative)
     _verify_sha256sums(

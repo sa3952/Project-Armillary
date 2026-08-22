@@ -6,10 +6,12 @@
 <meta name="robots" content="noindex, nofollow">
 <title>安全｜渾儀 Armillary</title>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
 </head>
 <body>
+
+<a class="skip-link" href="#main-content">跳到主要內容</a>
 
 <header>
   <div class="wrap">
@@ -24,159 +26,283 @@
       <span>渾儀<small>ARMILLARY</small></span>
     </a>
     <nav class="site-nav" aria-label="主要導覽">
-      <a href="/zh-TW/calculate">計算</a>
       <a href="/zh-TW/features">功能</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>
       <a href="/zh-TW/about">關於</a>
+      <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
   </div>
 </header>
 
-<main>
-<div class="wrap page-body">
-  <div class="eyebrow">安全 · SECURITY</div>
-  <h1>安全頁通常在說服你。<br>這一頁在告訴你邊界在哪。</h1>
-  <p class="lede">我們沒有第三方安全認證，沒有通過外部紅隊，沒有漏洞獎金計畫。</p>
-  <p>有的是：一組寫進程式、由失敗優先測試守著的限制；一台跑過驗證器與隱私探針的主機；以及一份誠實的「我們控制不了什麼」清單。</p>
-  <p><strong>三者分開列。混在一起的安全頁，等於沒有安全頁。</strong></p>
+<main id="main-content">
+<div class="wrap page-body datasheet">
 
-  <section>
-    <h2>不儲存什麼</h2>
-    <p><strong>應用程式裡沒有可以存出生資料的地方。</strong>不是「我們選擇不存」，是<strong>沒有那個元件</strong>：</p>
-    <p>沒有帳號資料庫、沒有命盤資料庫、沒有工作階段儲存、沒有請求快取、沒有出生資料快取、沒有背景佇列。</p>
-    <p>完整的資料流：</p>
-    <pre class="flow">請求內容 → 請求範圍的資料模型 → 行程鎖底下的同步計算
-         → 回應 ＋ 計算卷宗 → 你的瀏覽器記憶體
-         → （只有你按下時）剪貼簿或下載檔案</pre>
-    <p><strong>這條路徑上沒有任何一步寫入磁碟。</strong>自動化守衛在計算請求期間攔截檔案寫入介面；只要請求路徑嘗試寫檔，<strong>測試就失敗</strong>。</p>
-    <p>唯一的資料庫是內建的地名目錄，以唯讀、不可變模式開啟。它不含帳號或出生資料，也不寫入搜尋字串。另有驗證器檢查它的雜湊、完整性、沒有寫入暫存附檔，以及唯讀執行策略。</p>
-    <p><strong>這說的是沒有主動寫入，不是安全抹除。</strong>計算期間資料存在於記憶體中，之後由執行環境回收。我們<strong>不宣稱</strong>能從記憶體、swap 或當機傾印中安全抹除任何東西。</p>
+  <section class="ds-hero">
+    <p class="eyebrow">安全 · SECURITY</p>
+    <h1>這一頁給會讀設定檔的人。</h1>
+    <p class="lede">〈<a href="/zh-TW/trust">信任</a>〉回答「這些承諾由誰執行、你憑什麼相信」。<b>這一頁回答「它實際怎麼運作、攻擊面在哪、壞掉的時候會怎樣」。</b>數值全部照實列，包括我們知道的弱點。</p>
+    <p class="ds-note">沒有第三方安全認證，沒有專業滲透測試，沒有漏洞獎金計畫。<b>有的是可以逐行核對的設定，以及一份誠實的攻擊面清單。</b></p>
   </section>
 
-  <section>
-    <h2>伺服器日誌裡有什麼</h2>
-    <p>每完成一個請求輸出一行事件，<strong>只能有這十個欄位</strong>：</p>
-    <table class="log">
-      <thead><tr><th>欄位</th><th>允許的值</th></tr></thead>
-      <tbody>
-        <tr><td>事件版本</td><td>固定字串</td></tr>
-        <tr><td>事件名稱</td><td>固定字串</td></tr>
-        <tr><td>請求 ID</td><td><strong>伺服器產生</strong>的 32 字元十六進位字串</td></tr>
-        <tr><td>路由</td><td>固定分類，<strong>不是原始網址</strong></td></tr>
-        <tr><td>方法</td><td><code>GET</code>／<code>POST</code>／<code>HEAD</code>／<code>OPTIONS</code>／其他</td></tr>
-        <tr><td>狀態碼</td><td>100–599</td></tr>
-        <tr><td>耗時分組</td><td>固定分組，<strong>不記精確耗時</strong></td></tr>
-        <tr><td>請求大小分組</td><td>固定區間，<strong>不記內容</strong></td></tr>
-        <tr><td>結果</td><td>成功／拒絕／錯誤／未知</td></tr>
-        <tr><td>錯誤代碼</td><td>空值或四個固定字串之一</td></tr>
-      </tbody>
-    </table>
-    <p><strong>不會出現的東西：</strong>請求或回應內容、例外文字、堆疊追蹤、區域變數、查詢字串、完整網址、HTTP 標頭、cookie、authorization、呼叫端提供的請求 ID、IP 位址、User-Agent、referrer、出生時間、時區、地點、卷宗、計算軌跡、匯出內容。</p>
-    <p>這不是靠事後過濾做到的。事件由固定的建構函式產生，送出前再檢查一次欄位順序、版本、字彙與格式；<strong>把未清洗的資料直接送進輸出端會失敗關閉，該事件不會被輸出。</strong></p>
-    <p>外部送來的請求 ID 標頭<strong>一律不採用</strong>。</p>
+  <!-- ═══ 01 資料流 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>01</span>出生資料的完整路徑</p>
+    <pre class="flow">請求內容
+  → 請求範圍的資料模型（request-scoped，不跨請求存活）
+  → 行程鎖底下的同步計算
+  → 回應 ＋ 計算卷宗
+  → 你的瀏覽器記憶體
+  → （只有你按下時）剪貼簿或下載檔案</pre>
+    <p><b>這條路徑上沒有任何一步寫入磁碟。</b>守衛在請求處理期間替換 <span class="mono">builtins.open</span>、<span class="mono">io.open</span> 與 <span class="mono">os.open</span>；只要出現一次帶寫入旗標的呼叫，測試就失敗。</p>
+    <p>唯一的資料庫是內建的地名目錄，以<b>唯讀、不可變</b>模式開啟。它不含帳號或出生資料，<b>也不寫入你打過的搜尋字串</b>。</p>
+    <div class="fail">
+      <span class="fail-k">邊界</span>
+      <p>這說的是<b>沒有主動寫入</b>，不是安全抹除。計算期間資料存在於記憶體，之後由執行環境回收。守衛涵蓋的是 <b>Python 層</b>的寫入——原生函式庫的行為不在內。<b>我們不宣稱能從記憶體、swap 或當機傾印中抹除任何東西。</b></p>
+    </div>
   </section>
 
-  <section>
-    <h2>錯誤訊息裡有什麼</h2>
-    <p>未預期的例外一律回傳固定錯誤代碼與伺服器產生的請求 ID，<strong>不回顯例外原文</strong>。星曆函式庫的錯誤回傳固定代碼，<strong>不回顯原始錯誤文字</strong>（那可能含本機路徑）。</p>
-    <p>比較難處理的是回應已經開始送出之後才失敗——那時狀態碼已不能安全改寫。做法是：保留實際送出的狀態碼、把事件記為錯誤，<strong>並阻止原始例外進入框架的錯誤日誌。</strong>串流與背景工作的失敗路徑都有真實伺服器的反證測試。</p>
-    <p>日誌輸出端本身故障時，<strong>直接放棄該筆事件，不建立備援輸出端</strong>，也不影響你的回應。</p>
+  <!-- ═══ 02 信任邊界 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>02</span>五個信任邊界</p>
+    <p>威脅模型把系統切成五個邊界，<b>每一個都假設對面是敵意的</b>。這是內部文件的結構，不是為了這一頁編的。</p>
+    <div class="bounds">
+      <div><span class="bd-k">A</span><b>瀏覽器 → HTTP／ASGI</b><span>攻擊者可控制 body、method、路徑、查詢字串、標頭、content-length、連線時序與畸形載荷。</span></div>
+      <div><span class="bd-k">B</span><b>啟動器 → 執行期</b><span>本機啟動器以 per-run secret 與 nonce HMAC 驗證服務身分，並檢查執行期檔案的擁有者、權限與符號連結競態。</span></div>
+      <div><span class="bd-k">C</span><b>應用程式 → 星曆函式庫</b><span>pyswisseph 使用<b>行程全域</b>狀態，因此同行程以鎖序列化。星曆檔與 C extension 是受信任但高影響的相依——<b>不可把內部一致性當成外部天文驗證</b>。</span></div>
+      <div><span class="bd-k">D</span><b>瀏覽器 → 複製／下載</b><span>使用者明示匯出後，資料離開應用程式記憶體。<b>明示清除可使文件、區段、Blob URL 與請求世代失效，但撤不回已完成的複製或下載。</b></span></div>
+      <div><span class="bd-k">E</span><b>部署與第三方</b><span>代理、CDN、WAF、主機、遙測服務可能預設記錄網址、body、標頭或例外。<b>在實際選型與設定驗證完成前，這個邊界一律視為不受信任。</b></span></div>
+    </div>
+    <p class="limit"><b>要誠實說一件事：</b>這份威脅模型主要是為本機啟動器寫的，而現在有一個實際部署的 HTTPS 服務。<b>邊界 E 已經有一部分變成現況，文件還沒追上。</b>這是我們自己知道的落差，不是被指出來才承認的。</p>
   </section>
 
-  <section>
-    <h2>不連出去</h2>
-    <p>後端<strong>不含</strong>任何錯誤追蹤服務、應用效能監控、外部分析，也沒有對外的 HTTP 客戶端。原始碼守衛偵測到這類相依就直接失敗。</p>
-    <p>前端不載入外部字型、CDN 腳本、第三方 JavaScript 或遠端圖片。<strong>0 追蹤器、0 分析 cookie、0 第三方請求。</strong></p>
-    <p>地名搜尋走同源請求，讀內建的唯讀目錄；<strong>不使用瀏覽器定位、不使用 IP 定位、不呼叫任何線上服務。</strong></p>
-    <p>匯出檔名固定，<strong>不嵌入出生日期、時間、姓名或座標</strong>——檔案躺在下載資料夾裡，檔名本身不洩漏任何東西。</p>
-    <p><strong>這項守衛的邊界：</strong>它是針對已審查名單上的名稱所設的迴歸阻擋，<strong>不是完整的資訊流分析，不是相依套件的遞移稽核，也不是執行期沙箱。</strong>名單外的新途徑仍需人工審查與探針測試。</p>
+  <!-- ═══ 02 日誌 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>03</span>伺服器日誌的完整欄位</p>
+    <p>每完成一個請求輸出一行事件。<b>欄位組合必須完全等於下表，多一個少一個都拒絕輸出。</b></p>
+    <div class="spec-scroll">
+      <table class="spec">
+        <thead><tr><th>欄位</th><th>允許的值</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">event_schema_version</td><td>固定字串</td></tr>
+          <tr><td class="mono">event</td><td>固定字串</td></tr>
+          <tr><td class="mono">request_id</td><td><b>伺服器產生</b>的 32 字元十六進位字串</td></tr>
+          <tr><td class="mono">route</td><td>固定分類，<b>不是原始網址</b></td></tr>
+          <tr><td class="mono">method</td><td>GET／POST／HEAD／OPTIONS</td></tr>
+          <tr><td class="mono">status_code</td><td>100–599</td></tr>
+          <tr><td class="mono">duration_bucket</td><td>固定分組，<b>不記精確耗時</b></td></tr>
+          <tr><td class="mono">request_size_bucket</td><td>固定區間，<b>不記內容</b></td></tr>
+          <tr><td class="mono">outcome</td><td>success／rejected／error／unknown</td></tr>
+          <tr><td class="mono">error_code</td><td>空值，或四個固定字串之一</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="absent"><b>不會出現的東西：</b>請求或回應內容、例外文字、堆疊追蹤、區域變數、查詢字串、完整網址、HTTP 標頭、cookie、authorization、呼叫端提供的請求 ID、IP 位址、User-Agent、referrer、出生時間、時區、地點、卷宗、計算軌跡、匯出內容。</p>
+    <div class="fail">
+      <span class="fail-k">失敗關閉</span>
+      <p>這不是靠事後過濾。事件由固定的建構函式產生，送出前<b>再檢查一次</b>欄位順序、版本、字彙與格式——<b>把未清洗的資料送進輸出端會失敗關閉，該事件不會被輸出</b>。外部送來的 request-id 標頭一律不採用。日誌輸出端本身故障時直接放棄該筆事件，<b>不建立備援輸出端</b>，也不影響你的回應。</p>
+    </div>
   </section>
 
-  <section>
-    <h2>瀏覽器端</h2>
-    <p>不使用 localStorage、sessionStorage、IndexedDB、Cache Storage 或 beacon。敏感欄位使用 <code>autocomplete="off"</code>——<strong>這是提示，瀏覽器可以忽略。</strong></p>
-    <dl class="legal-terms">
-      <dt>清除結果</dt>
-      <dd>中止進行中的請求、使匯出文件失效、撤銷暫存網址、清除結果與錯誤，<strong>保留表單</strong>方便你修正後重算。</dd>
-
-      <dt>清除本頁敏感資料</dt>
-      <dd>另外清空所有出生與地點輸入、重設選項、清除網址參數，並在頁面隱藏時做盡力清除。</dd>
-    </dl>
-    <p><strong>遲到的回應必須通過世代檢查</strong>——你清除之後，早先發出的請求不會把結果再貼回畫面。</p>
-    <p>這些控制<strong>不宣稱</strong>：JavaScript 引擎已安全覆寫記憶體；瀏覽器或作業系統不會保留當機還原、swap、螢幕截圖或擴充套件看得到的內容；已完成的剪貼簿寫入或下載可以撤回。</p>
+  <!-- ═══ 03 出口 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>04</span>出口：結構上不可能，不只是政策</p>
+    <p>容器接在一個<b>標記為 internal 的 Docker 網路</b>上。<span class="mono">internal: true</span> 的意思是<b>這個網路沒有對外路由</b>——即使有程式想連出去，也沒有路可以走。</p>
+    <p>在那之上還有兩層：後端不含任何錯誤追蹤、APM、外部分析，<b>也沒有對外的 HTTP 客戶端</b>；相依守衛偵測到這類套件名稱就直接失敗。</p>
+    <p>前端不載入外部字型、CDN 腳本、第三方 JavaScript 或遠端圖片。地名搜尋走<b>同源</b>請求讀內建目錄，<b>不使用瀏覽器定位、不使用 IP 定位、不呼叫任何線上服務</b>。</p>
+    <div class="fail">
+      <span class="fail-k">守衛的極限</span>
+      <p>相依守衛是<b>針對已審查名單上的名稱</b>所設的迴歸阻擋，<b>不是完整的資訊流分析，不是遞移相依稽核，也不是執行期沙箱</b>。名單外的新途徑仍需人工審查。<b>真正擋住出口的是網路那一層，不是這份名單。</b></p>
+    </div>
   </section>
 
-  <section>
-    <h2>主機與部署</h2>
-    <dl class="legal-terms">
-      <dt>容器</dt>
-      <dd>沒有任何儲存掛載點；根檔案系統唯讀；只有一個小的記憶體暫存區且標為不可執行；丟棄全部系統權限；禁止提權；記憶體上限與 swap 上限相同（<strong>等於停用容器 swap</strong>）；行程數、檔案描述子、CPU 均設上限；內部網路。</dd>
-
-      <dt>反向代理</dt>
-      <dd>存取日誌關閉；<strong>不轉送原始 IP 與各種轉送標頭給應用程式</strong>；線上的 API 文件關閉。</dd>
-
-      <dt>作業系統</dt>
-      <dd>系統日誌短保留上限；停用 swap、當機傾印、自動備份與快照。</dd>
-
-      <dt>存取控制</dt>
-      <dd>少於 20 名受邀者，每人一組<strong>可撤銷、無識別性別名</strong>的憑證。憑證在代理層驗證，<strong>不在應用程式</strong>；主機只保存雜湊值。<strong>沒有帳號資料庫、沒有自助註冊、沒有 email 名單、沒有忘記密碼資料庫。</strong></dd>
-
-      <dt>驗證方式</dt>
-      <dd>上列每一項在實際運行的主機上以驗證器與隱私探針逐項確認——<strong>設定檔存在不等於設定生效，我們用探針去證明它生效。</strong></dd>
-    </dl>
-    <p>回應標頭要求搜尋引擎不索引、不追蹤、不封存。<strong>這是降低被收錄的措施，不是驗證機制，也不是「秘密網址」保護。</strong></p>
+  <!-- ═══ 04 瀏覽器端 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>05</span>送到你瀏覽器的標頭</p>
+    <p>應用程式對每個回應加上這一組：</p>
+    <div class="spec-scroll">
+      <table class="spec">
+        <tbody>
+          <tr><td class="mono">Content-Security-Policy</td><td class="mono val">default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'</td></tr>
+          <tr><td class="mono">Permissions-Policy</td><td class="mono val">camera=(), microphone=(), geolocation=()</td></tr>
+          <tr><td class="mono">Cross-Origin-Opener-Policy</td><td class="mono val">same-origin</td></tr>
+          <tr><td class="mono">Cross-Origin-Embedder-Policy</td><td class="mono val">require-corp</td></tr>
+          <tr><td class="mono">Cross-Origin-Resource-Policy</td><td class="mono val">same-origin</td></tr>
+          <tr><td class="mono">Referrer-Policy</td><td class="mono val">no-referrer</td></tr>
+          <tr><td class="mono">X-Content-Type-Options</td><td class="mono val">nosniff</td></tr>
+          <tr><td class="mono">Cache-Control</td><td class="mono val">no-store</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><span class="mono">geolocation=()</span> 是刻意的：<b>連瀏覽器都被告知這個頁面不得使用定位</b>，所以「我們不用定位」不只是承諾，是瀏覽器層級的封鎖。<span class="mono">frame-ancestors 'none'</span> 讓這個站不能被嵌進別人的 iframe，<span class="mono">no-store</span> 讓回應不進快取。</p>
+    <p>反向代理另外加上 <span class="mono">Strict-Transport-Security: max-age=31536000</span> 與 <span class="mono">X-Robots-Tag: noindex, nofollow, noarchive</span>。<b>後者是降低被搜尋引擎收錄的措施，不是驗證機制，也不是「秘密網址」保護。</b></p>
+    <p>前端不使用 localStorage、sessionStorage、IndexedDB、Cache Storage 或 beacon。敏感欄位標 <span class="mono">autocomplete="off"</span>——<b>那是給瀏覽器的請求，不是它必須遵守的保證。</b></p>
   </section>
 
-  <section>
-    <h2>線上跑的是哪一版</h2>
-    <p>後端會持續更新，<strong>線上執行的版本不必然等於公開程式庫的最新版本。</strong></p>
-    <p>要確認你正在使用哪一版，請看卷宗裡的版本識別碼——<strong>不要從程式庫的最新提交推定。我們自己也不這樣推定。</strong></p>
+  <!-- ═══ 05 邊界防護 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>06</span>入口的數值上限</p>
+    <div class="spec-scroll">
+      <table class="spec">
+        <tbody>
+          <tr><td>計算請求限流</td><td class="mono val">30 r/min／IP，burst 10，nodelay　→　429</td></tr>
+          <tr><td>靜態資源限流</td><td class="mono val">600 r/min／IP</td></tr>
+          <tr><td>同時連線數</td><td class="mono val">另有 limit_conn 上限　→　503</td></tr>
+          <tr><td>請求主體上限</td><td class="mono val">16 KB</td></tr>
+          <tr><td>年、月、日、時、分、秒</td><td class="mono val">各有明確值域，超出即 422</td></tr>
+          <tr><td>緯度／經度</td><td class="mono val">±90 ／ ±180</td></tr>
+          <tr><td>UTC 位移</td><td class="mono val">−14 ～ +14</td></tr>
+          <tr><td>計算並行度</td><td class="mono val">行程鎖，等待有預算上限，逾時即拒絕</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>限流用的是你的 IP，這件事值得說清楚。</b>反向代理必須看得到你的位址，否則封包送不回去。它拿那個位址做限流計數，<b>但不寫進日誌，也不轉送給應用程式</b>——應用程式從頭到尾沒有機會知道你的 IP。</p>
+    <p>已經取得計算鎖的請求<b>永遠不會被中斷</b>。中斷一個進行中的星曆計算，正是這個鎖存在要防止的失敗。</p>
   </section>
 
-  <section>
-    <h2>相依套件與供應鏈</h2>
-    <p>生產環境的相依套件以帶雜湊的鎖定檔固定；另有一份標準格式的軟體物料清單列出實際組成。第三方原始碼封存檔、雜湊、授權與上游位置另有清單記錄。</p>
-    <p>相依套件、星曆檔與時區資料庫<strong>三者性質不同，各有自己的更新節奏與驗證步驟</strong>，不共用一套流程。</p>
-    <p>星曆檔與恆星表的雜湊由測試直接驗證——<strong>有人替換了資料檔，測試會失敗。</strong></p>
-    <p>這些是可查的程序與清單。<strong>它們不是供應鏈稽核，也不是對上游套件本身的安全保證。</strong></p>
+  <!-- ═══ 06 容器與主機 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>07</span>容器與主機的實際數值</p>
+    <div class="spec-scroll">
+      <table class="spec">
+        <tbody>
+          <tr><td class="mono">read_only</td><td class="mono val">true　（根檔案系統唯讀）</td></tr>
+          <tr><td class="mono">tmpfs</td><td class="mono val">/tmp　rw,noexec,nosuid,nodev,size=64m　（唯一可寫處，容器結束即消失）</td></tr>
+          <tr><td class="mono">cap_drop</td><td class="mono val">ALL</td></tr>
+          <tr><td class="mono">security_opt</td><td class="mono val">no-new-privileges:true</td></tr>
+          <tr><td class="mono">mem_limit / memswap_limit</td><td class="mono val">512m ／ 512m　<b>兩者相等＝容器 swap 停用</b></td></tr>
+          <tr><td class="mono">pids_limit</td><td class="mono val">192</td></tr>
+          <tr><td class="mono">cpus</td><td class="mono val">1.0</td></tr>
+          <tr><td class="mono">ulimits.nofile</td><td class="mono val">65536 / 65536</td></tr>
+          <tr><td class="mono">networks</td><td class="mono val">private-alpha-internal　（internal: true）</td></tr>
+          <tr><td class="mono">init</td><td class="mono val">true</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>反向代理：</b>存取日誌關閉；不轉送原始 IP 與各種轉送標頭給應用程式；線上的 API 文件關閉。<b>作業系統：</b>系統日誌短保留上限；停用 swap、當機傾印、自動備份與快照。</p>
+    <p><b>存取控制：</b>Private Alpha 少於 20 名受邀者，每人一組<b>可撤銷、無識別性的別名憑證</b>。憑證在代理層驗證，<b>不在應用程式</b>；主機只保存雜湊值。沒有帳號資料庫、沒有自助註冊、沒有 email 名單、沒有忘記密碼資料庫。</p>
+    <div class="fail">
+      <span class="fail-k">驗證狀態</span>
+      <p>上列容器與代理設定<b>可在版控的 compose 與 nginx 設定檔中逐行核對</b>。傳輸層標頭已於本頁最近一次更新時對線上主機實測（HSTS、X-Robots-Tag、nosniff、no-referrer 皆存在）。<b>但主機組態可能在我們不知情的情況下改變——「已在主機驗證」只描述具名時間點，不自動代表現況。</b></p>
+    </div>
   </section>
 
-  <section>
-    <h2>我們控制不了什麼</h2>
-    <p>卷宗裡的隱私聲明把下列各層列為<strong>未涵蓋</strong>，這不是疏漏，是刻意標示：</p>
-    <table class="log">
-      <thead><tr><th>層</th><th>為什麼</th></tr></thead>
-      <tbody>
-        <tr><td>內容傳遞網路／應用防火牆</td><td>目前架構沒有這些元件</td></tr>
-        <tr><td>供應商基礎設施</td><td>由供應商決定</td></tr>
-        <tr><td>第三方遙測</td><td>目前沒有；未來若新增須先經隱私審查</td></tr>
-        <tr><td>瀏覽器／作業系統／原生函式庫記憶體</td><td>我們沒有能力觀察或抹除</td></tr>
-      </tbody>
-    </table>
-    <p><strong>不能從「某個元件不存在」推論出「因此安全」。</strong></p>
-    <p>其他明確不在能力範圍內的：已取得你使用者權限的本機攻擊者；你安裝的瀏覽器擴充套件；你複製或下載之後的副本及其同步備份；供應商依法或依契約保存的紀錄；DNS、憑證簽發、網路轉送必然處理的連線 metadata。</p>
+  <!-- ═══ 07 錯誤 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>08</span>壞掉的時候會怎樣</p>
+    <p>未預期的例外一律回傳固定錯誤代碼與伺服器產生的請求 ID，<b>不回顯例外原文</b>。星曆函式庫的錯誤回傳固定代碼，<b>不回顯原始錯誤文字</b>——那可能含本機路徑。</p>
+    <p><b>比較難的是回應已經開始送出之後才失敗。</b>那時狀態碼已經在線路上，不能安全改寫。做法是：保留實際送出的狀態碼、把事件記為錯誤，<b>並阻止原始例外進入框架自己的錯誤日誌</b>。串流與背景工作的失敗路徑都有真實伺服器的反證測試。</p>
+    <p>匯出時 renderer 或 Blob 建立失敗，<b>匯出面板必須顯示使用者看得見的錯誤</b>，不能只留 console 或讓按鈕看似沒反應。</p>
   </section>
 
-  <section>
-    <h2>測試證明了什麼、沒證明什麼</h2>
-    <p>repository 內的測試是<strong>設計期的迴歸證據</strong>：</p>
-    <ul>
-      <li><strong>不會</strong>在你每次計算時重新執行</li>
-      <li>卷宗裡的證據欄位是指向測試的指標，<strong>不是「這次執行過並通過」的紀錄</strong></li>
-      <li>只證明它們各自陳述的範圍</li>
+  <!-- ═══ 三個判斷 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>09</span>三個做過的判斷</p>
+    <p>控制清單看不出判斷力。這三件事看得出來——<b>兩件是我們拒絕了外部建議的一部分。</b></p>
+
+    <div class="case">
+      <p class="case-t">不可見字元：黑名單不會收斂，所以不用黑名單</p>
+      <p>地名欄位原本用列舉式 regex 擋不可見字元。實測發現 <span class="mono">U+200B</span>（零寬空格）、<span class="mono">U+2028</span>、<span class="mono">U+2029</span>、<span class="mono">U+061C</span> 全部漏過。</p>
+      <p><b>修補不是「再補幾個字元」</b>——改以 Unicode general category 表達：<span class="mono">Cc</span>、<span class="mono">Cf</span>、<span class="mono">Zl</span>、<span class="mono">Zp</span>。這涵蓋上述全部，也涵蓋<b>未來 Unicode 版本新增的格式字元</b>。</p>
+      <p class="case-no"><b>但我們拒絕了建議的一部分。</b>報告主張把 ZWNJ（<span class="mono">U+200C</span>）與 ZWJ（<span class="mono">U+200D</span>）一併列為危險。<b>那兩個字元在波斯文、阿拉伯文與印度系文字中是正字法必需的</b>，用來選擇連寫或不連寫字形——封鎖它們是拒絕合法地名，不是拒絕敵意輸入。而且它們無法像 bidi 控制碼那樣重排已渲染的標籤，支撐這條邊界的顯示欺騙論證不及於它們。<b>兩者明確豁免。</b></p>
+      <p>另外，錯誤訊息回報 <span class="mono">U+XXXX</span> 而<b>不回顯該字元本身</b>——避免把一個不可見或會翻轉方向的字元，放進一個將被其他介面渲染的字串。</p>
+    </div>
+
+    <div class="case">
+      <p class="case-t">HMAC：先更正診斷，再接受真正的問題</p>
+      <p>一份外部報告主張我們的 HMAC 用法錯誤。<b>那句診斷是錯的</b>——它描述的正是挑戰－回應的正常運作：啟動器出 nonce，服務回摘要，啟動器自己比對。</p>
+      <p><b>但同一批發現裡有一項是對的</b>：任何能觸及該端點的人都可以無限取得 <span class="mono">(nonce, HMAC)</span> 配對供離線窮舉，<b>因此整個機制的強度恰等於 token 的熵</b>。查核後現況本來就穩固——該端點在 Private Alpha <b>完全不註冊</b>，而 token 是 256 bit。</p>
+      <p>仍然加了一層深度防禦：<b>token 長度不足時直接拒絕證明身分，而不是以弱密鑰背書。</b>測試另外斷言——<b>拒絕本身不得回傳摘要，否則拒絕就成了預言機。</b></p>
+    </div>
+
+    <div class="case">
+      <p class="case-t">「每執行緒一次」與「每請求一次」在原始碼裡分不出來</p>
+      <p>星曆初始化的意圖是每執行緒一次，程式卻寫成每請求一次——<b>兩者在原始碼裡無從分辨，下一個讀者無法判斷哪個才是意圖</b>。改用 <span class="mono">threading.local</span> 表達。</p>
+      <p class="case-no"><b>被拒絕的替代方案：</b>用「已初始化的 thread ident 集合」會讓測試比較好寫，但 <b>thread ident 在執行緒結束後會被重用</b>，新執行緒會被誤判為已初始化——那正是這個機制要防的安靜錯誤。<b>保留正確的機制，改讓測試配合。</b></p>
+    </div>
+  </section>
+
+  <!-- ═══ 威脅登錄 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>10</span>威脅登錄與嚴重度</p>
+    <p>內部威脅模型登錄 <b>14 條具名威脅</b>（T1–T14），每一條都寫出攻擊故事、影響、目前控制與<b>剩餘風險</b>。舉三個實際的：</p>
+    <div class="spec-scroll">
+      <table class="spec threats">
+        <thead><tr><th>ID</th><th>攻擊故事</th><th>目前控制</th><th>剩餘風險</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">T2</td><td>開發者對 <span class="mono">request.json()</span>、model repr 或標頭做 debug log</td><td>封閉式事件 schema、送出前二次驗證、原始碼與測試守衛</td><td><b>Python 沒有資訊流型別系統</b>；程式碼審查與紅隊仍然必要</td></tr>
+          <tr><td class="mono">T9</td><td>並行請求污染星曆函式庫的行程全域狀態</td><td>行程鎖、模式矩陣迴歸測試</td><td><b>公開擴展必須多行程，不可移除 per-process 鎖</b></td></tr>
+          <tr><td class="mono">T14</td><td>作業系統 swap、當機傾印、終端機或備份保存資料</td><td>應用程式本身不寫出生資料的日誌或檔案</td><td><b>不宣稱安全記憶體抹除</b>；高敏感使用者應考慮本機優先與磁碟加密</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>嚴重度用<b>影響 × 可利用性</b>，不是只看 CVSS 字樣。分級裡有一類值得特別指出：</p>
+    <div class="fail">
+      <span class="fail-k">產品／隱私正確性</span>
+      <p><b>宣稱超過可證明的邊界——即使尚無 exploit——也必須在公開文案前修正。</b>換句話說，<b>在這個專案裡，「話講得太滿」本身就登記為一種安全缺陷</b>，和可利用的漏洞放在同一張表上。</p>
+    </div>
+  </section>
+
+  <!-- ═══ 紅隊問題 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>11</span>我們最希望有人打破的地方</p>
+    <p>威脅模型的最後一節列出<b>我們自己開給紅隊的十二個優先問題</b>。它們是我們認為最可能出事的地方，公開在這裡的理由很簡單：<b>一份只列出自己擅長之處的安全頁沒有用。</b></p>
+    <ul class="asks">
+      <li>編碼過的路徑、absolute-form URL、無效方法或標頭、chunked body，能否突破路由／方法／大小的縮減器？</li>
+      <li><span class="mono">ExceptionGroup</span>、串流回應、背景工作、回應序列化失敗是否會外洩？<span class="mono">CancelledError</span>、<span class="mono">KeyboardInterrupt</span>、<span class="mono">SystemExit</span>、<span class="mono">GeneratorExit</span> 是否仍正確向上傳播？</li>
+      <li>Python logging 重設、handler 錯誤或重複 import，是否可能退回 root logger 並輸出未清洗的資料？</li>
+      <li>執行期寫檔守衛是否漏掉 <span class="mono">Path.write_*</span>、原生寫入、快取、tempfile 或 fork？</li>
+      <li>是否存在請求模型、全域變數、closure、快取或背景工作跨請求保留出生資料？</li>
+      <li>清除之後殘留的 detached DOM handler、Blob URL、遲到回應或 back-forward cache，是否仍能還原資料？</li>
+      <li>卷宗裡的證據引用，是否可能因測試改名或未重跑閘門而變成誤導？</li>
     </ul>
-    <p>隱私聲明的狀態標為「暫定，待外部審查」。<strong>在獨立紅隊完成之前不會改；即使通過，也不會自動延伸到未涵蓋的層。</strong></p>
+    <p class="limit">完整十二題與 T1–T14 的完整登錄在內部威脅模型文件裡；<b>它與原始碼一起公開</b>。</p>
   </section>
 
-  <section>
-    <h2>通報安全問題</h2>
-    <p class="mono"><strong>security@</strong><span class="todo">〔正式網域待定；信箱尚未建立〕</span></p>
-    <p>請描述重現步驟，<strong>不要附上任何人的真實出生資料</strong>。</p>
-    <p>我們目前沒有安全港政策，因此使用條款不承諾超出法律範圍的測試授權。這是現況陳述，不是拒絕——<strong>歡迎善意通報。</strong></p>
-    <p>我們沒有漏洞獎金計畫。</p>
+  <!-- ═══ 08 供應鏈 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>12</span>相依與供應鏈</p>
+    <p>生產相依以<b>帶雜湊的鎖定檔</b>固定，另有 CycloneDX 格式的軟體物料清單列出實際組成，<b>與鎖定檔不一致即失敗</b>。第三方原始碼封存檔、雜湊、授權與上游位置另有清單。</p>
+    <p>相依套件、星曆檔與時區資料庫<b>三者性質不同，各有自己的更新節奏與驗證步驟</b>，不共用一套流程。<b>星曆檔與恆星表的雜湊由測試直接驗證——有人替換了資料檔，測試會失敗。</b></p>
+    <div class="fail">
+      <span class="fail-k">邊界</span>
+      <p>這些是可查的程序與清單。<b>它們不是供應鏈稽核，也不是對上游套件本身的安全保證。</b></p>
+    </div>
   </section>
+
+  <!-- ═══ 09 攻擊面 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>13</span>我們自己知道的攻擊面</p>
+    <p>這一節列的是<b>真的可以拿來攻擊我們的東西</b>，不是免責聲明。</p>
+    <ul class="weak">
+      <li><b>沒有專業滲透測試。</b>應用層的對抗性檢驗只有我們自己與具名記錄的獨立 AI 紅隊；exact輪次與status以current audit registry為準。<b>紅隊審查與滲透測試不是同一種證據。</b>主機層另有供應商依合約每年執行的入侵測試（見〈<a href="/zh-TW/trust">信任</a>〉層五）。</li>
+      <li><b>沒有內容傳遞網路，也沒有應用防火牆。</b>目前架構就是沒有這兩個元件。限流與連線上限在反向代理，僅此而已。</li>
+      <li><b>相依守衛只擋名單上的名字。</b>一個沒被列名的新套件不會被它擋下——真正的出口封鎖靠 internal 網路。</li>
+      <li><b>測試是設計期的迴歸證據，不在你每次計算時重跑。</b>卷宗裡的證據欄位是指向測試的指標，不是「這一次執行過並通過」的紀錄。</li>
+      <li><b>線上跑的版本不必然等於公開程式庫的最新版。</b>要確認你正在用哪一版，看卷宗裡的版本識別碼——<b>不要從最新提交推定，我們自己也不這樣推定。</b></li>
+      <li><b>隱私聲明狀態為「暫定，待外部審查」。</b>在獨立審查完成之前不會改；即使通過，也不會自動延伸到未涵蓋的層。</li>
+    </ul>
+    <p class="limit"><b>不能從「某個元件不存在」推論出「因此安全」。</b>沒有 CDN 表示沒有 CDN 的攻擊面，也表示沒有 CDN 的防護。</p>
+  </section>
+
+  <!-- ═══ 10 通報 ═══ -->
+  <section class="ds-sec">
+    <p class="hdr"><span>14</span>通報安全問題</p>
+    <p class="contact"><span class="mono">privacy@projectarmillary.com</span></p>
+    <p><b>安全通報與隱私請求共用同一個信箱。</b>這不是把兩件事混為一談——是目前只有這一個地址真的收得到信。<b>列出一個實際收不到信的專用別名會比沒有更糟</b>，所以我們只寫真的那一個。</p>
+    <p>請描述重現步驟，<b>不要附上任何人的真實出生資料</b>——用合成的日期時間就足以說明問題。</p>
+    <p>我們目前<b>沒有安全港政策</b>，因此使用條款不承諾超出法律範圍的測試授權。這是現況陳述，不是拒絕——<b>歡迎善意通報。</b>我們也沒有漏洞獎金計畫。</p>
+  </section>
+
+  <section class="ds-close">
+    <div>
+      <h2>這一頁的每一個數值<br>都在版控的設定檔裡。</h2>
+      <p>承諾由誰執行、以及你憑什麼相信這些話，在〈<a href="/zh-TW/trust">信任</a>〉。</p>
+    </div>
+    <p><a class="btn" href="/zh-TW/calculate">排一張盤 →</a></p>
+  </section>
+
 </div>
 </main>
 
@@ -192,6 +318,7 @@
     </div>
     <div class="sitemap-col">
       <h2>可查證性</h2>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>

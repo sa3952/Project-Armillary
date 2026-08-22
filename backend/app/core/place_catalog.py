@@ -117,7 +117,11 @@ def _fts_query(value: str) -> tuple[str, dict]:
     for token in bounded:
         # Short tokens stay exact.  A 1-character prefix term is the single
         # largest cost multiplier and is almost never the user's intent.
-        if len(token) >= MIN_PREFIX_TOKEN_LENGTH:
+        # FTS5 removes diacritics before matching.  Measure the same effective
+        # token rather than the submitted code-point count, or combining marks
+        # can disguise a one-character prefix scan.
+        effective_token = place_name_match_key(token)
+        if len(effective_token) >= MIN_PREFIX_TOKEN_LENGTH:
             terms.append(f'"{token}"*')
         else:
             terms.append(f'"{token}"')

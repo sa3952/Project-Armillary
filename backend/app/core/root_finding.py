@@ -57,6 +57,8 @@ _REFINEMENT_FACTOR = 8
 # |Δf| 縮成 1/256。真實運動會隨之縮到 180 以下而被解析；真正的環繞不連續
 # 則恆保持約 360 的跳躍，遞迴到底後正確地回報「無根」。
 _MAX_WRAP_DISAMBIGUATION_DEPTH = 8
+_MAX_COARSE_SAMPLES = 100_000
+_SAMPLE_ZERO_EPSILON_DEGREES = 1e-12
 
 SOLVER_NAME = "two_stage_scan_then_bisection_v1"
 
@@ -159,6 +161,11 @@ def find_crossings_detailed(
 
     if window_days <= 0.0 or coarse_step_days <= 0.0:
         return []
+    sample_count = int(window_days / coarse_step_days) + 2
+    if sample_count > _MAX_COARSE_SAMPLES:
+        raise ValueError(
+            f"root search exceeds bounded sample budget ({_MAX_COARSE_SAMPLES})"
+        )
 
     samples = _sample(separation_at, start_days, window_days, coarse_step_days)
     roots: list[dict] = []
@@ -249,8 +256,12 @@ def _collect(
     # 從頭到尾沒有被檢查過（RT-BACKEND-9-E-004）。分開兩輪之後，
     # 每個為零的取樣點只會被收一次，且不會擋住任何區間的檢查。
     for t, f_value in samples:
-        if f_value == 0.0:
-            roots.append(_exact_sample_root(t))
+        if abs(f_value) <= _SAMPLE_ZERO_EPSILON_DEGREES:
+            record = _exact_sample_root(t)
+            record["residual_degrees"] = f_value
+            record["bracket"]["low_offset_degrees"] = f_value
+            record["bracket"]["high_offset_degrees"] = f_value
+            roots.append(record)
 
     # --- 第二輪：相鄰區間變號 ---
     for index in range(len(samples) - 1):
@@ -258,7 +269,10 @@ def _collect(
             return
         left_t, left_f = samples[index]
         right_t, right_f = samples[index + 1]
-        if left_f == 0.0 or right_f == 0.0:
+        if (
+            abs(left_f) <= _SAMPLE_ZERO_EPSILON_DEGREES
+            or abs(right_f) <= _SAMPLE_ZERO_EPSILON_DEGREES
+        ):
             # 已由第一輪收下；此處不得再以端點為零當成區間內另有根。
             continue
         if not _sign_change(left_f, right_f):

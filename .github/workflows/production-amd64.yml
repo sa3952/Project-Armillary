@@ -48,12 +48,17 @@ jobs:
         run: python3 -m scripts.verification.verify_privacy_dependencies --check
 
       - name: Native amd64 production runtime and resilience
-        run: >-
-          python3 -m scripts.verification.verify_container_runtime
-          --build
-          --require-clean
-          --platform linux/amd64
-          --container-only
-          --worker-resilience
-          --soak-requests 250
-          --quiet
+        run: |
+          python3 -m scripts.verification.build_release_image \
+            --image classical-astrology-data:ci-amd64 \
+            --platform linux/amd64 \
+            --purpose diagnostic \
+            --evidence-dir /tmp/classical-astrology-build-evidence \
+            --require-clean
+          python3 -m scripts.verification.verify_container_runtime \
+            --image classical-astrology-data:ci-amd64 \
+            --platform linux/amd64 \
+            --container-only \
+            --worker-resilience \
+            --soak-requests 250 \
+            --quiet

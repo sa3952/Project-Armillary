@@ -40,6 +40,18 @@ TAIWAN_SETTLEMENT_SOURCE_URL = (
     "AE5B85B6-0895-4D32-8027-1713F018A649/download"
 )
 GENERATOR_VERSION = "place-catalog-builder-v1"
+MAX_INPUT_BYTES = 512 * 1024 * 1024
+MAX_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024
+MAX_LINE_CHARS = 1_000_000
+MAX_SOURCE_ROWS = 10_000_000
+MAX_OUTPUT_BYTES = 4 * 1024 * 1024 * 1024
+
+
+def _require_bounded_input(path: Path) -> None:
+    if not path.is_file() or path.is_symlink():
+        raise ValueError(f"input must be a regular non-symlink file: {path}")
+    if path.stat().st_size > MAX_INPUT_BYTES:
+        raise ValueError(f"input exceeds bounded byte limit: {path.name}")
 
 
 def _taiwan_character_variants(value: str) -> str:
@@ -155,22 +167,28 @@ def _insert(connection: sqlite3.Connection, record: dict) -> bool:
 
 
 def _geonames_lines(path: Path):
+    _require_bounded_input(path)
     if zipfile.is_zipfile(path):
         with zipfile.ZipFile(path) as archive:
-            members = [
-                name
-                for name in archive.namelist()
-                if name.endswith(".txt")
-            ]
+            members = [info for info in archive.infolist() if info.filename.endswith(".txt")]
             if len(members) != 1:
                 raise ValueError(
                     "GeoNames archive must contain exactly one text file"
                 )
-            with archive.open(members[0]) as raw:
+            member = members[0]
+            if member.file_size > MAX_UNCOMPRESSED_BYTES:
+                raise ValueError("GeoNames member exceeds bounded uncompressed limit")
+            with archive.open(member) as raw:
                 for line in io.TextIOWrapper(raw, encoding="utf-8"):
+                    if len(line) > MAX_LINE_CHARS:
+                        raise ValueError("GeoNames row exceeds bounded line limit")
                     yield line
     else:
-        yield from path.open(encoding="utf-8")
+        with path.open(encoding="utf-8") as handle:
+            for line in handle:
+                if len(line) > MAX_LINE_CHARS:
+                    raise ValueError("GeoNames row exceeds bounded line limit")
+                yield line
 
 
 def import_geonames(
@@ -179,6 +197,8 @@ def import_geonames(
 ) -> int:
     count = 0
     for line in _geonames_lines(path):
+        if count >= MAX_SOURCE_ROWS:
+            raise ValueError("GeoNames input exceeds bounded row limit")
         fields = line.rstrip("\n").split("\t")
         if len(fields) < 19:
             raise ValueError("invalid GeoNames cities500 row")
@@ -259,9 +279,13 @@ def import_taiwan(
     precision: str,
     source_priority: int,
 ) -> int:
+    _require_bounded_input(path)
     count = 0
     with path.open(encoding="utf-8-sig", newline="") as handle:
-        for row in csv.DictReader(handle):
+        reader = csv.DictReader(handle)
+        for row in reader:
+            if reader.line_num > MAX_SOURCE_ROWS + 1:
+                raise ValueError("Taiwan input exceeds bounded row limit")
             if not row.get("Longitude") or not row.get("Latitude"):
                 continue
             aliases = " ".join(
@@ -383,6 +407,8 @@ def build_catalog(
         )
         connection.commit()
         connection.execute("VACUUM")
+        if working_output.stat().st_size > MAX_OUTPUT_BYTES:
+            raise ValueError("place catalog exceeds bounded output limit")
     except Exception:
         connection.close()
         working_output.unlink(missing_ok=True)
@@ -416,7 +442,7 @@ def build_artifact_manifest(
         "release_policy": "low_frequency_intentional_dataset_release",
         "rebuild": {
             "command": (
-                "backend/.venv/bin/python -m scripts.validation.build_place_catalog "
+                "python -m scripts.validation.build_place_catalog "
                 "--geonames-zip <cities500.zip> "
                 "--taiwan-admin-csv <taiwan-admin.csv> "
                 "--taiwan-settlement-csv <taiwan-settlement.csv> "

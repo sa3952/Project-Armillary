@@ -1,0 +1,36 @@
+{
+ "backend_source_sha256": "8b8fbddf945b31383981375c570c91a524fb52646e8c6214128175aee860f2d9",
+ "fixtures": {
+  "chart-all-modules.json": {
+   "dossier_version": "0.6.0",
+   "generation_status": "current_backend_response",
+   "request_sha256": "ba30a26528dc4cf3072ec029585e7418770b5aad52577b1aebbb6c46e46adcd8",
+   "response_sha256": "4cef93c7c201b1c01a97617bd56c3a930855c623554fbe600ccc21747b485e76",
+   "schema_version": "0.13.0"
+  },
+  "chart-date-only.json": {
+   "dossier_version": "0.6.0",
+   "generation_status": "current_backend_response",
+   "request_sha256": "36bf726bf95600956869e9bce09b57694b53c0541136cba91607304758b8408e",
+   "response_sha256": "5c00bfc6bf3b7dd952c03966571aadda3367ff65a1056231af2e420c4747d067",
+   "schema_version": "0.13.0"
+  },
+  "chart-exact.json": {
+   "dossier_version": "0.6.0",
+   "generation_status": "current_backend_response",
+   "request_sha256": "478db3272d459801edf24070d49871483382e39aff11936faeec4a7ca65b4ee1",
+   "response_sha256": "674cf09102bcd9cd64d15b8e18e56b55c77a13b6ab3894ffc91fec968faadc6a",
+   "schema_version": "0.13.0"
+  },
+  "chart-sidereal-dignity-refused.json": {
+   "dossier_version": "0.6.0",
+   "generation_status": "current_backend_response",
+   "request_sha256": "9dbf230f402359dd01bc4ad67897a25986dee1aa9fa4800a7571cb639d253e91",
+   "response_sha256": "e18c23ad1d29c34a20f7bdd824f336e61d70bea2299a56eab7b9205125d8587e",
+   "schema_version": "0.13.0"
+  }
+ },
+ "producer": "scripts.frontend.regenerate_chart_fixtures",
+ "schema_version": "frontend-chart-fixture-manifest-v1",
+ "source_revision_at_generation": "23744d2185645b15494cab7edbf62f63d2849083"
+}

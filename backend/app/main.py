@@ -35,6 +35,7 @@ from .config import (
 from .ephemeris import (
     FullEphemerisRequiredError,
     ensure_ephemeris_initialized_for_thread,
+    release_ephemeris_for_thread,
     has_full_ephemeris_files,
     init_ephemeris,
 )
@@ -118,12 +119,17 @@ except importlib.metadata.PackageNotFoundError:
     _PYSWISSEPH_DISTRIBUTION_VERSION = None
 
 def health_check(settings: AppSettings):
-    """供瀏覽器預覽與實際 HTTP 驗收確認後端確實載入完成。"""
+    """Report process liveness, not end-to-end calculation readiness."""
     if settings.profile is AppProfile.PRIVATE_ALPHA:
-        return {"status": "ok", "ready": True}
+        return {
+            "status": "ok",
+            "ready": True,
+            "readiness_scope": "process_liveness_only",
+        }
     return {
         "status": "ok",
         "ready": True,
+        "readiness_scope": "process_liveness_only",
         "service": "classical-astrology-app",
         "runtime_contract": "local-runtime-v2",
         "full_ephemeris_files": _HAS_FULL_EPHEMERIS,
@@ -563,7 +569,10 @@ def compute_chart(req: ChartRequest):
     try:
         return _compute_chart_locked(req)
     finally:
-        _COMPUTE_LOCK.release()
+        try:
+            release_ephemeris_for_thread()
+        finally:
+            _COMPUTE_LOCK.release()
 
 
 def _compute_chart_locked(req: ChartRequest):
@@ -1421,6 +1430,7 @@ def create_app(
 
     api_method_routes = {
         "/api/health": frozenset({"GET"}),
+        "/api/client-config": frozenset({"GET"}),
         "/api/chart": frozenset({"POST"}),
         "/api/places/search": frozenset({"POST"}),
     }
@@ -1524,14 +1534,14 @@ def create_app(
             name="frontend",
         )
 
-    if resolved_settings.is_private_alpha:
-        application.add_middleware(ChartRequestBoundary)
-        application.add_middleware(RequestCapacityBoundary)
-
     application.add_middleware(
         ApiMethodBoundary,
         route_methods=api_method_routes,
     )
+
+    if resolved_settings.is_private_alpha:
+        application.add_middleware(ChartRequestBoundary)
+        application.add_middleware(RequestCapacityBoundary)
 
     # Privacy remains the outer user middleware so it can contain downstream
     # response-lifecycle failures and apply headers to request-boundary errors.

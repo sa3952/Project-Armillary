@@ -98,6 +98,8 @@ def test_real_hosted_server_success_rejections_and_process_output_are_bounded():
             "-m",
             "uvicorn",
             "app.main:app",
+            "--http",
+            "h11",
             "--host",
             "127.0.0.1",
             "--port",
@@ -192,7 +194,7 @@ def test_real_hosted_server_unexpected_error_is_generic_and_not_logged():
                 "AppSettings(profile=AppProfile.PRIVATE_ALPHA))"
             ),
             (
-                "uvicorn.run(main.app, host='127.0.0.1', "
+                "uvicorn.run(main.app, host='127.0.0.1', http='h11', "
                 f"port={port}, access_log=False)"
             ),
         )
@@ -232,7 +234,7 @@ def test_real_local_server_sanitizes_validation_input_and_nonfinite_numbers():
     environment = {**os.environ, PROFILE_ENV: "local"}
     process = subprocess.Popen(
         [
-            sys.executable, "-m", "uvicorn", "app.main:app", "--host",
+            sys.executable, "-m", "uvicorn", "app.main:app", "--http", "h11", "--host",
             "127.0.0.1", "--port", str(port), "--no-access-log",
         ],
         cwd=BACKEND_ROOT,

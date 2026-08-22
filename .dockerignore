@@ -65,12 +65,12 @@ frontend/tests/**
 !third_party/
 !third_party/pyswisseph/
 !third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz
-!third_party/pyswisseph/LICENSE.txt
 
 !scripts/
 !scripts/verification/
 !scripts/verification/verify_ephemeris_integrity.py
 !scripts/verification/verify_place_catalog.py
+!scripts/verification/capture_build_evidence.py
 !scripts/publication/
 !scripts/publication/verify_linux_source_build.py
 
@@ -82,3 +82,9 @@ frontend/tests/**
 **/*.py[cod]
 frontend/tests
 frontend/tests/**
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*secret*
+**/*token*

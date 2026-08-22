@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
 import hashlib
 import json
 import os
@@ -41,7 +42,18 @@ except ModuleNotFoundError:
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_NAME = "frontend-release.json"
 SOURCE_URL_PREFIX = "https://github.com/sa3952/Project-Armillary/tree/"
+SOURCE_ARCHIVE_URL_PREFIX = "https://github.com/sa3952/Project-Armillary/archive/"
+FORMAL_LEGAL_CONTRACT = Path("docs/publication/formal_legal_release_copy.json")
+FORMAL_LEGAL_FIELDS = frozenset({
+    "effective_date",
+    "release_version",
+    "public_revision",
+    "source_archive_url",
+    "source_archive_sha256",
+})
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
+_DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_RELEASE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
 def _canonical_bytes(value: object) -> bytes:
@@ -59,6 +71,107 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def validate_publication_receipt(
+    path: Path,
+    *,
+    expected_revision: str,
+) -> dict[str, str]:
+    """Consume evidence of publication instead of an operator assertion."""
+    metadata = path.lstat()
+    if (
+        not path.is_file()
+        or path.is_symlink()
+        or metadata.st_size > 32 * 1024
+    ):
+        raise ValueError("Corresponding Source publication receipt is unsafe")
+    try:
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(
+            f"Corresponding Source publication receipt is unreadable: {error}"
+        ) from None
+    expected_keys = {
+        "schema_version",
+        "status",
+        "effective_date",
+        "release_version",
+        "public_source_revision",
+        "source_url",
+        "source_archive_url",
+        "source_archive_sha256",
+        "anonymous_checkout_sha256",
+        "evidence_sha256",
+    }
+    if not isinstance(receipt, dict) or set(receipt) != expected_keys:
+        raise ValueError("Corresponding Source publication receipt key set is invalid")
+    try:
+        parsed_date = date.fromisoformat(str(receipt.get("effective_date", "")))
+    except ValueError:
+        parsed_date = None
+    if (
+        receipt.get("schema_version")
+        != "corresponding-source-publication-receipt-v1"
+        or receipt.get("status") != "published_anonymously_reachable"
+        or receipt.get("public_source_revision") != expected_revision
+        or receipt.get("source_url") != f"{SOURCE_URL_PREFIX}{expected_revision}"
+        or receipt.get("source_archive_url")
+        != f"{SOURCE_ARCHIVE_URL_PREFIX}{expected_revision}.tar.gz"
+        or parsed_date is None
+        or parsed_date.isoformat() != receipt.get("effective_date")
+        or not _RELEASE_VERSION.fullmatch(str(receipt.get("release_version", "")))
+        or any(
+            not _DIGEST.fullmatch(str(receipt.get(key, "")))
+            for key in (
+                "source_archive_sha256",
+                "anonymous_checkout_sha256",
+                "evidence_sha256",
+            )
+        )
+    ):
+        raise ValueError(
+            "Corresponding Source publication receipt identity or evidence is invalid"
+        )
+    return {key: str(receipt[key]) for key in expected_keys}
+
+
+def formal_legal_release_fields(
+    source_root: Path,
+    publication_evidence: dict[str, str] | None,
+) -> dict[str, str] | None:
+    """Bind release-owned legal fields to verified publication evidence."""
+    if publication_evidence is None:
+        return None
+    path = source_root / FORMAL_LEGAL_CONTRACT
+    if not path.is_file() or path.is_symlink():
+        raise ValueError("formal legal release contract is missing or unsafe")
+    try:
+        contract = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"formal legal release contract is unreadable: {error}") from None
+    machine_fields = contract.get("machine_owned_release_fields")
+    if (
+        contract.get("schema_version") != "formal-legal-release-copy-v1"
+        or contract.get("status") != "current_release_copy"
+        or contract.get("publication_disposition") != "publication_input"
+        or not isinstance(machine_fields, dict)
+        or set(machine_fields) != FORMAL_LEGAL_FIELDS
+        or any(
+            not isinstance(item, dict)
+            or item.get("owner") != "S21 publication/frontend release producer"
+            or item.get("source_value") is not None
+            for item in machine_fields.values()
+        )
+    ):
+        raise ValueError("formal legal release contract machine ownership is invalid")
+    return {
+        "effective_date": publication_evidence["effective_date"],
+        "release_version": publication_evidence["release_version"],
+        "public_revision": publication_evidence["public_source_revision"],
+        "source_archive_url": publication_evidence["source_archive_url"],
+        "source_archive_sha256": publication_evidence["source_archive_sha256"],
+    }
 
 
 def _make_tree_removable(root: Path) -> None:
@@ -83,10 +196,11 @@ def _manifest_payload(
     revision: str,
     contract: dict[str, str | int],
     files: dict[str, dict[str, object]],
-    source_published: bool,
+    publication_evidence: dict[str, str] | None,
+    legal_release_fields: dict[str, str] | None,
 ) -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 3,
         "artifact_type": "classical-astrology-frontend-release",
         "frontend_public_source_revision": revision,
         "source_url": f"{SOURCE_URL_PREFIX}{revision}",
@@ -95,13 +209,15 @@ def _manifest_payload(
         # Source is not published yet (`PIA-2026-08-06-011`), and building a
         # release before it is would bake in exactly the claim
         # `PIA-2026-08-06-010` refused to make in the third-party notices.
-        # The status field forces that to be stated rather than assumed; the
-        # builder has to say which it is.
+        # The status is derived from a verified receipt.  A CLI boolean used to
+        # let the builder assert publication and then discard the evidence.
         "source_url_status": (
             "published_and_expected_anonymously_reachable"
-            if source_published
+            if publication_evidence is not None
             else "provisional_pending_publication"
         ),
+        "source_publication": publication_evidence,
+        "formal_legal_release_fields": legal_release_fields,
         "required_contracts": {
             "api_schema_version": contract["api_schema_version"],
             "dossier_version": contract["dossier_version"],
@@ -121,12 +237,24 @@ def build_release(
     output_parent: Path,
     public_source_revision: str,
     require_clean_revision: bool = True,
-    source_published: bool = False,
+    publication_receipt: Path | None = None,
 ) -> dict[str, object]:
     source_root = source_root.resolve()
     output_parent = Path(os.path.abspath(output_parent))
     if not _REVISION.fullmatch(public_source_revision):
         raise ValueError("frontend public source revision must be 40 lowercase hex")
+    publication_evidence = (
+        validate_publication_receipt(
+            publication_receipt,
+            expected_revision=public_source_revision,
+        )
+        if publication_receipt is not None
+        else None
+    )
+    legal_release_fields = formal_legal_release_fields(
+        source_root,
+        publication_evidence,
+    )
     if require_clean_revision:
         status = subprocess.run(
             ["git", "status", "--porcelain"],
@@ -164,7 +292,16 @@ def build_release(
                 raise ValueError(f"required frontend asset is missing or unsafe: {name}")
             target = temporary / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, target)
+            if require_clean_revision:
+                committed = subprocess.run(
+                    ["git", "show", f"{public_source_revision}:frontend/{name}"],
+                    cwd=source_root,
+                    check=True,
+                    capture_output=True,
+                ).stdout
+                target.write_bytes(committed)
+            else:
+                shutil.copyfile(source, target)
             os.chmod(target, 0o444)
             files[name] = {
                 "sha256": _sha256(target),
@@ -174,7 +311,8 @@ def build_release(
             revision=public_source_revision,
             contract=contract,
             files=files,
-            source_published=source_published,
+            publication_evidence=publication_evidence,
+            legal_release_fields=legal_release_fields,
         )
         digest = _artifact_digest(payload)
         manifest = {**payload, "artifact_digest": digest}
@@ -237,12 +375,11 @@ def main() -> None:
     build.add_argument("--output-parent", type=Path, required=True)
     build.add_argument("--public-source-revision", required=True)
     build.add_argument(
-        "--source-published",
-        action="store_true",
+        "--publication-receipt",
+        type=Path,
         help=(
-            "assert the Corresponding Source is already published at that "
-            "revision and anonymously reachable; default records the URL as "
-            "provisional so the manifest cannot claim more than is true"
+            "verified Corresponding Source publication receipt for this exact "
+            "revision; omission leaves the immutable manifest provisional"
         ),
     )
     verify = commands.add_parser("verify")
@@ -253,7 +390,7 @@ def main() -> None:
             source_root=args.source_root,
             output_parent=args.output_parent,
             public_source_revision=args.public_source_revision,
-            source_published=args.source_published,
+            publication_receipt=args.publication_receipt,
         )
     else:
         result = verify_release(args.release_directory)

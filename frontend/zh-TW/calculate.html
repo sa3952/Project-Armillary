@@ -6,10 +6,12 @@
 <meta name="robots" content="noindex, nofollow">
 <title>計算｜渾儀 Armillary</title>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.6-locale">
-<link rel="stylesheet" href="/zh-TW/calculate.css?v=0.6.6-locale">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.8-s19">
+<link rel="stylesheet" href="/zh-TW/calculate.css?v=0.6.8-s19">
 </head>
 <body>
+
+<a class="skip-link" href="#main-content">跳到主要內容</a>
 
 <header>
   <div class="wrap">
@@ -34,7 +36,7 @@
   </div>
 </header>
 
-<main class="wrap">
+<main class="wrap" id="main-content">
 
   <!-- ═══ L2 區：關於產品的描述性陳述 ═══════════════════ -->
   <section class="layer-region" data-layer="L2" aria-labelledby="compose-heading">
@@ -83,7 +85,7 @@
           </div>
           <div class="field">
             <label for="second">秒 <span class="en">second</span></label>
-            <input type="number" id="second" min="0" max="59" step="any" inputmode="decimal" autocomplete="off" placeholder="0">
+            <input type="number" id="second" min="0" max="60" step="any" inputmode="decimal" autocomplete="off" placeholder="0">
             <span class="hint">0–59，可填小數，不填視為 0</span>
           </div>
         </div>
@@ -231,6 +233,11 @@
     <ul class="warnings" id="warnings" hidden></ul>
 
     <div class="toolbar">
+      <label for="export-detail-mode">輸出內容</label>
+      <select id="export-detail-mode">
+        <option value="chart_data_only">只要星盤資料</option>
+        <option value="reproducibility_detail" selected>星盤資料＋收據與計算過程</option>
+      </select>
       <button type="button" class="ghost small" data-copy="all">複製全文</button>
       <button type="button" class="ghost small" data-download="json">下載 JSON</button>
       <button type="button" class="ghost small" data-download="csv">下載 CSV</button>
@@ -292,13 +299,13 @@
   </div>
 </footer>
 
-<script src="/zh-TW/client-context.js?v=0.6.6-locale"></script>
-<script src="/zh-TW/exporters.js?v=0.6.6-locale"></script>
-<script src="/zh-TW/privacy-lifecycle.js?v=0.6.6-locale"></script>
-<script src="/zh-TW/options-catalogue.js?v=0.6.6-locale"></script>
-<script src="/zh-TW/request-input.js?v=0.6.6-locale"></script>
-<script src="/zh-TW/view-model.js?v=0.6.6-locale"></script>
-<script src="/zh-TW/location-receipt.js?v=0.6.6-locale"></script>
-<script src="/zh-TW/calculate.js?v=0.6.6-locale"></script>
+<script src="/zh-TW/client-context.js?v=0.6.8-s19"></script>
+<script src="/zh-TW/exporters.js?v=0.6.8-s19"></script>
+<script src="/zh-TW/privacy-lifecycle.js?v=0.6.8-s19"></script>
+<script src="/zh-TW/options-catalogue.js?v=0.6.8-s19"></script>
+<script src="/zh-TW/request-input.js?v=0.6.8-s19"></script>
+<script src="/zh-TW/view-model.js?v=0.6.8-s19"></script>
+<script src="/zh-TW/location-receipt.js?v=0.6.8-s19"></script>
+<script src="/zh-TW/calculate.js?v=0.6.8-s19"></script>
 </body>
 </html>

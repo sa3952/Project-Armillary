@@ -1,0 +1,108 @@
+<div class="wrap page-body">
+  <div class="eyebrow">驗證 · VALIDATION</div>
+  <h1>「已驗證」如果沒有附帶範圍，等於沒說。</h1>
+  <p class="lede">一次比對三顆行星、一個年份、一種座標模式，也可以叫「已驗證」。</p>
+  <p>這一頁給的是範圍：<strong>比對了哪些天體、哪個年代、哪些欄位、用什麼當參考、門檻設多少、結果如何、哪些還沒結案。</strong></p>
+  <p>底下附一份完整的範例卷宗，可以展開逐欄檢查——<strong>不必交出你的出生資料。</strong></p>
+
+  <section>
+    <h2>我們拿產品去對一套完全不同的管線</h2>
+    <p><strong>只用同一套函式庫自我驗證，沒有意義。</strong>所以我們用 JPL 的 DE442 星曆核心，經由 Astropy／ERFA 建立另一條參考管線，與產品使用的 Swiss Ephemeris 逐小時比對。它在幾何星曆與主要轉換實作上獨立，但仍共享 IERS／IAU 標準、部分觀測資料譜系與視位置定義；因此不能簡寫成「完全獨立」。</p>
+    <p>本頁下列 1990–2026 統計是<strong>歷史驗證批次</strong>，不是每次開頁重跑，也不是目前 candidate image 的收據。後續 validator v2 使用 frozen backend <code>70a6a8b</code> 作更深的成因與邊界研究；正式 candidate 必須另以 exact source／image identity重播，不能把歷史數字自動貼到新映像。</p>
+    <table class="log">
+      <thead><tr><th>項目</th><th>設定</th></tr></thead>
+      <tbody>
+        <tr><td>時間範圍</td><td>1990-01-01 至 2026-07-28，<strong>逐小時</strong></td></tr>
+        <tr><td>時間點</td><td>320,584</td></tr>
+        <tr><td>天體</td><td>太陽、月亮、水星、金星、火星、木星、土星</td></tr>
+        <tr class="mark"><td><strong>比對筆數</strong></td><td><strong>2,244,088</strong></td></tr>
+        <tr><td>比對欄位</td><td>黃經、黃緯、赤經、赤緯、地心距離，以及各項的速度</td></tr>
+        <tr><td>位置門檻</td><td>5 角秒（月亮 15 角秒）</td></tr>
+        <tr><td>速度門檻</td><td>1 角秒／日（月亮 5 角秒／日）</td></tr>
+        <tr><td>位置模式</td><td>地心。<strong>未涵蓋</strong>站心、地平座標、宮位與事件輸出</td></tr>
+      </tbody>
+    </table>
+
+    <h2>結果</h2>
+    <table class="log">
+      <thead><tr><th>狀態</th><th>筆數</th><th>占比</th></tr></thead>
+      <tbody>
+        <tr><td>通過</td><td>2,243,195</td><td><strong>99.96%</strong></td></tr>
+        <tr><td>警告</td><td>377</td><td>0.017%</td></tr>
+        <tr><td>未通過</td><td>516</td><td>0.023%</td></tr>
+      </tbody>
+    </table>
+    <p><strong>五大行星的位置沒有任何一項未通過。</strong>代表性最大位置差：水星赤緯 4.8 角秒、金星赤經 4.0 角秒、土星赤經 1.7 角秒。月亮的位置一致到 0.005 角秒以內。</p>
+    <p>距離差：水星 2.3 公里、金星 2.3 公里、火星 1.9 公里、木星 3.5 公里、土星 10.7 公里。</p>
+    <p><strong>站心速度另有已知限制：</strong>Swiss <code>FLG_SPEED</code> 回傳的太陽／月亮部分站心解析速度，不等於同次站心位置的有限差分導數。位置比較仍然良好，但這些速度欄位不宣稱已驗證的導數精度；詳情會隨每次站心回應的warning與receipt一起出現。</p>
+  </section>
+
+  <section>
+    <h2>未通過的那些，我們一路追到根因</h2>
+    <p><strong>這一節才是重點。</strong>總分好看很容易，說得出每個異常為什麼發生才難。</p>
+    <p>516 筆未通過裡，<strong>1,405 個欄位層級的失敗是角速度，只有 4 個是位置。</strong>這個分布本身就是線索：如果底層軌道普遍錯誤，應該同時看到持續的位置與距離偏差。</p>
+
+    <h2>月亮的大速度差，是我們自己的驗證器算錯</h2>
+    <p>異常集中在歷史正閏秒生效的日子。校正器用固定 300 秒當差分分母，但跨越正閏秒時那兩個時刻實際相隔 <strong>301 秒</strong>。</p>
+    <p>301／300 × 月亮每日約 15 度 ≈ <strong>180 角秒／日</strong>，與實際觀測到的 180.975 角秒／日吻合。</p>
+    <p><strong>已修正</strong>：分母改用實際相差的秒數，並加上跨閏秒的迴歸測試。<strong>產品沒有錯，錯的是我們的量尺。</strong></p>
+
+    <h2>五大行星的最大速度差，全部發生在行星位於太陽視圓面之內</h2>
+    <p>太陽視半徑約 960 角秒。這五個最大異常時刻的日距分別是：水星 35 角秒、金星 132 角秒、火星 65 角秒、木星 49 角秒、土星 240 角秒——<strong>全部在太陽圓面裡面。</strong></p>
+    <p>在那個區域裡，行星的光子被太陽遮蔽，嚴格說並不存在可觀測的視位置。兩套軟體各自採用不同的延伸規則來維持函數連續：位置只差幾角秒，<strong>但斜率（也就是速度）可以差到數十至數百角秒／日。</strong></p>
+    <p><strong>判定：主要肇因是兩套近太陽視位置規則不同，不是產品計算錯誤。</strong></p>
+
+    <h2>太陽的速度差，仍在追</h2>
+    <p>已完成 119 個取樣點的有界重現，確認產品的解析速度與自身位置一致到 0.05 角秒／日以內——也就是產品沒有回傳損壞的欄位。但要完全歸因到底層框架，還需要做分層比較。</p>
+    <p><strong>這一項目前開放。我們寫在這裡，而不是等你發現。</strong></p>
+  </section>
+
+  <section>
+    <h2>我們刻意沒做的事</h2>
+    <p>我們<strong>沒有</strong>因為這批結果就更換星曆引擎、改用 DE442、修改天文數值，或放寬門檻把還沒理解的差異蓋掉。</p>
+    <p>也要說清楚一件常見的誤導寫法：<strong>DE442 不是「唯一真值」。</strong>JPL 核心提供的是特定參考框架下的幾何狀態；光行時、光行差、引力偏折、歲差、章動都是由使用端選擇並施加的。</p>
+    <p>正確的名稱是「以 DE442 為幾何星曆、經 Astropy／ERFA 視位置管線產生的參考結果」，<strong>不是「NASA 真值」。</strong>看到有人這樣宣傳，那句話本身就不精確。</p>
+  </section>
+
+  <section>
+    <h2>邊界才是真問題</h2>
+    <p>1 度等於 3,600 角秒。幾角秒的位置差，一般不足以改變星座或相位分類。</p>
+    <p><strong>但「整體誤差很小」不能用來忽略邊界。</strong>如果原始位置剛好落在邊界前後幾角秒，這些都可能翻轉：29°59′59″ 的星座切換、界的度數邊界、宮頭前後的落宮、極窄的相位容許線。</p>
+
+    <h2>已做的邊界檢查</h2>
+    <p>1990 至 2026 年間，五大行星的黃經速度零點共 <strong>448 個</strong>。每個零點前後各 1 小時與 6 小時比較順行／逆行符號，共 <strong>1,792 次檢查</strong>——<strong>零次分類翻轉。</strong></p>
+    <p>最大零點時間差：水星 1.65 秒、金星 4.94 秒、火星 12.19 秒、木星 12.85 秒、土星 42.52 秒。</p>
+
+    <h2>後續完成的邊界檢查</h2>
+    <p>Validator v2在frozen backend上建立289個crossings、70,155個application samples與8,824個reference samples；涵蓋星座、旬、Egyptian bounds、station、sect與exact aspect，沒有unshared bracket或double-boundary scan step。最大時間差依family約0.026秒至58.044秒；這是歷史run evidence，仍需在exact candidate重播。</p>
+    <p>Orb edge、quadrant cusp、固定星、日月食shadow、廣泛升降／上下中天與非預設center／frame仍沒有同等覆蓋。上升點與宮頭另受出生時間、經緯度、海拔、大氣折射與地球自轉資料影響，不能由行星星曆比對外推。</p>
+  </section>
+
+  <section>
+    <h2>資料檔本身也被鎖住</h2>
+    <p>內建的星曆檔與恆星表，各自的 SHA-256 雜湊由測試直接驗證。</p>
+    <p>這保證輸入資料沒有默默改變——<strong>如果有人替換了星曆檔，測試會失敗。</strong></p>
+    <p>星曆檔基於 JPL DE441，由 Astrodienst 建立；卷宗會記錄本次實際使用的來源。</p>
+  </section>
+
+  <section>
+    <h2>完整範例卷宗</h2>
+    <p><strong>不交出你的出生資料，也能看到完整輸出長什麼樣。</strong></p>
+    <p>展開後是一份真實跑出來的卷宗，含全部欄位：時間換算、三套座標、計算口徑、引擎版本、星曆來源、方法版本與狀態、逐步計算軌跡與雜湊收據。</p>
+    <p><strong>這份範例由後端實際計算產生，不是手寫的。</strong>使用的是一組標示為範例的出生資料。</p>
+{{example_dossier}}
+  </section>
+
+  <section>
+    <h2>我們沒有取得的東西</h2>
+    <p>說清楚比較好：</p>
+    <ul>
+      <li><strong>沒有</strong>第三方安全認證。</li>
+      <li><strong>已有</strong>獨立 AI 紅隊與外部模型審查；<strong>沒有</strong>專業滲透測試。</li>
+      <li><strong>沒有</strong>全系統天文正確性認證——上面那次比對涵蓋指定的天體、年代、欄位與模式，不是全部。</li>
+      <li>Heliocentric、barycentric、true position、J2000、nutation-off、固定星、日月食shadow與完整升降／上下中天，仍在各自的具名validation boundary；沒有證據的欄位不因同頁其他項目通過而變成通過。</li>
+      <li>repository 內的測試是設計期的迴歸證據，<strong>不會在你每次計算時重跑</strong>。</li>
+    </ul>
+    <p><strong>我們寧可列出這份清單，也不想用一個模糊的「已驗證」讓你以為我們有。</strong></p>
+  </section>
+</div>

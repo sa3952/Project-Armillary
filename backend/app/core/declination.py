@@ -19,6 +19,12 @@ DECLINATION_ASPECT_CLASSIFICATION_RULING = "MTH-Q-004 A1 (2026-08-03)"
 DECLINATION_ASPECT_PROVENANCE = "modern_20th_century_not_classical"
 
 
+def _declination_side(value: float) -> str:
+    if value == 0.0:
+        return "zero"
+    return "north" if value > 0.0 else "south"
+
+
 def compute_declination_aspects(
     bodies: list,
     orb: float,
@@ -41,12 +47,17 @@ def compute_declination_aspects(
             if d1 is None or d2 is None:
                 continue
 
-            if d1 * d2 >= 0 and abs(d1 - d2) <= orb:
+            side_a = _declination_side(d1)
+            side_b = _declination_side(d2)
+            if "zero" in (side_a, side_b):
+                continue
+
+            if side_a == side_b and abs(d1 - d2) <= orb:
                 aspects.append({
                     "type": "parallel", "body_a": a["name"], "body_b": b["name"],
                     "declination_a": d1, "declination_b": d2, "diff": abs(d1 - d2),
                 })
-            elif d1 * d2 < 0 and abs(d1 + d2) <= orb:
+            elif side_a != side_b and abs(d1 + d2) <= orb:
                 aspects.append({
                     "type": "contra_parallel", "body_a": a["name"], "body_b": b["name"],
                     "declination_a": d1, "declination_b": d2, "diff": abs(d1 + d2),
@@ -67,6 +78,11 @@ def compute_declination_aspects(
         "method_classification": DECLINATION_ASPECT_CLASSIFICATION,
         "classification_ruling": DECLINATION_ASPECT_CLASSIFICATION_RULING,
         "method_provenance": DECLINATION_ASPECT_PROVENANCE,
+        "declination_sides": {
+            body["name"]: _declination_side(body["declination"])
+            for body in bodies
+            if body.get("declination") is not None
+        },
         "orb_degrees": orb,
         "orb_receipt": {
             "requested": orb != default_orb,

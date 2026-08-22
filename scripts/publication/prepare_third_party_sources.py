@@ -18,7 +18,7 @@ import urllib.request
 import urllib.parse
 from email.parser import BytesParser
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 PACKAGE_LINE = re.compile(
@@ -27,10 +27,31 @@ PACKAGE_LINE = re.compile(
 HASH_LINE = re.compile(r"--hash=sha256:([0-9a-f]{64})")
 PYPI_JSON = "https://pypi.org/pypi/{name}/{version}/json"
 USER_AGENT = "classical-astrology-corresponding-source/1"
+MAX_METADATA_BYTES = 8 * 1024 * 1024
+MAX_SOURCE_ARCHIVE_BYTES = 512 * 1024 * 1024
+MAX_ARCHIVE_MEMBERS = 50_000
+MAX_ARCHIVE_MEMBER_BYTES = 32 * 1024 * 1024
 
 
 class SourcePreparationError(RuntimeError):
     """Raised when exact third-party source cannot be proven."""
+
+
+def _wheel_identity(filename: str) -> tuple[str, str, Callable[[str], str]]:
+    """Load the build-only wheel parser only in wheel-acquisition paths.
+
+    The public candidate verifier imports this module on a clean host before
+    it enters the governed Docker builder.  License-table and lock verification
+    are stdlib-only and must not require a pre-existing host virtualenv.
+    """
+    try:
+        from packaging.utils import canonicalize_name, parse_wheel_filename
+    except ModuleNotFoundError as error:
+        raise SourcePreparationError(
+            "wheel acquisition requires the hash-locked build environment"
+        ) from error
+    wheel_name, wheel_version, _, _ = parse_wheel_filename(filename)
+    return canonicalize_name(wheel_name), str(wheel_version), canonicalize_name
 
 
 ROLE_LABELS = {
@@ -52,6 +73,9 @@ def parse_lock(path: Path, role: str) -> list[dict[str, Any]]:
     packages: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
     for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
         package_match = PACKAGE_LINE.match(line)
         if package_match:
             current = {
@@ -65,6 +89,12 @@ def parse_lock(path: Path, role: str) -> list[dict[str, Any]]:
         hash_match = HASH_LINE.search(line)
         if hash_match and current is not None:
             current["allowed_sha256"].append(hash_match.group(1))
+            continue
+        if stripped == "\\":
+            continue
+        raise SourcePreparationError(
+            f"unsupported dependency-lock directive in {path}: {stripped}"
+        )
     if not packages or any(not item["allowed_sha256"] for item in packages):
         raise SourcePreparationError(f"cannot parse complete hashes from {path}")
     return packages
@@ -78,7 +108,14 @@ def _request_json(url: str) -> dict[str, Any]:
         timeout=30,
     ) as response:
         _require_https_url(response.geturl())
-        return json.load(response)
+        body = _read_bounded(response, MAX_METADATA_BYTES, "PyPI metadata")
+        try:
+            payload = json.loads(body)
+        except json.JSONDecodeError as error:
+            raise SourcePreparationError("PyPI metadata is not valid JSON") from error
+        if not isinstance(payload, dict):
+            raise SourcePreparationError("PyPI metadata root must be an object")
+        return payload
 
 
 def _download(url: str, destination: Path) -> None:
@@ -92,7 +129,29 @@ def _download(url: str, destination: Path) -> None:
         destination.open("wb") as output,
     ):
         _require_https_url(response.geturl())
-        shutil.copyfileobj(response, output)
+        content_length = response.headers.get("Content-Length")
+        if content_length is not None and int(content_length) > MAX_SOURCE_ARCHIVE_BYTES:
+            raise SourcePreparationError("source archive exceeds bounded byte limit")
+        written = 0
+        while True:
+            chunk = response.read(min(1024 * 1024, MAX_SOURCE_ARCHIVE_BYTES - written + 1))
+            if not chunk:
+                break
+            written += len(chunk)
+            if written > MAX_SOURCE_ARCHIVE_BYTES:
+                raise SourcePreparationError("source archive exceeds bounded byte limit")
+            output.write(chunk)
+
+
+def _read_bounded(handle, limit: int, label: str) -> bytes:
+    headers = getattr(handle, "headers", {})
+    content_length = headers.get("Content-Length") if headers is not None else None
+    if content_length is not None and int(content_length) > limit:
+        raise SourcePreparationError(f"{label} exceeds bounded byte limit")
+    body = handle.read(limit + 1)
+    if len(body) > limit:
+        raise SourcePreparationError(f"{label} exceeds bounded byte limit")
+    return body
 
 
 def _require_https_url(url: str) -> None:
@@ -142,6 +201,10 @@ def _inspect_sdist_license(archive: Path) -> dict[str, Any]:
             members = [
                 member for member in source.getmembers() if member.isfile()
             ]
+            if len(members) > MAX_ARCHIVE_MEMBERS:
+                raise SourcePreparationError("source archive has too many members")
+            if any(member.size > MAX_ARCHIVE_MEMBER_BYTES for member in members):
+                raise SourcePreparationError("source archive member exceeds bounded limit")
             pkg_info = next(
                 (
                     member
@@ -161,7 +224,7 @@ def _inspect_sdist_license(archive: Path) -> dict[str, Any]:
                 )
             metadata = BytesParser(
                 policy=email.policy.default
-            ).parsebytes(handle.read())
+            ).parsebytes(_read_bounded(handle, MAX_ARCHIVE_MEMBER_BYTES, "PKG-INFO"))
             root = pkg_info.name.rsplit("/", 1)[0]
             declared = metadata.get_all("License-File") or []
             candidates = []
@@ -194,7 +257,11 @@ def _inspect_sdist_license(archive: Path) -> dict[str, Any]:
                         f"{relative}"
                     )
                 license_hashes[relative] = hashlib.sha256(
-                    license_handle.read()
+                    _read_bounded(
+                        license_handle,
+                        MAX_ARCHIVE_MEMBER_BYTES,
+                        "license file",
+                    )
                 ).hexdigest()
     except (OSError, tarfile.TarError) as exc:
         raise SourcePreparationError(
@@ -338,6 +405,10 @@ def verify_manifest_lock_inputs(
             "sha256"
         ) != _sha256(path):
             raise SourcePreparationError(f"{role} dependency lock has drifted")
+        if declared.get("selection") != "caller_supplied" or declared.get("role") != role:
+            raise SourcePreparationError(f"{role} dependency lock identity is ambiguous")
+        if not isinstance(declared.get("source_path"), str) or not declared["source_path"]:
+            raise SourcePreparationError(f"{role} dependency lock path identity is missing")
         for package in parse_lock(path, role):
             key = (package["name"].lower(), package["version"])
             expected.setdefault(key, set()).add(role)
@@ -382,7 +453,13 @@ def _prepare_package(
             f"{name}=={version} sdist hash differs from the source lock"
         )
     filename = artifact["filename"]
+    if not isinstance(filename, str) or Path(filename).name != filename:
+        raise SourcePreparationError("source filename is not a confined basename")
     destination = sources_dir / filename
+    try:
+        destination.resolve().relative_to(sources_dir.resolve())
+    except ValueError as error:
+        raise SourcePreparationError("source filename escapes destination") from error
     _download(artifact["url"], destination)
     actual_hash = _sha256(destination)
     if actual_hash != declared_hash:
@@ -423,6 +500,7 @@ def _prepare_build_wheel_index(
     build_lock: Path,
     destination: Path,
     *,
+    source_inventory: list[dict[str, Any]],
     platforms: list[str],
     python_version: str,
     abi: str,
@@ -468,8 +546,26 @@ def _prepare_build_wheel_index(
             raise SourcePreparationError(
                 f"build wheel is not authorized by lock: {path.name}"
             )
+        wheel_name, wheel_version, normalize_name = _wheel_identity(path.name)
+        source_match = next(
+            (
+                item for item in source_inventory
+                if normalize_name(item["name"]) == wheel_name
+                and item["version"] == wheel_version
+            ),
+            None,
+        )
+        if source_match is None:
+            raise SourcePreparationError(
+                f"build wheel has no retained matching sdist: {path.name}"
+            )
         wheels.append(
-            {"filename": path.name, "sha256": digest}
+            {
+                "filename": path.name,
+                "sha256": digest,
+                "source_sdist_filename": source_match["filename"],
+                "source_sdist_sha256": source_match["sha256"],
+            }
         )
     expected_count = len(parse_lock(build_lock, "build"))
     if len(wheels) != expected_count:
@@ -492,6 +588,7 @@ def _prepare_dependency_wheel_index(
     development_lock: Path,
     destination: Path,
     *,
+    source_inventory: list[dict[str, Any]],
     platforms: list[str],
     python_version: str,
     abi: str,
@@ -558,7 +655,27 @@ def _prepare_dependency_wheel_index(
             raise SourcePreparationError(
                 f"dependency wheel is not authorized by lock: {path.name}"
             )
-        wheels.append({"filename": path.name, "sha256": digest})
+        wheel_name, wheel_version, normalize_name = _wheel_identity(path.name)
+        source_match = next(
+            (
+                item for item in source_inventory
+                if normalize_name(item["name"]) == wheel_name
+                and item["version"] == wheel_version
+            ),
+            None,
+        )
+        if source_match is None:
+            raise SourcePreparationError(
+                f"dependency wheel has no retained matching sdist: {path.name}"
+            )
+        wheels.append(
+            {
+                "filename": path.name,
+                "sha256": digest,
+                "source_sdist_filename": source_match["filename"],
+                "source_sdist_sha256": source_match["sha256"],
+            }
+        )
     if len(wheels) != len(packages):
         raise SourcePreparationError(
             "dependency wheel index does not contain exactly one artifact "
@@ -647,6 +764,7 @@ def prepare_sources(
             build_wheel_index = _prepare_build_wheel_index(
                 build_lock,
                 destination,
+                source_inventory=inventory,
                 platforms=build_wheel_platforms,
                 python_version=build_python_version,
                 abi=build_abi,
@@ -655,10 +773,26 @@ def prepare_sources(
                 dependency_wheel_index = _prepare_dependency_wheel_index(
                     development_lock,
                     destination,
+                    source_inventory=inventory,
                     platforms=build_wheel_platforms,
                     python_version=build_python_version,
                     abi=build_abi,
                 )
+        def lock_identity(role: str, lock_path: Path) -> dict[str, str]:
+            try:
+                source_path = lock_path.resolve().relative_to(
+                    Path(__file__).resolve().parents[2]
+                ).as_posix()
+            except ValueError:
+                source_path = f"external_input/{lock_path.name}"
+            return {
+                "filename": lock_path.name,
+                "sha256": _sha256(lock_path),
+                "selection": "caller_supplied",
+                "source_path": source_path,
+                "role": role,
+            }
+
         payload = {
             "schema_version": 2,
             "complete": complete,
@@ -666,10 +800,7 @@ def prepare_sources(
             "license_evidence_complete": license_evidence_complete,
             "source": "PyPI version metadata plus locked SHA-256 verification",
             "lock_inputs": {
-                role: {
-                    "filename": lock_path.name,
-                    "sha256": _sha256(lock_path),
-                }
+                role: lock_identity(role, lock_path)
                 for role, lock_path in sorted(lock_inputs.items())
             },
             "reconstruction_complete": bool(

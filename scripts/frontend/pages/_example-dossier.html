@@ -1,0 +1,1013 @@
+<!-- 由 scripts/frontend/render_example_dossier.cjs 產生，請勿手改。 -->
+<details class="dossier">
+  <summary>展開完整範例卷宗（28 節、496 列）</summary>
+  <div class="dossier-body">
+  <p class="dossier-lede"><strong>這是範例，不是任何人的真實出生資料。</strong>
+  底下每一個數值都由後端實際計算產生，不是手寫的；使用的是一組標示為範例的輸入。</p>
+  <p class="dossier-lede">本次請求<strong>明示指定</strong>了界表、面、三分性與容許度表。
+  這不是預設行為——不指定時那幾節會留空並說明原因，因為選一套表就是替你做方法裁決。</p>
+  <dl class="legal-terms dossier-meta">
+    <dt>匯出契約版本</dt><dd class="mono">0.1.2</dd>
+    <dt>API schema 版本</dt><dd class="mono">0.13.0</dd>
+    <dt>卷宗版本</dt><dd class="mono">0.6.0</dd>
+  </dl>
+  <h3 class="dossier-warnings-title">本次回應附帶的警告（9）</h3>
+    <ul class="dossier-warnings"><li><code>topocentric_analytic_speed_limitation</code> 站心speed_*是Swiss FLG_SPEED解析值；太陽／月亮部分欄位已知不等於同次站心position的有限差分導數。位置仍可使用，但這些speed欄位不得解讀為已驗證的導數精度。</li><li><code>mixed_origin_moon_position</code> 本次全盤採地心座標，但有效月亮改採觀測地站心座標。兩個月亮數值均保留，所有下游判定使用站心月亮；這是刻意的混合原點研究 profile，不代表站心值普遍較準。</li><li><code>provisional_method_result</code> house_division 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> planet_in_house 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> aspects 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> sect 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> lots 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> void_of_course 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> declination_aspects 已計算，但方法仍待審閱，不能視為正式採用。</li></ul>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>時間轉換
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">所有時刻均標明時間尺度；UTC 為換算結果，不是輸入。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>時間</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>本地時間</td><td>1990-05-15 14:30:00.00</td></tr>
+        <tr><td>時區</td><td>Asia/Taipei</td></tr>
+        <tr><td>UTC 偏移（小時）</td><td>8.00</td></tr>
+        <tr><td>UTC</td><td>1990-05-15 06:30:00.000</td></tr>
+        <tr><td>儒略日 JD(UT)</td><td>2448026.770834</td></tr>
+        <tr><td>ΔT（秒）</td><td>57.105</td></tr>
+        <tr><td>Swiss 時間輸入語義</td><td>utc</td></tr>
+        <tr><td>ΔT 模型狀態</td><td>model_value</td></tr>
+        <tr><td>地方真恆星時 LAST（小時）</td><td>6.060282</td></tr>
+        <tr><td>真黃赤交角 ε</td><td>23°26′31.79″</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>天體位置
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">黃道、赤道、地平三套座標一次輸出，不必換工具重填生辰。</p>
+    <p class="dossier-note">星座與宮內度數由後端黃經以 30° 分段換寫，非另一次計算；完整精度在 JSON 匯出中。</p>
+    <p class="dossier-note">站心速度為 Swiss FLG_SPEED 解析值；太陽／月亮部分欄位已知不等於同次位置的有限差分導數，請勿把它當作已驗證的導數精度。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>本命天體</caption>
+        <thead><tr><th>天體</th><th>黃經 λ</th><th>星座度數</th><th>黃緯 β</th><th>赤經 α</th><th>赤緯 δ</th><th>方位角 Az</th><th>真高度</th><th>視高度</th><th>行進</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>54.175133</td><td>金牛 24°10′30.48″</td><td>-0°00′00.10″</td><td>51.803431</td><td>18°49′03.80″</td><td>269.408</td><td>53.344</td><td>53.356</td><td>順行</td></tr>
+        <tr><td>月亮</td><td>293.974367</td><td>摩羯 23°58′27.72″</td><td>-1°22′34.85″</td><td>296.118201</td><td>-22°40′14.46″</td><td>268.515</td><td>-66.845</td><td>-66.845</td><td>順行</td></tr>
+        <tr><td>水星</td><td>38.042005</td><td>金牛 8°02′31.22″</td><td>-2°28′29.30″</td><td>36.490921</td><td>11°50′51.40″</td><td>266.717</td><td>37.135</td><td>37.155</td><td>逆行</td></tr>
+        <tr><td>金星</td><td>12.556961</td><td>牡羊 12°33′25.06″</td><td>-1°47′24.22″</td><td>12.248358</td><td>3°18′46.58″</td><td>268.385</td><td>11.702</td><td>11.776</td><td>順行</td></tr>
+        <tr><td>火星</td><td>348.163636</td><td>雙魚 18°09′49.09″</td><td>-1°43′39.59″</td><td>349.795163</td><td>-6°16′14.05″</td><td>268.748</td><td>-12.677</td><td>-12.677</td><td>順行</td></tr>
+        <tr><td>木星</td><td>99.498423</td><td>巨蟹 9°29′54.32″</td><td>0°08′32.25″</td><td>100.346304</td><td>23°14′38.10″</td><td>94.053</td><td>81.309</td><td>81.311</td><td>順行</td></tr>
+        <tr><td>土星</td><td>295.253242</td><td>摩羯 25°15′11.67″</td><td>0°09′19.27″</td><td>297.179045</td><td>-20°56′07.34″</td><td>272.294</td><td>-65.557</td><td>-65.557</td><td>逆行</td></tr>
+        <tr><td>天王星</td><td>279.189494</td><td>摩羯 9°11′22.18″</td><td>-0°18′52.86″</td><td>280.023885</td><td>-23°26′15.41″</td><td>273.011</td><td>-81.627</td><td>-81.627</td><td>逆行</td></tr>
+        <tr><td>海王星</td><td>284.356245</td><td>摩羯 14°21′22.48″</td><td>0°52′20.55″</td><td>285.486963</td><td>-21°48′04.26″</td><td>277.001</td><td>-76.377</td><td>-76.377</td><td>逆行</td></tr>
+        <tr><td>冥王星</td><td>226.173753</td><td>天蠍 16°10′25.51″</td><td>15°59′31.52″</td><td>228.252199</td><td>-1°19′32.25″</td><td>67.564</td><td>-42.875</td><td>-42.875</td><td>逆行</td></tr>
+        <tr><td>凱龍星</td><td>103.194125</td><td>巨蟹 13°11′38.85″</td><td>-6°24′35.24″</td><td>103.677343</td><td>16°24′28.93″</td><td>120.506</td><td>75.749</td><td>75.753</td><td>順行</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>月交點
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">真交點與平交點何者進入正式技法尚待考據；兩者以名稱區分，不擇一。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>交點</caption>
+        <thead><tr><th>天體</th><th>黃經 λ</th><th>星座度數</th><th>黃緯 β</th><th>赤經 α</th><th>赤緯 δ</th><th>方位角 Az</th><th>真高度</th><th>視高度</th><th>行進</th></tr></thead>
+        <tbody>
+        <tr><td>北交點(密切)</td><td>310.264022</td><td>水瓶 10°15′50.48″</td><td>0°00′00.00″</td><td>312.712579</td><td>-17°40′19.45″</td><td>271.221</td><td>-50.556</td><td>-50.556</td><td>逆行</td></tr>
+        <tr><td>北交點(平均)</td><td>311.351279</td><td>水瓶 11°21′04.60″</td><td>0°00′00.00″</td><td>313.809560</td><td>-17°22′32.32″</td><td>271.188</td><td>-49.469</td><td>-49.469</td><td>逆行</td></tr>
+        <tr><td>南交點(密切)</td><td>130.264022</td><td>獅子 10°15′50.48″</td><td>0°00′00.00″</td><td>132.712579</td><td>17°40′19.45″</td><td>91.221</td><td>50.556</td><td>50.569</td><td>逆行</td></tr>
+        <tr><td>南交點(平均)</td><td>131.351279</td><td>獅子 11°21′04.60″</td><td>0°00′00.00″</td><td>133.809560</td><td>17°22′32.32″</td><td>91.188</td><td>49.469</td><td>49.482</td><td>逆行</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>Lilith 與 Priapus
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">方法：swiss_lunar_apsides_named_points_v1；審閱狀態：sebastian_authorized_2026_08_04；權威：Sebastian ruling 2026-08-04 CMP-A6 option 3。</p>
+    <p class="dossier-note">三個點皆非物理天體，是月球軌道的幾何點。</p>
+    <p class="dossier-note">座標政策：軌道參考 geocentric_lunar_orbit_model；未套用站心視差；理由：Swiss Ephemeris does not distinguish topocentric from geocentric lunar nodes/apogees for these orbital points；相位參與：not_included_by_this_option。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>月球拱點</caption>
+        <thead><tr><th>天體</th><th>黃經 λ</th><th>星座度數</th><th>黃緯 β</th><th>赤經 α</th><th>赤緯 δ</th><th>方位角 Az</th><th>真高度</th><th>視高度</th><th>行進</th></tr></thead>
+        <tbody>
+        <tr><td>平均黑月莉莉絲</td><td>231.453235</td><td>天蠍 21°27′11.65″</td><td>-5°03′57.77″</td><td>227.593308</td><td>-23°00′46.26″</td><td>97.467</td><td>-50.449</td><td>-50.449</td><td>順行</td></tr>
+        <tr><td>自然／插值月球遠地點（Lilith）</td><td>230.802573</td><td>天蠍 20°48′09.26″</td><td>-4°55′17.95″</td><td>226.958653</td><td>-22°41′53.65″</td><td>97.156</td><td>-49.815</td><td>-49.815</td><td>逆行</td></tr>
+        <tr><td>自然／插值月球近地點（Priapus）</td><td>52.883014</td><td>金牛 22°52′58.85″</td><td>4°53′58.97″</td><td>49.134580</td><td>23°13′49.36″</td><td>277.403</td><td>51.882</td><td>51.895</td><td>順行</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>站心月亮
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">方法：moon_only_topocentric_comparison_v1；審閱狀態：sebastian_authorized_2026_08_04；權威：Sebastian ruling 2026-08-04 CMP-A10。</p>
+    <p class="dossier-note">畫面上同時出現兩個月亮不是錯誤，是明示的座標政策：地心參考值保留，站心值另計。</p>
+    <p class="dossier-note">整體中心：geocentric；生效的月亮中心：topocentric。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>兩個月亮</caption>
+        <thead><tr><th>來源</th><th>黃經 λ</th></tr></thead>
+        <tbody>
+        <tr><td>地心參考 geocentric</td><td>294.336768</td></tr>
+        <tr><td>站心生效 topocentric</td><td>293.974367</td></tr>
+        <tr><td>差值（度）</td><td>-0.362401</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>恆星
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">分類：research_only；裁決：MTH-Q-006 A1 (2026-08-03)。</p>
+    <p class="dossier-note">目錄收錄 34 顆，本次輸出 34 顆。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>恆星位置</caption>
+        <thead><tr><th>恆星</th><th>目錄名</th><th>黃經 λ</th><th>星座度數</th><th>赤緯 δ</th></tr></thead>
+        <tbody>
+        <tr><td>大陵五</td><td>Algol,bePer</td><td>56.030443</td><td>金牛 26°01′49.60″</td><td>40°55′10.43″</td></tr>
+        <tr><td>昴宿六(昴星團)</td><td>Alcyone,etTau</td><td>59.855516</td><td>金牛 29°51′19.86″</td><td>24°04′36.44″</td></tr>
+        <tr><td>畢宿五</td><td>Aldebaran,alTau</td><td>69.652339</td><td>雙子 9°39′08.42″</td><td>16°29′29.64″</td></tr>
+        <tr><td>五車二</td><td>Capella,alAur</td><td>81.721143</td><td>雙子 21°43′16.12″</td><td>45°59′29.19″</td></tr>
+        <tr><td>天狼星</td><td>Sirius,alCMa</td><td>103.947420</td><td>巨蟹 13°56′50.71″</td><td>-16°42′12.22″</td></tr>
+        <tr><td>南河三</td><td>Procyon,alCMi</td><td>115.653082</td><td>巨蟹 25°39′11.10″</td><td>5°15′01.04″</td></tr>
+        <tr><td>軒轅十四</td><td>Regulus,alLeo</td><td>149.699061</td><td>獅子 29°41′56.62″</td><td>12°00′50.45″</td></tr>
+        <tr><td>搖光(大熊座η)</td><td>Alkaid,etUMa</td><td>176.805840</td><td>處女 26°48′21.02″</td><td>49°21′37.51″</td></tr>
+        <tr><td>軫宿一</td><td>Algorab,deCrv</td><td>193.325466</td><td>天秤 13°19′31.68″</td><td>-16°27′56.90″</td></tr>
+        <tr><td>角宿一</td><td>Spica,alVir</td><td>203.715068</td><td>天秤 23°42′54.25″</td><td>-11°06′53.82″</td></tr>
+        <tr><td>大角</td><td>Arcturus,alBoo</td><td>204.108124</td><td>天秤 24°06′29.25″</td><td>19°13′47.07″</td></tr>
+        <tr><td>貫索四</td><td>Alphecca,alCrB</td><td>222.170851</td><td>天蠍 12°10′15.06″</td><td>26°44′36.87″</td></tr>
+        <tr><td>心宿二</td><td>Antares,alSco</td><td>249.636472</td><td>射手 9°38′11.30″</td><td>-26°24′50.19″</td></tr>
+        <tr><td>織女一</td><td>Vega,alLyr</td><td>285.191993</td><td>摩羯 15°11′31.18″</td><td>38°46′10.50″</td></tr>
+        <tr><td>壘壁陣四</td><td>Deneb Algedi,deCap</td><td>323.410840</td><td>水瓶 23°24′39.02″</td><td>-16°10′15.17″</td></tr>
+        <tr><td>參宿七</td><td>Rigel,beOri</td><td>76.692145</td><td>雙子 16°41′31.72″</td><td>-8°12′43.31″</td></tr>
+        <tr><td>河鼓二(牛郎星)</td><td>Altair,alAql</td><td>301.646142</td><td>水瓶 1°38′46.11″</td><td>8°50′22.31″</td></tr>
+        <tr><td>北河二</td><td>Castor,alGem</td><td>110.106107</td><td>巨蟹 20°06′21.99″</td><td>31°54′44.67″</td></tr>
+        <tr><td>北河三</td><td>Pollux,beGem</td><td>113.083028</td><td>巨蟹 23°04′58.90″</td><td>28°03′07.20″</td></tr>
+        <tr><td>參宿四</td><td>Betelgeuse,alOri</td><td>88.618467</td><td>雙子 28°37′06.48″</td><td>7°24′23.62″</td></tr>
+        <tr><td>壁宿二</td><td>Alpheratz,alAnd</td><td>14.172759</td><td>牡羊 14°10′21.93″</td><td>29°02′07.12″</td></tr>
+        <tr><td>芻蒿增二</td><td>Mira,omiCet</td><td>31.385157</td><td>金牛 1°23′06.56″</td><td>-3°01′13.06″</td></tr>
+        <tr><td>參宿五</td><td>Bellatrix,gaOri</td><td>80.809948</td><td>雙子 20°48′35.81″</td><td>6°20′32.25″</td></tr>
+        <tr><td>老人星</td><td>Canopus,alCar</td><td>104.816423</td><td>巨蟹 14°48′59.12″</td><td>-52°41′32.21″</td></tr>
+        <tr><td>東次將</td><td>Vindemiatrix,epVir</td><td>189.813566</td><td>天秤 9°48′48.84″</td><td>11°00′30.49″</td></tr>
+        <tr><td>北落師門</td><td>Fomalhaut,alPsA</td><td>333.726802</td><td>雙魚 3°43′36.49″</td><td>-29°40′16.35″</td></tr>
+        <tr><td>水委一</td><td>Achernar,alEri</td><td>345.173639</td><td>雙魚 15°10′25.10″</td><td>-57°16′55.06″</td></tr>
+        <tr><td>勾陳一(北極星)</td><td>Polaris,alUMi</td><td>88.424590</td><td>雙子 28°25′28.52″</td><td>89°13′16.21″</td></tr>
+        <tr><td>天津四</td><td>Deneb,alCyg</td><td>335.197661</td><td>雙魚 5°11′51.58″</td><td>45°14′25.96″</td></tr>
+        <tr><td>馬腹一</td><td>Hadar,beCen</td><td>233.669488</td><td>天蠍 23°40′10.16″</td><td>-60°19′53.60″</td></tr>
+        <tr><td>天囷一</td><td>Menkar,alCet</td><td>44.183056</td><td>金牛 14°10′59.00″</td><td>4°03′10.88″</td></tr>
+        <tr><td>王良四</td><td>Schedar,alCas</td><td>37.645372</td><td>金牛 7°38′43.34″</td><td>56°28′55.78″</td></tr>
+        <tr><td>婁宿三</td><td>Hamal,alAri</td><td>37.525505</td><td>金牛 7°31′31.82″</td><td>23°25′01.35″</td></tr>
+        <tr><td>氐宿一</td><td>Zubenelgenubi,al-2Lib</td><td>224.957149</td><td>天蠍 14°57′25.74″</td><td>-16°00′20.99″</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>軸點
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">軸點由地方恆星時與觀測地緯度決定，與宮位制的選擇無關。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>四軸</caption>
+        <thead><tr><th>軸點</th><th>黃經</th><th>星座度數</th></tr></thead>
+        <tbody>
+        <tr><td>上升 ASC</td><td>180.825167</td><td>天秤 0°49′30.60″</td></tr>
+        <tr><td>中天 MC</td><td>90.829613</td><td>巨蟹 0°49′46.61″</td></tr>
+        <tr><td>下降 DSC</td><td>0.825167</td><td>牡羊 0°49′30.60″</td></tr>
+        <tr><td>天底 IC</td><td>270.829613</td><td>摩羯 0°49′46.61″</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>額外角點
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">non_classical_technical_angles_opt_in</p>
+    <p class="dossier-note">以下五個角點由 swe.houses_ex 附帶回傳，皆非古典占星的四角。本產品輸出其數值，不對其占星用途表示任何立場。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>角點</caption>
+        <thead><tr><th>角點</th><th>黃經 λ</th><th>星座度數</th></tr></thead>
+        <tbody>
+        <tr><td>anti_vertex</td><td>—</td><td>—</td></tr>
+        <tr><td>co_ascendant_koch</td><td>—</td><td>—</td></tr>
+        <tr><td>co_ascendant_munkasey</td><td>—</td><td>—</td></tr>
+        <tr><td>equatorial_ascendant</td><td>—</td><td>—</td></tr>
+        <tr><td>polar_ascendant</td><td>—</td><td>—</td></tr>
+        <tr><td>vertex</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>朔望與日月食
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">geocentric_apparent_tropical_of_date</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>朔望時刻（UTC）</caption>
+        <thead><tr><th>事件</th><th>時刻</th></tr></thead>
+        <tbody>
+        <tr><td>first_quarter（前一次）</td><td>1990-05-01T20:17:49.251Z</td></tr>
+        <tr><td>first_quarter（下一次）</td><td>1990-05-31T08:10:43.290Z</td></tr>
+        <tr><td>full_moon（前一次）</td><td>1990-05-09T19:30:45.850Z</td></tr>
+        <tr><td>full_moon（下一次）</td><td>1990-06-08T11:01:07.075Z</td></tr>
+        <tr><td>last_quarter（前一次）</td><td>1990-04-18T07:02:32.393Z</td></tr>
+        <tr><td>last_quarter（下一次）</td><td>1990-05-17T19:44:56.735Z</td></tr>
+        <tr><td>new_moon（前一次）</td><td>1990-04-25T04:27:27.174Z</td></tr>
+        <tr><td>new_moon（下一次）</td><td>1990-05-24T11:47:07.011Z</td></tr>
+        <tr><td>產前朔望（full_moon）</td><td>1990-05-09T19:30:45.850Z</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-1">
+    <h3>升降與中天
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING I 天文事實</p>
+    <p class="dossier-note">座標原點 topocentric_observer；位置口徑 apparent_always；不跟隨整體計算口徑；圓面取 upper_limb；中天定義 upper_and_lower_meridian_transit。</p>
+    <p class="dossier-note">折射 enabled；溫度 15 °C；氣壓 swiss_estimate_from_altitude。</p>
+    <p class="dossier-note">A rise is the instant the refracted upper limb crosses the horizon; removing refraction would remove the event being reported, not merely change its precision.</p>
+    <p class="dossier-note">參考時刻 birth_instant；方向 previous、next；星曆來源未經回傳確認（requested_flag_only_rise_trans_returns_no_ephemeris_retflag）；裁決：MTH-Q-018, Sebastian 2026-08-03: scope A plus a triggered explanation；紅隊發現：RT-BACKEND-9-E-009。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>地平事件（UTC）</caption>
+        <thead><tr><th>天體</th><th>可見性</th><th>上升</th><th>下降</th><th>上中天</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>rises_and_sets</td><td>1990-05-15T21:14:19.693Z</td><td>1990-05-15T10:32:39.449Z</td><td>—</td></tr>
+        <tr><td>月亮</td><td>rises_and_sets</td><td>1990-05-15T15:10:34.469Z</td><td>1990-05-16T02:13:45.671Z</td><td>—</td></tr>
+        <tr><td>水星</td><td>rises_and_sets</td><td>1990-05-15T20:26:06.892Z</td><td>1990-05-15T09:15:52.932Z</td><td>—</td></tr>
+        <tr><td>金星</td><td>rises_and_sets</td><td>1990-05-15T19:06:45.954Z</td><td>1990-05-15T07:23:47.895Z</td><td>—</td></tr>
+        <tr><td>火星</td><td>rises_and_sets</td><td>1990-05-15T17:53:36.865Z</td><td>1990-05-16T05:36:04.039Z</td><td>—</td></tr>
+        <tr><td>木星</td><td>rises_and_sets</td><td>1990-05-16T00:18:20.858Z</td><td>1990-05-15T13:53:55.422Z</td><td>—</td></tr>
+        <tr><td>土星</td><td>rises_and_sets</td><td>1990-05-15T14:50:33.819Z</td><td>1990-05-16T01:35:02.651Z</td><td>—</td></tr>
+        <tr><td>天王星</td><td>rises_and_sets</td><td>1990-05-15T13:47:22.830Z</td><td>1990-05-16T00:21:19.910Z</td><td>—</td></tr>
+        <tr><td>海王星</td><td>rises_and_sets</td><td>1990-05-15T14:05:43.709Z</td><td>1990-05-16T00:46:36.814Z</td><td>—</td></tr>
+        <tr><td>冥王星</td><td>rises_and_sets</td><td>1990-05-15T09:38:48.486Z</td><td>1990-05-15T21:36:54.035Z</td><td>—</td></tr>
+        <tr><td>凱龍星</td><td>rises_and_sets</td><td>1990-05-16T00:45:26.897Z</td><td>1990-05-15T13:52:52.872Z</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-2">
+    <h3>反照點 Antiscia
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING II 幾何推導</p>
+    <p class="dossier-note">λ′ = 180° − λ（以 0° 巨蟹—0° 摩羯 為鏡軸）。</p>
+    <p class="dossier-note">範圍：納入 classical_planets、lunar_nodes；排除 fixed_stars、angles、outer_planets、lots；語意：geometric_mirror_coordinates_only_no_relationship_verdict_no_orb；裁決：MTH-Q-008 乙 (2026-08-03)。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>反照點與反向反照點</caption>
+        <thead><tr><th>天體</th><th>反照點 λ′</th><th>星座度數</th><th>反向反照點</th><th>星座度數</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>125.824867</td><td>獅子 5°49′29.52″</td><td>305.824867</td><td>水瓶 5°49′29.52″</td></tr>
+        <tr><td>月亮</td><td>246.025633</td><td>射手 6°01′32.28″</td><td>66.025633</td><td>雙子 6°01′32.28″</td></tr>
+        <tr><td>水星</td><td>141.957995</td><td>獅子 21°57′28.78″</td><td>321.957995</td><td>水瓶 21°57′28.78″</td></tr>
+        <tr><td>金星</td><td>167.443039</td><td>處女 17°26′34.94″</td><td>347.443039</td><td>雙魚 17°26′34.94″</td></tr>
+        <tr><td>火星</td><td>191.836364</td><td>天秤 11°50′10.91″</td><td>11.836364</td><td>牡羊 11°50′10.91″</td></tr>
+        <tr><td>木星</td><td>80.501577</td><td>雙子 20°30′05.68″</td><td>260.501577</td><td>射手 20°30′05.68″</td></tr>
+        <tr><td>土星</td><td>244.746758</td><td>射手 4°44′48.33″</td><td>64.746758</td><td>雙子 4°44′48.33″</td></tr>
+        <tr><td>北交點(密切)</td><td>229.735978</td><td>天蠍 19°44′09.52″</td><td>49.735978</td><td>金牛 19°44′09.52″</td></tr>
+        <tr><td>北交點(平均)</td><td>228.648721</td><td>天蠍 18°38′55.40″</td><td>48.648721</td><td>金牛 18°38′55.40″</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-2">
+    <h3>赤緯平行與反平行
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING II 幾何推導</p>
+    <p class="dossier-note">方法：parallel_contra_parallel_fixed_orb_v1；審閱狀態：provisional_pending_method_audit；權威：未確立。</p>
+    <p class="dossier-note">分類：research_only——MTH-Q-004 A1 (2026-08-03)。這是近現代技法，不是古典傳統。</p>
+    <p class="dossier-note">容許度：1.000°。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>赤緯相位</caption>
+        <thead><tr><th>類型</th><th>天體 A</th><th>赤緯 A</th><th>天體 B</th><th>赤緯 B</th><th>差值（度）</th></tr></thead>
+        <tbody>
+        <tr><td>反平行 contra-parallel</td><td>月亮</td><td>-22°40′14.46″</td><td>木星</td><td>23°14′38.10″</td><td>0.5732</td></tr>
+        <tr><td>平行 parallel</td><td>月亮</td><td>-22°40′14.46″</td><td>天王星</td><td>-23°26′15.41″</td><td>0.7669</td></tr>
+        <tr><td>平行 parallel</td><td>月亮</td><td>-22°40′14.46″</td><td>海王星</td><td>-21°48′04.26″</td><td>0.8695</td></tr>
+        <tr><td>反平行 contra-parallel</td><td>木星</td><td>23°14′38.10″</td><td>天王星</td><td>-23°26′15.41″</td><td>0.1937</td></tr>
+        <tr><td>平行 parallel</td><td>土星</td><td>-20°56′07.34″</td><td>海王星</td><td>-21°48′04.26″</td><td>0.8658</td></tr>
+        <tr><td>反平行 contra-parallel</td><td>凱龍星</td><td>16°24′28.93″</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>0.9676</td></tr>
+        <tr><td>平行 parallel</td><td>凱龍星</td><td>16°24′28.93″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.9676</td></tr>
+        <tr><td>平行 parallel</td><td>北交點(密切)</td><td>-17°40′19.45″</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>0.2964</td></tr>
+        <tr><td>反平行 contra-parallel</td><td>北交點(密切)</td><td>-17°40′19.45″</td><td>南交點(密切)</td><td>17°40′19.45″</td><td>0.0000</td></tr>
+        <tr><td>反平行 contra-parallel</td><td>北交點(密切)</td><td>-17°40′19.45″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.2964</td></tr>
+        <tr><td>反平行 contra-parallel</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>南交點(密切)</td><td>17°40′19.45″</td><td>0.2964</td></tr>
+        <tr><td>反平行 contra-parallel</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.0000</td></tr>
+        <tr><td>平行 parallel</td><td>南交點(密切)</td><td>17°40′19.45″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.2964</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>宮位分割
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">方法：swiss_ephemeris_house_division_v1（Placidus）。</p>
+    <p class="dossier-note">方法審閱狀態：provisional_pending_method_audit；權威：未確立。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>宮始點</caption>
+        <thead><tr><th>宮</th><th>黃經</th><th>星座度數</th></tr></thead>
+        <tbody>
+        <tr><td>第 1 宮</td><td>180.825167</td><td>天秤 0°49′30.60″</td></tr>
+        <tr><td>第 2 宮</td><td>209.543215</td><td>天秤 29°32′35.57″</td></tr>
+        <tr><td>第 3 宮</td><td>239.934467</td><td>天蠍 29°56′04.08″</td></tr>
+        <tr><td>第 4 宮</td><td>270.829613</td><td>摩羯 0°49′46.61″</td></tr>
+        <tr><td>第 5 宮</td><td>301.746715</td><td>水瓶 1°44′48.17″</td></tr>
+        <tr><td>第 6 宮</td><td>332.158226</td><td>雙魚 2°09′29.61″</td></tr>
+        <tr><td>第 7 宮</td><td>0.825167</td><td>牡羊 0°49′30.60″</td></tr>
+        <tr><td>第 8 宮</td><td>29.543215</td><td>牡羊 29°32′35.57″</td></tr>
+        <tr><td>第 9 宮</td><td>59.934467</td><td>金牛 29°56′04.08″</td></tr>
+        <tr><td>第 10 宮</td><td>90.829613</td><td>巨蟹 0°49′46.61″</td></tr>
+        <tr><td>第 11 宮</td><td>121.746715</td><td>獅子 1°44′48.17″</td></tr>
+        <tr><td>第 12 宮</td><td>152.158226</td><td>處女 2°09′29.61″</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>行星落宮
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">方法：zodiacal_cusp_half_open_intervals_v1；審閱狀態：provisional_pending_method_audit；權威：not_established。</p>
+    <p class="dossier-note">宮位制：Placidus；區間語義：[cusp_n,cusp_n_plus_1)。</p>
+    <p class="dossier-note">距最近宮頭的角距一律列出，讓你自己判斷這個落宮對時間有多敏感。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>落宮</caption>
+        <thead><tr><th>天體</th><th>黃經 λ</th><th>宮</th><th>距最近宮頭（度）</th><th>在宮頭上</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>54.175133</td><td>8</td><td>5.7593</td><td>否</td></tr>
+        <tr><td>月亮</td><td>293.974367</td><td>4</td><td>7.7723</td><td>否</td></tr>
+        <tr><td>水星</td><td>38.042005</td><td>8</td><td>8.4988</td><td>否</td></tr>
+        <tr><td>金星</td><td>12.556961</td><td>7</td><td>11.7318</td><td>否</td></tr>
+        <tr><td>火星</td><td>348.163636</td><td>6</td><td>12.6615</td><td>否</td></tr>
+        <tr><td>木星</td><td>99.498423</td><td>10</td><td>8.6688</td><td>否</td></tr>
+        <tr><td>土星</td><td>295.253242</td><td>4</td><td>6.4935</td><td>否</td></tr>
+        <tr><td>天王星</td><td>279.189494</td><td>4</td><td>8.3599</td><td>否</td></tr>
+        <tr><td>海王星</td><td>284.356245</td><td>4</td><td>13.5266</td><td>否</td></tr>
+        <tr><td>冥王星</td><td>226.173753</td><td>2</td><td>13.7607</td><td>否</td></tr>
+        <tr><td>凱龍星</td><td>103.194125</td><td>10</td><td>12.3645</td><td>否</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>日夜盤
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">方法：sun_center_true_altitude_gt_zero_v1；審閱狀態：provisional_pending_method_audit；權威：未確立。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>判定</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>判定</td><td>日生盤</td></tr>
+        <tr><td>依據</td><td>product_convention_no_classical_source_for_boundary</td></tr>
+        <tr><td>所用太陽高度</td><td>53.344085</td></tr>
+        <tr><td>接近臨界</td><td>否</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>阿拉伯點
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">方法：traditional_day_night_formula_v1；審閱狀態：provisional_pending_method_audit；權威：未確立。</p>
+    <p class="dossier-note">公式是否依日夜盤反轉：是。</p>
+    <p class="dossier-note">目前僅命運點與精神點。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>點位</caption>
+        <thead><tr><th>點</th><th>黃經 λ</th><th>星座度數</th></tr></thead>
+        <tbody>
+        <tr><td>命運點 Fortune</td><td>60.624401</td><td>雙子 0°37′27.84″</td></tr>
+        <tr><td>精神點 Spirit</td><td>301.025933</td><td>水瓶 1°01′33.36″</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>月空亡
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">方法：modern_sign_bounded_exact_perfection_v1；審閱狀態：provisional_pending_method_audit；權威：未確立。</p>
+    <p class="dossier-note">求解器：two_stage_scan_then_bisection_v1（狀態 converged）。</p>
+    <p class="dossier-note">本模組目前以線性外插求相位完成時刻，那是已知的正確性缺陷：月亮速度會變、被相位的行星可能站留、站留附近可能出現多重根。方向已定為兩段式求根，尚未實作。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>判定</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>是否空亡</td><td>否</td></tr>
+        <tr><td>離開本星座尚需（小時）</td><td>9.7530</td></tr>
+        <tr><td>下一個完成的相位</td><td>太陽</td></tr>
+        <tr><td>該相位角度</td><td>120.00</td></tr>
+        <tr><td>尚需（日）</td><td>0.012527</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>相位
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">方法：whole_sign_configuration_v1；審閱狀態：provisional_pending_method_audit。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>逐度相位</caption>
+        <thead><tr><th>組合</th><th>整宮配置</th><th>最近相位</th><th>角距離</th><th>是否在容許度內</th></tr></thead>
+        <tbody>
+        <tr><td>太陽 — 月亮</td><td>拱</td><td>拱</td><td>120.2008</td><td>是</td></tr>
+        <tr><td>太陽 — 水星</td><td>合</td><td>半六分</td><td>16.1331</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 金星</td><td>無</td><td>半刑</td><td>41.6182</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 火星</td><td>六分</td><td>五分</td><td>66.0115</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 木星</td><td>六分</td><td>半刑</td><td>45.3233</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 土星</td><td>拱</td><td>拱</td><td>118.9219</td><td>是</td></tr>
+        <tr><td>太陽 — 北交點(密切)</td><td>刑</td><td>刑</td><td>103.9111</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 北交點(平均)</td><td>刑</td><td>刑</td><td>102.8239</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 天王星</td><td>拱</td><td>倍半刑</td><td>134.9856</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 海王星</td><td>拱</td><td>倍半刑</td><td>129.8189</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 冥王星</td><td>沖</td><td>沖</td><td>171.9986</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 福點</td><td>無</td><td>合</td><td>6.4493</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 精神點</td><td>刑</td><td>拱</td><td>113.1492</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 上升點</td><td>無</td><td>拱</td><td>126.6500</td><td>未套用容許度</td></tr>
+        <tr><td>太陽 — 天頂</td><td>無</td><td>半六分</td><td>36.6545</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 水星</td><td>拱</td><td>刑</td><td>104.0676</td><td>否</td></tr>
+        <tr><td>月亮 — 金星</td><td>刑</td><td>五分</td><td>78.5826</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 火星</td><td>六分</td><td>六分</td><td>54.1893</td><td>是</td></tr>
+        <tr><td>月亮 — 木星</td><td>沖</td><td>沖</td><td>165.5241</td><td>否</td></tr>
+        <tr><td>月亮 — 土星</td><td>合</td><td>合</td><td>1.2789</td><td>是</td></tr>
+        <tr><td>月亮 — 北交點(密切)</td><td>無</td><td>半六分</td><td>16.2897</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 北交點(平均)</td><td>無</td><td>半六分</td><td>17.3769</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 天王星</td><td>合</td><td>合</td><td>14.7849</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 海王星</td><td>合</td><td>合</td><td>9.6181</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 冥王星</td><td>六分</td><td>五分</td><td>67.8006</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 福點</td><td>無</td><td>拱</td><td>126.6500</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 精神點</td><td>無</td><td>合</td><td>7.0516</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 上升點</td><td>無</td><td>拱</td><td>113.1492</td><td>未套用容許度</td></tr>
+        <tr><td>月亮 — 天頂</td><td>無</td><td>梅花／補十二分</td><td>156.8552</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 金星</td><td>無</td><td>半六分</td><td>25.4850</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 火星</td><td>六分</td><td>半刑</td><td>49.8784</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 木星</td><td>六分</td><td>六分</td><td>61.4564</td><td>是</td></tr>
+        <tr><td>水星 — 土星</td><td>拱</td><td>刑</td><td>102.7888</td><td>否</td></tr>
+        <tr><td>水星 — 北交點(密切)</td><td>刑</td><td>刑</td><td>87.7780</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 北交點(平均)</td><td>刑</td><td>刑</td><td>86.6907</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 天王星</td><td>拱</td><td>拱</td><td>118.8525</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 海王星</td><td>拱</td><td>拱</td><td>113.6858</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 冥王星</td><td>沖</td><td>沖</td><td>171.8683</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 福點</td><td>無</td><td>半六分</td><td>22.5824</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 精神點</td><td>刑</td><td>刑</td><td>97.0161</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 上升點</td><td>無</td><td>倍五分</td><td>142.7832</td><td>未套用容許度</td></tr>
+        <tr><td>水星 — 天頂</td><td>無</td><td>六分</td><td>52.7876</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 火星</td><td>無</td><td>半六分</td><td>24.3933</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 木星</td><td>刑</td><td>刑</td><td>86.9415</td><td>是</td></tr>
+        <tr><td>金星 — 土星</td><td>刑</td><td>五分</td><td>77.3037</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 北交點(密切)</td><td>六分</td><td>六分</td><td>62.2929</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 北交點(平均)</td><td>六分</td><td>六分</td><td>61.2057</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 天王星</td><td>刑</td><td>刑</td><td>93.3675</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 海王星</td><td>刑</td><td>刑</td><td>88.2007</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 冥王星</td><td>無</td><td>倍五分</td><td>146.3832</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 福點</td><td>六分</td><td>半刑</td><td>48.0674</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 精神點</td><td>六分</td><td>五分</td><td>71.5310</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 上升點</td><td>無</td><td>沖</td><td>168.2682</td><td>未套用容許度</td></tr>
+        <tr><td>金星 — 天頂</td><td>無</td><td>五分</td><td>78.2727</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 木星</td><td>拱</td><td>拱</td><td>111.3348</td><td>是</td></tr>
+        <tr><td>火星 — 土星</td><td>六分</td><td>六分</td><td>52.9104</td><td>是</td></tr>
+        <tr><td>火星 — 北交點(密切)</td><td>無</td><td>半刑</td><td>37.8996</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 北交點(平均)</td><td>無</td><td>半六分</td><td>36.8124</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 天王星</td><td>六分</td><td>五分</td><td>68.9741</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 海王星</td><td>六分</td><td>六分</td><td>63.8074</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 冥王星</td><td>拱</td><td>拱</td><td>121.9899</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 福點</td><td>刑</td><td>五分</td><td>72.4608</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 精神點</td><td>無</td><td>半刑</td><td>47.1377</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 上升點</td><td>無</td><td>沖</td><td>167.3385</td><td>未套用容許度</td></tr>
+        <tr><td>火星 — 天頂</td><td>無</td><td>刑</td><td>102.6660</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 土星</td><td>沖</td><td>梅花／補十二分</td><td>164.2452</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 北交點(密切)</td><td>無</td><td>梅花／補十二分</td><td>149.2344</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 北交點(平均)</td><td>無</td><td>梅花／補十二分</td><td>148.1471</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 天王星</td><td>沖</td><td>沖</td><td>179.6911</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 海王星</td><td>沖</td><td>沖</td><td>175.1422</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 冥王星</td><td>拱</td><td>拱</td><td>126.6753</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 福點</td><td>無</td><td>半刑</td><td>38.8740</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 精神點</td><td>無</td><td>梅花／補十二分</td><td>158.4725</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 上升點</td><td>無</td><td>刑</td><td>81.3267</td><td>未套用容許度</td></tr>
+        <tr><td>木星 — 天頂</td><td>無</td><td>合</td><td>8.6688</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 北交點(密切)</td><td>無</td><td>半六分</td><td>15.0108</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 北交點(平均)</td><td>無</td><td>半六分</td><td>16.0980</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 天王星</td><td>合</td><td>半六分</td><td>16.0637</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 海王星</td><td>合</td><td>合</td><td>10.8970</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 冥王星</td><td>六分</td><td>五分</td><td>69.0795</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 福點</td><td>無</td><td>拱</td><td>125.3712</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 精神點</td><td>無</td><td>合</td><td>5.7727</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 上升點</td><td>無</td><td>拱</td><td>114.4281</td><td>未套用容許度</td></tr>
+        <tr><td>土星 — 天頂</td><td>無</td><td>梅花／補十二分</td><td>155.5764</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 北交點(平均)</td><td>合</td><td>合</td><td>1.0873</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 天王星</td><td>無</td><td>半六分</td><td>31.0745</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 海王星</td><td>無</td><td>半六分</td><td>25.9078</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 冥王星</td><td>刑</td><td>刑</td><td>84.0903</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 福點</td><td>拱</td><td>拱</td><td>110.3604</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 精神點</td><td>合</td><td>合</td><td>9.2381</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 上升點</td><td>無</td><td>倍半刑</td><td>129.4389</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(密切) — 天頂</td><td>無</td><td>倍五分</td><td>140.5656</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(平均) — 天王星</td><td>無</td><td>半六分</td><td>32.1618</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(平均) — 海王星</td><td>無</td><td>半六分</td><td>26.9950</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(平均) — 冥王星</td><td>刑</td><td>刑</td><td>85.1775</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(平均) — 福點</td><td>拱</td><td>拱</td><td>109.2731</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(平均) — 精神點</td><td>合</td><td>合</td><td>10.3253</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(平均) — 上升點</td><td>無</td><td>倍半刑</td><td>130.5261</td><td>未套用容許度</td></tr>
+        <tr><td>北交點(平均) — 天頂</td><td>無</td><td>倍半刑</td><td>139.4783</td><td>未套用容許度</td></tr>
+        <tr><td>天王星 — 海王星</td><td>合</td><td>合</td><td>5.1668</td><td>未套用容許度</td></tr>
+        <tr><td>天王星 — 冥王星</td><td>六分</td><td>六分</td><td>53.0157</td><td>未套用容許度</td></tr>
+        <tr><td>天王星 — 福點</td><td>無</td><td>倍五分</td><td>141.4349</td><td>未套用容許度</td></tr>
+        <tr><td>天王星 — 精神點</td><td>無</td><td>半六分</td><td>21.8364</td><td>未套用容許度</td></tr>
+        <tr><td>天王星 — 上升點</td><td>無</td><td>刑</td><td>98.3643</td><td>未套用容許度</td></tr>
+        <tr><td>天王星 — 天頂</td><td>無</td><td>沖</td><td>171.6401</td><td>未套用容許度</td></tr>
+        <tr><td>海王星 — 冥王星</td><td>六分</td><td>六分</td><td>58.1825</td><td>未套用容許度</td></tr>
+        <tr><td>海王星 — 福點</td><td>無</td><td>倍半刑</td><td>136.2682</td><td>未套用容許度</td></tr>
+        <tr><td>海王星 — 精神點</td><td>無</td><td>半六分</td><td>16.6697</td><td>未套用容許度</td></tr>
+        <tr><td>海王星 — 上升點</td><td>無</td><td>刑</td><td>103.5311</td><td>未套用容許度</td></tr>
+        <tr><td>海王星 — 天頂</td><td>無</td><td>沖</td><td>166.4734</td><td>未套用容許度</td></tr>
+        <tr><td>冥王星 — 福點</td><td>無</td><td>沖</td><td>165.5494</td><td>未套用容許度</td></tr>
+        <tr><td>冥王星 — 精神點</td><td>刑</td><td>五分</td><td>74.8522</td><td>未套用容許度</td></tr>
+        <tr><td>冥王星 — 上升點</td><td>無</td><td>半刑</td><td>45.3486</td><td>未套用容許度</td></tr>
+        <tr><td>冥王星 — 天頂</td><td>無</td><td>倍半刑</td><td>135.3441</td><td>未套用容許度</td></tr>
+        <tr><td>福點 — 精神點</td><td>拱</td><td>拱</td><td>119.5985</td><td>未套用容許度</td></tr>
+        <tr><td>福點 — 上升點</td><td>無</td><td>拱</td><td>120.2008</td><td>未套用容許度</td></tr>
+        <tr><td>福點 — 天頂</td><td>無</td><td>半六分</td><td>30.2052</td><td>未套用容許度</td></tr>
+        <tr><td>精神點 — 上升點</td><td>無</td><td>拱</td><td>120.2008</td><td>未套用容許度</td></tr>
+        <tr><td>精神點 — 天頂</td><td>無</td><td>梅花／補十二分</td><td>149.8037</td><td>未套用容許度</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>必然尊貴
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">本模組只評估廟與旺（domicile／exaltation）。陷、落、外來與互容尚未評估——那是「未評估」，不是「沒有」。</p>
+    <p class="dossier-note">另有 3 套並列比較用的 profile；並列不會改變你選定的那一套。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>採用的具名 profile</caption>
+        <thead><tr><th>技法</th><th>profile</th><th>狀態</th></tr></thead>
+        <tbody>
+        <tr><td>廟旺 domicile／exaltation</td><td>traditional_seven_domicile_exaltation_signs_v1</td><td>已選定</td></tr>
+        <tr><td>界 bounds</td><td>lilly_received_bounds_1647_v1</td><td>已選定</td></tr>
+        <tr><td>面／旬 face／decan</td><td>manilius_sign_decans_astronomica_iv_v1</td><td>已選定</td></tr>
+        <tr><td>三分性 triplicity</td><td>lilly_triplicity_compact_1647_v1</td><td>已選定</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>廟與旺 Domicile / Exaltation
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">採用 profile：traditional_seven_domicile_exaltation_signs_v1</p>
+    <p class="dossier-note">來源：Ptolemy, Tetrabiblos I.17 and I.19, Frank E. Robbins trans. (Loeb 1940); sign assignments corroborated by Dorotheus Carmen Astrologicum I.1-2, Valens Anthologies III.4, and Firmicus Maternus Mathesis II.2-3</p>
+    <p class="dossier-note">陷、落、外來與互容標記為未評估——那是「未評估」，不是「沒有」。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>廟與旺 Domicile / Exaltation　判定</caption>
+        <thead><tr><th>天體</th><th>星座</th><th>宮內度數</th><th>廟</th><th>旺</th><th>判定</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>金牛</td><td>24.1751</td><td>獅子</td><td>牡羊</td><td>無廟旺</td></tr>
+        <tr><td>月亮</td><td>摩羯</td><td>23.9744</td><td>巨蟹</td><td>金牛</td><td>無廟旺</td></tr>
+        <tr><td>水星</td><td>金牛</td><td>8.0420</td><td>雙子、處女</td><td>處女</td><td>無廟旺</td></tr>
+        <tr><td>金星</td><td>牡羊</td><td>12.5570</td><td>金牛、天秤</td><td>雙魚</td><td>無廟旺</td></tr>
+        <tr><td>火星</td><td>雙魚</td><td>18.1636</td><td>牡羊、天蠍</td><td>摩羯</td><td>無廟旺</td></tr>
+        <tr><td>木星</td><td>巨蟹</td><td>9.4984</td><td>射手、雙魚</td><td>巨蟹</td><td>入旺</td></tr>
+        <tr><td>土星</td><td>摩羯</td><td>25.2532</td><td>摩羯、水瓶</td><td>天秤</td><td>入廟</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>界 Bounds
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">採用 profile：lilly_received_bounds_1647_v1</p>
+    <p class="dossier-note">來源：William Lilly, Christian Astrology (1647), p.104, Table of the Essential Dignities, first-edition scan transcription</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>界 Bounds　判定</caption>
+        <thead><tr><th>天體</th><th>星座</th><th>宮內度數</th><th>守護</th><th>判定</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>金牛</td><td>24.1751</td><td>saturn</td><td>—</td></tr>
+        <tr><td>月亮</td><td>摩羯</td><td>23.9744</td><td>mars</td><td>—</td></tr>
+        <tr><td>水星</td><td>金牛</td><td>8.0420</td><td>mercury</td><td>—</td></tr>
+        <tr><td>金星</td><td>牡羊</td><td>12.5570</td><td>venus</td><td>—</td></tr>
+        <tr><td>火星</td><td>雙魚</td><td>18.1636</td><td>mercury</td><td>—</td></tr>
+        <tr><td>木星</td><td>巨蟹</td><td>9.4984</td><td>jupiter</td><td>—</td></tr>
+        <tr><td>土星</td><td>摩羯</td><td>25.2532</td><td>saturn</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>面／旬 Face / Decan
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">採用 profile：manilius_sign_decans_astronomica_iv_v1</p>
+    <p class="dossier-note">來源：Manilius, Astronomica IV.294-386 (decan assignments from IV.312ff.)</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>面／旬 Face / Decan　判定</caption>
+        <thead><tr><th>天體</th><th>星座</th><th>宮內度數</th><th>守護</th><th>判定</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>金牛</td><td>24.1751</td><td>virgo</td><td>—</td></tr>
+        <tr><td>月亮</td><td>摩羯</td><td>23.9744</td><td>virgo</td><td>—</td></tr>
+        <tr><td>水星</td><td>金牛</td><td>8.0420</td><td>cancer</td><td>—</td></tr>
+        <tr><td>金星</td><td>牡羊</td><td>12.5570</td><td>taurus</td><td>—</td></tr>
+        <tr><td>火星</td><td>雙魚</td><td>18.1636</td><td>aquarius</td><td>—</td></tr>
+        <tr><td>木星</td><td>巨蟹</td><td>9.4984</td><td>capricorn</td><td>—</td></tr>
+        <tr><td>土星</td><td>摩羯</td><td>25.2532</td><td>virgo</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-3">
+    <h3>三分性 Triplicity
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">RING III 方法判斷</p>
+    <p class="dossier-note">採用 profile：lilly_triplicity_compact_1647_v1</p>
+    <p class="dossier-note">來源：William Lilly, Christian Astrology (1647), p.104, compact day/night triplicity table</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>三分性 Triplicity　判定</caption>
+        <thead><tr><th>天體</th><th>星座</th><th>宮內度數</th><th>守護</th><th>判定</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>金牛</td><td>24.1751</td><td>—</td><td>—</td></tr>
+        <tr><td>月亮</td><td>摩羯</td><td>23.9744</td><td>—</td><td>—</td></tr>
+        <tr><td>水星</td><td>金牛</td><td>8.0420</td><td>—</td><td>—</td></tr>
+        <tr><td>金星</td><td>牡羊</td><td>12.5570</td><td>—</td><td>—</td></tr>
+        <tr><td>火星</td><td>雙魚</td><td>18.1636</td><td>—</td><td>—</td></tr>
+        <tr><td>木星</td><td>巨蟹</td><td>9.4984</td><td>—</td><td>—</td></tr>
+        <tr><td>土星</td><td>摩羯</td><td>25.2532</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>並列比較（不影響選定）：dorothean_triplicity_three_rulers_v1</caption>
+        <thead><tr><th>天體</th><th>星座</th><th>守護</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>金牛</td><td>—</td></tr>
+        <tr><td>月亮</td><td>摩羯</td><td>—</td></tr>
+        <tr><td>水星</td><td>金牛</td><td>—</td></tr>
+        <tr><td>金星</td><td>牡羊</td><td>—</td></tr>
+        <tr><td>火星</td><td>雙魚</td><td>—</td></tr>
+        <tr><td>木星</td><td>巨蟹</td><td>—</td></tr>
+        <tr><td>土星</td><td>摩羯</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>並列比較（不影響選定）：ptolemy_triplicity_textual_corulership_v1</caption>
+        <thead><tr><th>天體</th><th>星座</th><th>守護</th></tr></thead>
+        <tbody>
+        <tr><td>太陽</td><td>金牛</td><td>—</td></tr>
+        <tr><td>月亮</td><td>摩羯</td><td>—</td></tr>
+        <tr><td>水星</td><td>金牛</td><td>—</td></tr>
+        <tr><td>金星</td><td>牡羊</td><td>—</td></tr>
+        <tr><td>火星</td><td>雙魚</td><td>—</td></tr>
+        <tr><td>木星</td><td>巨蟹</td><td>—</td></tr>
+        <tr><td>土星</td><td>摩羯</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-v">
+    <h3>出生時刻敏感度
+      <span class="dossier-status" data-state="not_requested">未請求</span>
+    </h3>
+    <p class="dossier-layer">VERIFICATION 驗證</p>
+    <p class="dossier-note">出生時刻標記為精確到分鐘，因此沒有進行區間取樣。若你其實只記得大約時辰，改選較寬的把握度，這裡會列出哪些判定會跟著改變。</p>
+  </section>
+  <section class="dossier-section" data-ring="ring-v">
+    <h3>本次生效的選項
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">VERIFICATION 驗證</p>
+    <p class="dossier-note">這是後端回報的本次實際生效值，含你沒有明示送出、由後端帶入的預設。</p>
+    <p class="dossier-note">拿這份表就能重現同一次計算，不必記得自己勾了什麼。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>生效選項</caption>
+        <thead><tr><th>選項</th><th>生效值</th></tr></thead>
+        <tbody>
+        <tr><td>antiscia_include_nodes</td><td>true</td></tr>
+        <tr><td>aspect_angle_orb_degrees</td><td>null（未選定）</td></tr>
+        <tr><td>aspect_fixed_orb_degrees</td><td>null（未選定）</td></tr>
+        <tr><td>aspect_include_angles</td><td>true</td></tr>
+        <tr><td>aspect_include_nodes</td><td>true</td></tr>
+        <tr><td>aspect_orb_profile</td><td>lilly_1647_experience_v1</td></tr>
+        <tr><td>aspect_orb_scale_percent</td><td>null（未選定）</td></tr>
+        <tr><td>aspect_set_profile</td><td>modern_minor_combined_v1</td></tr>
+        <tr><td>body_selection_preset</td><td>custom</td></tr>
+        <tr><td>bounds_profile</td><td>lilly_received_bounds_1647_v1</td></tr>
+        <tr><td>decan_profile</td><td>manilius_sign_decans_astronomica_iv_v1</td></tr>
+        <tr><td>declination_aspect_orb_degrees</td><td>1</td></tr>
+        <tr><td>house_system</td><td>P</td></tr>
+        <tr><td>include_anti_vertex</td><td>true</td></tr>
+        <tr><td>include_antiscia</td><td>true</td></tr>
+        <tr><td>include_aspect_perfection</td><td>true</td></tr>
+        <tr><td>include_aspects</td><td>true</td></tr>
+        <tr><td>include_chiron</td><td>true</td></tr>
+        <tr><td>include_declination_aspects</td><td>true</td></tr>
+        <tr><td>include_domicile_exaltation</td><td>true</td></tr>
+        <tr><td>include_eclipses</td><td>true</td></tr>
+        <tr><td>include_extra_angles</td><td>true</td></tr>
+        <tr><td>include_fixed_stars</td><td>true</td></tr>
+        <tr><td>include_houses</td><td>true</td></tr>
+        <tr><td>include_lilith_priapus</td><td>true</td></tr>
+        <tr><td>include_lots</td><td>true</td></tr>
+        <tr><td>include_lunar_phases</td><td>true</td></tr>
+        <tr><td>include_outer_planets</td><td>true</td></tr>
+        <tr><td>include_rise_set_transits</td><td>true</td></tr>
+        <tr><td>include_south_nodes</td><td>true</td></tr>
+        <tr><td>include_void_of_course</td><td>true</td></tr>
+        <tr><td>moon_position_profile</td><td>moon_only_topocentric_v1</td></tr>
+        <tr><td>partile_profile</td><td>lilly_1677_three_degrees_v1</td></tr>
+        <tr><td>triplicity_include_research_comparison</td><td>true</td></tr>
+        <tr><td>triplicity_profile</td><td>lilly_triplicity_compact_1647_v1</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-v">
+    <h3>逐步計算軌跡
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">VERIFICATION 驗證</p>
+    <p class="dossier-note">本次共 98 步。步數隨你勾選的模組而變，不是固定值。</p>
+    <p class="dossier-note">整份可複製貼出去逐步對照；每一步都列出算式、輸入與結果。</p>
+    <p class="dossier-note">序列化雜湊 537297e226df46d56341fe5b34512fcddca80286cbfa60b821f96f9456e21f1b（對 Python 固定參數序列化的結果計算，不跨語言可攜，證明的是完整性而非跨實作指紋）</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>軌跡</caption>
+        <thead><tr><th>#</th><th>步驟</th><th>算式</th><th>輸入</th><th>結果</th><th>備註</th></tr></thead>
+        <tbody>
+        <tr><td>1</td><td>本地時間 -&gt; UTC</td><td>UTC = 本地時間 - 時區偏移</td><td>時區=Asia/Taipei；時區偏移(小時)=8；本地時間=1990-05-15 14:30:00.00</td><td>UTC時間=1990-05-15 06:30:00.000</td><td>—</td></tr>
+        <tr><td>2</td><td>UTC -&gt; 儒略日 (swe.utc_to_jd)</td><td>JD_ET, JD_UT = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)</td><td>UTC=1990-05-15 06:30:00.000</td><td>JD(ET/TT)=2448026.7714951853；JD(UT)=2448026.7708342457</td><td>—</td></tr>
+        <tr><td>3</td><td>地球時與世界時之差 ΔT</td><td>ΔT(秒) = (JD_ET - JD_UT) * 86400</td><td>JD(ET)=2448026.7714951853；JD(UT)=2448026.7708342457</td><td>ΔT(秒)=57.1052</td><td>—</td></tr>
+        <tr><td>4</td><td>黃赤交角與章動 (swe.calc_ut ECL_NUT)</td><td>ECL_NUT 回傳 [真黃赤交角, 平黃赤交角, 黃經章動, 交角章動]</td><td>JD(UT)=2448026.7708342457</td><td>交角章動(度)=0.0016304647231617782；平黃赤交角(度)=23.44053263706711；真黃赤交角ε(度)=23.44216310179027；黃經章動(度)=0.0032542394199027314</td><td>—</td></tr>
+        <tr><td>5</td><td>平均／視恆星時 (Sidereal Time)</td><td>GAST = swe.sidtime(JD_UT)；GMST = swe.sidtime0(JD_UT, 平黃赤交角, 0)；LAST/LMST = GAST/GMST + 東經/15</td><td>JD(UT)=2448026.7708342457；地理經度(東正西負)=120.6736</td><td>GAST(小時)=22.01537571403499；GMST(小時)=22.015176671274734；LAST(小時)=6.060282380701658；LMST(小時)=6.0600833379414</td><td>舊欄位 gst_hours/lst_hours 為向後相容 alias，固定等同 GAST/LAST。</td></tr>
+        <tr><td>6</td><td>均時差與真太陽時（僅供參考，不影響本次計算）</td><td>真太陽時 = UTC + 經度/15(小時) + 均時差；均時差 = swe.time_equ(JD_UT) * 1440 分鐘</td><td>JD(UT)=2448026.7708342457；地理經度=120.6736</td><td>均時差(分鐘)=3.7075；真太陽時(參考)=1990-05-15 14:36:24</td><td>此為輔助資訊，出生時刻以使用者輸入之精確時鐘時間為準</td></tr>
+        <tr><td>7</td><td>計算模式設定</td><td>套用於本次所有星體計算的統一旗標</td><td>ayanamsa=-；位置=apparent；章動=on；計算中心=geocentric；黃道參考框架=of_date；黃道系統=tropical</td><td>ayanamsa數值(度)=null；requested_flags=258</td><td>—</td></tr>
+        <tr><td>8</td><td>太陽 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=89.40805048853974；方位角Az(北=0,順時針)=269.40805048853974；真高度Alt=53.344084570588954；視高度(含蒙氣差)=53.35584172029664；赤經=51.803431148478126；赤緯=18.817722629926067；距離(AU)=1.010849620447888；黃經=54.17513298166507；黃經速度(度/日)=0.9642981906000891；黃緯=-0.00002712947391518406</td><td>—</td></tr>
+        <tr><td>9</td><td>月亮 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=88.50944002865708；方位角Az(北=0,順時針)=268.5094400286571；真高度Alt=-66.48270813083428；視高度(含蒙氣差)=-66.48270813083428；赤經=296.50674621491476；赤緯=-22.617817060793772；距離(AU)=0.0026493425563108254；黃經=294.33676811062907；黃經速度(度/日)=12.30311000343183；黃緯=-1.3875621360099166</td><td>—</td></tr>
+        <tr><td>10</td><td>水星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=86.71746737555424；方位角Az(北=0,順時針)=266.71746737555424；真高度Alt=37.13458000347025；視高度(含蒙氣差)=37.15543213209593；赤經=36.490921428316554；赤緯=11.847610932218139；距離(AU)=0.599888631300486；黃經=38.04200536587955；黃經速度(度/日)=-0.1374872456814575；黃緯=-2.474806868739293</td><td>—</td></tr>
+        <tr><td>11</td><td>金星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=88.384764090369；方位角Az(北=0,順時針)=268.384764090369；真高度Alt=11.702489135544866；視高度(含蒙氣差)=11.776429198956375；赤經=12.248358435428374；赤緯=3.3129384646802795；距離(AU)=1.0362906615049041；黃經=12.556960688310596；黃經速度(度/日)=1.140267420127444；黃緯=-1.7900597456696565</td><td>—</td></tr>
+        <tr><td>12</td><td>火星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=88.74812070798544；方位角Az(北=0,順時針)=268.74812070798544；真高度Alt=-12.676578231797041；視高度(含蒙氣差)=-12.676578231797041；赤經=349.79516251516503；赤緯=-6.270568325391271；距離(AU)=1.457971577054868；黃經=348.1636360139993；黃經速度(度/日)=0.7428043436226343；黃緯=-1.7276628975076656</td><td>—</td></tr>
+        <tr><td>13</td><td>木星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=274.05311123071607；方位角Az(北=0,順時針)=94.05311123071607；真高度Alt=81.30858062625421；視高度(含蒙氣差)=81.3109966564702；赤經=100.34630427511642；赤緯=23.243917069693293；距離(AU)=5.860301015977113；黃經=99.49842250232014；黃經速度(度/日)=0.18890703970483255；黃緯=0.14229135059518105</td><td>—</td></tr>
+        <tr><td>14</td><td>土星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=92.29361871981337；方位角Az(北=0,順時針)=272.29361871981337；真高度Alt=-65.55718917887627；視高度(含蒙氣差)=-65.55718917887627；赤經=297.1790454425206；赤緯=-20.93537166925474；距離(AU)=9.487995643932482；黃經=295.25324158929004；黃經速度(度/日)=-0.016537041018113822；黃緯=0.15535165786625807</td><td>—</td></tr>
+        <tr><td>15</td><td>天王星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=93.01078400018383；方位角Az(北=0,順時針)=273.01078400018383；真高度Alt=-81.62677436236517；視高度(含蒙氣差)=-81.62677436236517；赤經=280.02388547717874；赤緯=-23.437613836493167；距離(AU)=18.676125900545717；黃經=279.1894939776997；黃經速度(度/日)=-0.024430345730887416；黃緯=-0.3146830545882891</td><td>—</td></tr>
+        <tr><td>16</td><td>海王星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=97.00082860979376；方位角Az(北=0,順時針)=277.00082860979376；真高度Alt=-76.3773693087986；視高度(含蒙氣差)=-76.3773693087986；赤經=285.4869625163796；赤緯=-21.801182847417373；距離(AU)=29.5500131413978；黃經=284.3562451627202；黃經速度(度/日)=-0.014619955497902404；黃緯=0.8723746548060747</td><td>—</td></tr>
+        <tr><td>17</td><td>冥王星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=247.5639193431082；方位角Az(北=0,順時針)=67.56391934310818；真高度Alt=-42.875482642384824；視高度(含蒙氣差)=-42.875482642384824；赤經=228.2521991597292；赤緯=-1.3256243170471809；距離(AU)=28.694559031976286；黃經=226.17375306160372；黃經速度(度/日)=-0.02773873017595457；黃緯=15.99208993751722</td><td>—</td></tr>
+        <tr><td>18</td><td>凱龍星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=300.5064506627327；方位角Az(北=0,順時針)=120.50645066273268；真高度Alt=75.74945631836573；視高度(含蒙氣差)=75.7534701492797；赤經=103.67734329157852；赤緯=16.40803737282183；距離(AU)=11.690304737188894；黃經=103.19412469811223；黃經速度(度/日)=0.07973541669497944；黃緯=-6.409789868950592</td><td>—</td></tr>
+        <tr><td>19</td><td>月亮 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=33026；地平座標來源flags(tropical of-date)=33026；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=88.51514496840605；方位角Az(北=0,順時針)=268.51514496840605；真高度Alt=-66.84517034721222；視高度(含蒙氣差)=-66.84517034721222；赤經=296.11820114076653；赤緯=-22.670683463312763；距離(AU)=0.0026884653726112107；黃經=293.9743670045535；黃經速度(度/日)=16.92776680215502；黃緯=-1.3763463421207067</td><td>站心speed_*是Swiss FLG_SPEED解析值；已知太陽／月亮部分欄位不等於同次站心position的有限差分導數，故不作導數精度宣稱。</td></tr>
+        <tr><td>20</td><td>平均黑月莉莉絲 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=277.46658307157446；方位角Az(北=0,順時針)=97.46658307157446；真高度Alt=-50.44891108362696；視高度(含蒙氣差)=-50.44891108362696；赤經=227.5933084136632；赤緯=-23.012850136485504；距離(AU)=0.002710625131722546；黃經=231.45323505218212；黃經速度(度/日)=0.11204820534971094；黃緯=-5.0660466448136</td><td>—</td></tr>
+        <tr><td>21</td><td>自然／插值月球遠地點（Lilith） 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=277.1558987549589；方位角Az(北=0,順時針)=97.15589875495891；真高度Alt=-49.81539497193646；視高度(含蒙氣差)=-49.81539497193646；赤經=226.95865265397936；赤緯=-22.698235855211735；距離(AU)=0.002716859526272097；黃經=230.80257281828486；黃經速度(度/日)=-0.08370634416379029；黃緯=-4.921651568946556</td><td>—</td></tr>
+        <tr><td>22</td><td>自然／插值月球近地點（Priapus） 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=97.40344290586245；方位角Az(北=0,順時針)=277.40344290586245；真高度Alt=51.88241764754197；視高度(含蒙氣差)=51.8948129028655；赤經=49.13458019949183；赤緯=23.230379007596905；距離(AU)=0.002386886023430778；黃經=52.883013604555345；黃經速度(度/日)=0.5233507291244137；黃緯=4.899714444183776</td><td>—</td></tr>
+        <tr><td>23</td><td>北交點(密切) 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=91.22055134586378；方位角Az(北=0,順時針)=271.2205513458638；真高度Alt=-50.55582557121849；視高度(含蒙氣差)=-50.55582557121849；赤經=312.7125787830575；赤緯=-17.672069819888172；距離(AU)=0.0026117402882049855；黃經=310.2640216947138；黃經速度(度/日)=-0.03032866449405725；黃緯=0</td><td>—</td></tr>
+        <tr><td>24</td><td>北交點(平均) 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=91.18800774178465；方位角Az(北=0,順時針)=271.18800774178465；真高度Alt=-49.46876970421549；視高度(含蒙氣差)=-49.46876970421549；赤經=313.8095598447026；赤緯=-17.375645539722985；距離(AU)=0.0025695552897999903；黃經=311.35127868087005；黃經速度(度/日)=-0.05293309781741551；黃緯=0</td><td>—</td></tr>
+        <tr><td>25</td><td>南交點(密切) 導出</td><td>ecliptic_longitude=(north+180) mod 360; ecliptic_latitude=-north; right_ascension=(north+180) mod 360; declination=-north</td><td>來源=true_node；來源黃經=310.2640216947138</td><td>赤經=132.7125787830575；赤緯=17.672069819888172；黃經=130.2640216947138</td><td>這是北交點方向的幾何對蹠點，不是另一個獨立 Swiss body。</td></tr>
+        <tr><td>26</td><td>南交點(平均) 導出</td><td>ecliptic_longitude=(north+180) mod 360; ecliptic_latitude=-north; right_ascension=(north+180) mod 360; declination=-north</td><td>來源=mean_node；來源黃經=311.35127868087005</td><td>赤經=133.80955984470262；赤緯=17.375645539722985；黃經=131.35127868087005</td><td>這是北交點方向的幾何對蹠點，不是另一個獨立 Swiss body。</td></tr>
+        <tr><td>27</td><td>宮位制：Placidus (P)</td><td>swe.houses_ex(JD_UT, 地理緯度, 地理經度, 宮位制代碼)</td><td>JD(UT)=2448026.7708342457；houses_ex_flags=0；經度=120.6736；緯度=24.1477</td><td>12宮宮頭=[180.82516687773142,209.5432151427151,239.93446742545663,270.8296129140426,301.7467148616686,332.15822620148697,0.8251668777314194,29.5432151427151,59.93446742545666,90.8296129140426,121.74671486166858,152.15822620148697]；ARMC=90.90423571052486；ASC=180.82516687773142；DESC=0.8251668777314194；IC=270.8296129140426；MC=90.8296129140426</td><td>以下為 swisseph 附帶回傳、非古典占星角點，僅供技術核對：Vertex=27.7574，Equatorial Ascendant=180.9856，Co-Ascendant(Koch)=181.2234，Co-Ascendant(Munkasey)=180.5010，Polar Ascendant=1.2234</td></tr>
+        <tr><td>28</td><td>行星落宮</td><td>星體黃經 ∈ [第 n 宮宮頭, 第 n+1 宮宮頭)</td><td>cusps=[180.82516687773142,209.5432151427151,239.93446742545663,270.8296129140426,301.7467148616686,332.15822620148697,0.8251668777314194,29.5432151427151,59.93446742545666,90.8296129140426,121.74671486166858,152.15822620148697]；house_system=P；planet_count=11</td><td>chiron=10；jupiter=10；mars=6；mercury=8；moon=4；neptune=4；pluto=2；saturn=4；sun=8；uranus=4；venus=7</td><td>宮頭使用半開區間；精確落在宮頭時歸入從該宮頭開始的新宮。本輸出只做落宮定位，不加入占星解讀。</td></tr>
+        <tr><td>29</td><td>恆星 大陵五（Algol,bePer）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=125.56049008261044；方位角Az(北=0,順時針)=305.56049008261044；星等=2.12；赤經=46.88049515524027；赤緯=40.919563275943176；高度Alt=49.79551110744744；黃經=56.03044311981547；黃緯=22.42753501196636</td><td>—</td></tr>
+        <tr><td>30</td><td>恆星 昴宿六(昴星團)（Alcyone,etTau）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=97.032457363297；方位角Az(北=0,順時針)=277.032457363297；星等=2.87；赤經=56.72472414490332；赤緯=24.07679014124772；高度Alt=58.88217457328634；黃經=59.85551630170786；黃緯=4.049993652588898</td><td>—</td></tr>
+        <tr><td>31</td><td>恆星 畢宿五（Aldebaran,alTau）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=73.82206763227464；方位角Az(北=0,順時針)=253.82206763227464；星等=0.86；赤經=68.83938036148346；赤緯=16.49156796494327；高度Alt=67.97236915610272；黃經=69.6523386986449；黃緯=-5.468160670168482</td><td>—</td></tr>
+        <tr><td>32</td><td>恆星 五車二（Capella,alAur）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=159.23200809478695；方位角Az(北=0,順時針)=339.2320080947869；星等=0.08；赤經=78.9908527537585；赤緯=45.991441259152616；高度Alt=66.14145435343372；黃經=81.72114309201216；黃緯=22.86520449841193</td><td>—</td></tr>
+        <tr><td>33</td><td>恆星 天狼星（Sirius,alCMa）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=345.2254963062337；方位角Az(北=0,順時針)=165.2254963062337；星等=-1.46；赤經=101.17949313378115；赤緯=-16.70339389259816；高度Alt=47.93584504770707；黃經=103.94741954395754；黃緯=-39.60574917363924</td><td>—</td></tr>
+        <tr><td>34</td><td>恆星 南河三（Procyon,alCMi）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=305.750250101834；方位角Az(北=0,順時針)=125.75025010183401；星等=0.37；赤經=114.69980876129802；赤緯=5.250287573464248；高度Alt=60.32586592097551；黃經=115.65308236256014；黃緯=-16.018987988894406</td><td>—</td></tr>
+        <tr><td>35</td><td>恆星 軒轅十四（Regulus,alLeo）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=270.24465459210876；方位角Az(北=0,順時針)=90.24465459210876；星等=1.4；赤經=151.96891615500277；赤緯=12.014013954324561；高度Alt=31.129033504062043；黃經=149.6990609659607；黃緯=0.4645810970046625</td><td>—</td></tr>
+        <tr><td>36</td><td>恆星 搖光(大熊座η)（Alkaid,etUMa）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=215.9197796818032；方位角Az(北=0,順時針)=35.91977968180322；星等=1.86；赤經=206.8017864714639；赤緯=49.36042019745079；高度Alt=2.915060891960031；黃經=176.805840018304；黃緯=54.39208853095168</td><td>—</td></tr>
+        <tr><td>37</td><td>恆星 軫宿一（Algorab,deCrv）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=282.69212162450634；方位角Az(北=0,順時針)=102.69212162450634；星等=2.94；赤經=187.34754179557922；赤緯=-16.465806698449516；高度Alt=-12.365921018401862；黃經=193.32546643532095；黃緯=-12.1960929713181</td><td>—</td></tr>
+        <tr><td>38</td><td>恆星 角宿一（Spica,alVir）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=272.29024369149283；方位角Az(北=0,順時針)=92.29024369149283；星等=0.97；赤經=201.17850743042467；赤緯=-11.114950860050309；高度Alt=-22.900061688556402；黃經=203.71506809564212；黃緯=-2.053860809629604</td><td>—</td></tr>
+        <tr><td>39</td><td>恆星 大角（Arcturus,alBoo）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=237.22303054287983；方位角Az(北=0,順時針)=57.223030542879826；星等=-0.05；赤經=213.81398420859475；赤緯=19.229741642171703；高度Alt=-19.47379088340271；黃經=204.10812364650735；黃緯=30.744336437403</td><td>—</td></tr>
+        <tr><td>40</td><td>恆星 貫索四（Alphecca,alCrB）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=217.6785508733333；方位角Az(北=0,順時針)=37.67855087333328；星等=2.24；赤經=233.57900749794692；赤緯=26.743574306796287；高度Alt=-27.639774423293563；黃經=222.17085113233952；黃緯=44.32535650049722</td><td>—</td></tr>
+        <tr><td>41</td><td>恆星 心宿二（Antares,alSco）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=281.0721778482227；方位角Az(北=0,順時針)=101.07217784822268；星等=0.91；赤經=247.21322602090885；赤緯=-26.413941076202057；高度Alt=-68.48883115360478；黃經=249.63647210314818；黃緯=-4.568546583719359</td><td>—</td></tr>
+        <tr><td>42</td><td>恆星 織女一（Vega,alLyr）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=172.80663502967178；方位角Az(北=0,順時針)=352.8066350296718；星等=0.03；赤經=279.16006384577173；赤緯=38.769582071079135；高度Alt=-26.609255295723827；黃經=285.19199331215486；黃緯=61.729471496428665</td><td>—</td></tr>
+        <tr><td>43</td><td>恆星 壘壁陣四（Deneb Algedi,deCap）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=87.62827280494224；方位角Az(北=0,順時針)=267.62827280494224；星等=2.83；赤經=326.63105404176355；赤緯=-16.17088075941213；高度Alt=-37.4063111825854；黃經=323.4108401968548；黃緯=-2.5997903295411886</td><td>—</td></tr>
+        <tr><td>44</td><td>恆星 參宿七（Rigel,beOri）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=21.98956930250546；方位角Az(北=0,順時針)=201.98956930250546；星等=0.13；赤經=78.51640061859084；赤緯=-8.212031931777126；高度Alt=55.45461996167873；黃經=76.69214493386855；黃緯=-31.125156328231256</td><td>—</td></tr>
+        <tr><td>45</td><td>恆星 河鼓二(牛郎星)（Altair,alAql）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=138.49664768930296；方位角Az(北=0,順時針)=318.49664768930296；星等=0.76；赤經=297.5837318720309；赤緯=8.839529319946259；高度Alt=-47.97001626816806；黃經=301.6461418358186；黃緯=29.30120443420484</td><td>—</td></tr>
+        <tr><td>46</td><td>恆星 北河二（Castor,alGem）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=243.6180906217548；方位角Az(北=0,順時針)=63.61809062175479；星等=1.58；赤經=113.49675298051383；赤緯=31.912409593164323；高度Alt=68.65261790982527；黃經=110.1061074885455；黃緯=10.09591710570016</td><td>—</td></tr>
+        <tr><td>47</td><td>恆星 北河三（Pollux,beGem）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=254.76138826401737；方位角Az(北=0,順時針)=74.76138826401734；星等=1.14；赤經=116.18274586449327；赤緯=28.051999807922748；高度Alt=67.00901781150662；黃經=113.08302752591594；黃緯=6.684074242939681</td><td>—</td></tr>
+        <tr><td>48</td><td>恆星 參宿四（Betelgeuse,alOri）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=7.682673380256176；方位角Az(北=0,順時針)=187.68267338025618；星等=0.42；赤經=88.66101480405173；赤緯=7.406560925922585；高度Alt=73.1214773141215；黃經=88.61846657323684；黃緯=-16.029180339043208</td><td>—</td></tr>
+        <tr><td>49</td><td>恆星 壁宿二（Alpheratz,alAnd）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=116.51979775147592；方位角Az(北=0,順時針)=296.51979775147595；星等=2.06；赤經=1.9704554753800338；赤緯=29.03531141225669；高度Alt=12.321502343053613；黃經=14.17275920742655；黃緯=25.679028782011184</td><td>—</td></tr>
+        <tr><td>50</td><td>恆星 芻蒿增二（Mira,omiCet）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=71.63931096827582；方位角Az(北=0,順時針)=251.63931096827582；星等=6.53；赤經=34.712716525557376；赤緯=-3.0202940197481976；高度Alt=29.043171775858198；黃經=31.38515652843114；黃緯=-15.936464609710342</td><td>—</td></tr>
+        <tr><td>51</td><td>恆星 參宿五（Bellatrix,gaOri）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=29.308201121691468；方位角Az(北=0,順時針)=209.30820112169147；星等=1.64；赤經=81.15162148425793；赤緯=6.342290626207109；高度Alt=69.8833217663985；黃經=80.80994838648768；黃緯=-16.818005374753476</td><td>—</td></tr>
+        <tr><td>52</td><td>恆星 老人星（Canopus,alCar）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=356.8766389498333；方位角Az(北=0,順時針)=176.87663894983325；星等=-0.74；赤經=95.92864850092819；赤緯=-52.69228027457238；高度Alt=13.035005850325819；黃經=104.81642284181913；黃緯=-75.82938825029909</td><td>—</td></tr>
+        <tr><td>53</td><td>恆星 東次將（Vindemiatrix,epVir）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=253.86054106760767；方位角Az(北=0,順時針)=73.86054106760764；星等=2.79；赤經=195.4317521479264；赤緯=11.008470384188534；高度Alt=-8.427921606686743；黃經=189.81356608733734；黃緯=16.206628071488133</td><td>—</td></tr>
+        <tr><td>54</td><td>恆星 北落師門（Fomalhaut,alPsA）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=67.19740765255204；方位角Az(北=0,順時針)=247.19740765255204；星等=1.16；赤經=344.28216157869383；赤緯=-29.671208477985；高度Alt=-25.42370974653819；黃經=333.72680232553563；黃緯=-21.1324104674894</td><td>—</td></tr>
+        <tr><td>55</td><td>恆星 水委一（Achernar,alEri）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=30.09685702873645；方位角Az(北=0,順時針)=210.09685702873645；星等=0.46；赤經=24.334966198909594；赤緯=-57.28196247634845；高度Alt=-8.514814673786189；黃經=345.1736387458827；黃緯=-59.37320206937774</td><td>—</td></tr>
+        <tr><td>56</td><td>恆星 勾陳一(北極星)（Polaris,alUMi）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=179.29061947208282；方位角Az(北=0,順時針)=359.2906194720828；星等=2.02；赤經=34.981916912789686；赤緯=89.22117007549498；高度Alt=24.582448263783228；黃經=88.42458955098964；黃緯=66.103279681283</td><td>—</td></tr>
+        <tr><td>57</td><td>恆星 天津四（Deneb,alCyg）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=152.83835749158914；方位角Az(北=0,順時針)=332.83835749158914；星等=1.25；赤經=310.278846613156；赤緯=45.24054457421825；高度Alt=-11.899287979179558；黃經=335.19766123640267；黃緯=59.90178998274495</td><td>—</td></tr>
+        <tr><td>58</td><td>恆星 馬腹一（Hadar,beCen）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=328.1939246094461；方位角Az(北=0,順時針)=148.19392460944613；星等=0.6；赤經=210.79600362667455；赤緯=-60.331555483973524；高度Alt=-35.489531045420435；黃經=233.66948845020104；黃緯=-44.13647608143591</td><td>—</td></tr>
+        <tr><td>59</td><td>恆星 天囷一（Menkar,alCet）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=72.68120334375317；方位角Az(北=0,順時針)=252.68120334375317；星等=2.53；赤經=45.44136660921285；赤緯=4.053020948881292；高度Alt=41.85985080451259；黃經=44.18305645181851；黃緯=-12.586147450448017</td><td>—</td></tr>
+        <tr><td>60</td><td>恆星 王良四（Schedar,alCas）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=143.05717615238342；方位角Az(北=0,順時針)=323.0571761523834；星等=2.23；赤經=9.983030669371322；赤緯=56.48216121340792；高度Alt=24.870716841834582；黃經=37.64537223227034；黃緯=46.62034457520491</td><td>—</td></tr>
+        <tr><td>61</td><td>恆星 婁宿三（Hamal,alAri）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=102.21385808198465；方位角Az(北=0,順時針)=282.21385808198465；星等=2.01；赤經=31.654417750767543；赤緯=23.417040536438897；高度Alt=36.207284221990754；黃經=37.52550462862643；黃緯=9.964536534810104</td><td>—</td></tr>
+        <tr><td>62</td><td>恆星 氐宿一（Zubenelgenubi,al-2Lib）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=269.20718658998356；方位角Az(北=0,順時針)=89.20718658998356；星等=2.75；赤經=222.59453127660112；赤緯=-16.005831157155335；高度Alt=-44.12103532216385；黃經=224.95714881782652；黃緯=0.33429896028482536</td><td>—</td></tr>
+        <tr><td>63</td><td>前後朔望弦與出生前朔望</td><td>以 Moon-Sun 視地心回歸黃經差對 0°/90°/180°/270° 作 Newton root search</td><td>contract=geocentric apparent tropical of-date；flags=258；reference_JD_UT=2448026.7708342457</td><td>first_quarter={&quot;next&quot;:&quot;1990-05-31T08:10:43.290Z&quot;,&quot;previous&quot;:&quot;1990-05-01T20:17:49.251Z&quot;}；full_moon={&quot;next&quot;:&quot;1990-06-08T11:01:07.075Z&quot;,&quot;previous&quot;:&quot;1990-05-09T19:30:45.850Z&quot;}；last_quarter={&quot;next&quot;:&quot;1990-05-17T19:44:56.735Z&quot;,&quot;previous&quot;:&quot;1990-04-18T07:02:32.393Z&quot;}；new_moon={&quot;next&quot;:&quot;1990-05-24T11:47:07.011Z&quot;,&quot;previous&quot;:&quot;1990-04-25T04:27:27.174Z&quot;}</td><td>prenatal_syzygy 僅指出生前最近一次朔或望，不含古典技法解讀。</td></tr>
+        <tr><td>64</td><td>出生前最近日食／月食</td><td>Swiss Ephemeris global eclipse search, backwards=True</td><td>flags=2；reference_JD_UT=2448026.7708342457</td><td>lunar=1990-02-09T19:11:03.027Z；solar=1990-01-26T19:30:23.381Z</td><td>只回報天文事件與 Swiss 類型，不提供古典占星解讀。</td></tr>
+        <tr><td>65</td><td>星體升降與上下中天</td><td>swe.rise_trans；由出生前兩日起逐事件搜尋 previous，出生時刻後搜尋 next</td><td>flags=2；geopos=[120.6736,24.1477,80]；pressure_hPa=0；reference_JD_UT=2448026.7708342457；refraction=enabled；rise_set_disc=upper_limb；temperature_C=15</td><td>body_count=11</td><td>上下中天不使用 disc/refraction；升降使用 Swiss upper-limb + standard-refraction default。</td></tr>
+        <tr><td>66</td><td>對蹠點計算方法</td><td>Antiscia = (180° − 黃經 − 2×ayanamsa) mod 360°；Contra-antiscia = (360° − 黃經 − 2×ayanamsa) mod 360°</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>67</td><td>太陽 對蹠點</td><td>—</td><td>黃經=54.17513298166507</td><td>Antiscia=125.82486701833493；Contra-antiscia=305.82486701833494</td><td>—</td></tr>
+        <tr><td>68</td><td>月亮 對蹠點</td><td>—</td><td>黃經=293.9743670045535</td><td>Antiscia=246.02563299544647；Contra-antiscia=66.02563299544647</td><td>—</td></tr>
+        <tr><td>69</td><td>水星 對蹠點</td><td>—</td><td>黃經=38.04200536587955</td><td>Antiscia=141.95799463412044；Contra-antiscia=321.95799463412044</td><td>—</td></tr>
+        <tr><td>70</td><td>金星 對蹠點</td><td>—</td><td>黃經=12.556960688310596</td><td>Antiscia=167.4430393116894；Contra-antiscia=347.4430393116894</td><td>—</td></tr>
+        <tr><td>71</td><td>火星 對蹠點</td><td>—</td><td>黃經=348.1636360139993</td><td>Antiscia=191.83636398600072；Contra-antiscia=11.83636398600072</td><td>—</td></tr>
+        <tr><td>72</td><td>木星 對蹠點</td><td>—</td><td>黃經=99.49842250232014</td><td>Antiscia=80.50157749767986；Contra-antiscia=260.5015774976799</td><td>—</td></tr>
+        <tr><td>73</td><td>土星 對蹠點</td><td>—</td><td>黃經=295.25324158929004</td><td>Antiscia=244.74675841070996；Contra-antiscia=64.74675841070996</td><td>—</td></tr>
+        <tr><td>74</td><td>北交點(密切) 對蹠點</td><td>—</td><td>黃經=310.2640216947138</td><td>Antiscia=229.7359783052862；Contra-antiscia=49.73597830528621</td><td>—</td></tr>
+        <tr><td>75</td><td>北交點(平均) 對蹠點</td><td>—</td><td>黃經=311.35127868087005</td><td>Antiscia=228.64872131912995；Contra-antiscia=48.64872131912995</td><td>—</td></tr>
+        <tr><td>76</td><td>日夜盤判定 (Sect, method=sun_center_true_altitude_gt_zero_v1)</td><td>太陽地平真高度 &gt; 0 → 日生盤；否則 → 夜生盤（採太陽中心，未計入蒙氣折射）</td><td>太陽真高度=53.344084570588954</td><td>盤性=日生盤 (Day)；臨近臨界=false</td><td>—</td></tr>
+        <tr><td>77</td><td>阿拉伯點：Lot of Fortune (method=traditional_day_night_formula_v1)</td><td>Fortune = ASC + Moon − Sun（日盤公式）</td><td>ASC=180.82516687773142；太陽黃經=54.17513298166507；月亮黃經=293.9743670045535</td><td>Fortune 黃經=60.62440090061989</td><td>—</td></tr>
+        <tr><td>78</td><td>阿拉伯點：Lot of Spirit (method=traditional_day_night_formula_v1)</td><td>Spirit = ASC + Sun − Moon（日盤公式）</td><td>ASC=180.82516687773142；太陽黃經=54.17513298166507；月亮黃經=293.9743670045535</td><td>Spirit 黃經=301.02593285484295</td><td>—</td></tr>
+        <tr><td>79</td><td>VOC候選搜尋：距離下一個星座邊界的時間</td><td>以 root_finding 求 月亮黃經(t) − 下一星座起點 = 0 的最早時刻</td><td>下一星座起點=300；月亮瞬時速度(度/日)=16.92776680215502；月亮黃經=293.9743670045535；求根器=two_stage_scan_then_bisection_v1</td><td>二分迭代次數=16；括號區間(天)=[0.4,0.45]；括號端點殘差(度)=[-0.06336613087614751,0.4056408764927255]；收斂殘差(度)=0.000002487137578555121；距邊界時間(天)=0.406374740600586</td><td>改以求根取代 (邊界 − 黃經) / 瞬時速度：月亮速度在 11.7–15.4 度/日之間變化，除法外插的誤差足以改變哪些相位算在邊界之內，進而改變空亡的布林結果。括號端點與迭代次數一併輸出，第三方可據以複算（MTH-Q-003 乙）。</td></tr>
+        <tr><td>80</td><td>VOC候選搜尋 (method=modern_sign_bounded_exact_perfection_v1, solver=two_stage_scan_then_bisection_v1)</td><td>對每個托勒密相位角(0/60/90/120/180°)的兩個帶號目標，以粗掃描分割根區間後二分求根，僅保留換座邊界前發生者</td><td>—</td><td>候選事件數=2；候選清單=[{&quot;aspect_angle&quot;:120,&quot;body&quot;:&quot;太陽&quot;,&quot;body_key&quot;:&quot;sun&quot;,&quot;solver_evidence&quot;:{&quot;bisection_iterations&quot;:16,&quot;bracket&quot;:{&quot;high_days&quot;:0.05,&quot;high_offset_degrees&quot;:0.6074533403892701,&quot;low_days&quot;:0,&quot;low_offset_degrees&quot;:-0.20076597711158684},&quot;residual_degrees&quot;:0.0000036575522699422436},&quot;time_days&quot;:0.012527084350585938},{&quot;aspect_angle&quot;:0,&quot;body&quot;:&quot;土星&quot;,&quot;body_key&quot;:&quot;saturn&quot;,&quot;solver_evidence&quot;:{&quot;bisection_iterations&quot;:16,&quot;bracket&quot;:{&quot;high_days&quot;:0.1,&quot;high_offset_degrees&quot;:0.4411657443424133,&quot;low_days&quot;:0.05,&quot;low_offset_degrees&quot;:-0.4216119801100717},&quot;residual_degrees&quot;:5.527072630684415e-7},&quot;time_days&quot;:0.07439384460449219}]</td><td>求根器在每個取樣點實際查詢星曆，不假設速度為定值，因此對月亮速度變化、被相位行星站留、以及同一視窗內的多重根皆成立。此搜尋仍內含「用哪些星體/哪些相位角」的技法假設，屬方法假設而非純天文事實。定義為現代（Morrison 系）的星座界線＋精確完成，與希臘化 30° 及 Lilly 容許度兩種古典定義不同，見 RES-MTH-SOURCES-2026-08-03 §2</td></tr>
+        <tr><td>81</td><td>月空亡(VOC)最終判定</td><td>若邊界前無任何相位完成（含盤上時刻恰好精確者）-&gt; 空亡；否則以最快完成者為離開星座前的入相位</td><td>—</td><td>最快入相位=太陽 120.0°，約 0.30 小時後</td><td>—</td></tr>
+        <tr><td>82</td><td>赤緯相位判斷方法 (method=parallel_contra_parallel_fixed_orb_v1)</td><td>平行(Parallel): |δ1 - δ2| ≤ 容許誤差 且 同號；反平行(Contra-parallel): |δ1 + δ2| ≤ 容許誤差 且 異號</td><td>容許誤差(度)=1</td><td>參與星體數=15</td><td>—</td></tr>
+        <tr><td>83</td><td>月亮 與 木星 成赤緯反平行</td><td>—</td><td>δ(月亮)=-22.670683463312763；δ(木星)=23.243917069693293</td><td>誤差(度)=0.5732336063805299</td><td>—</td></tr>
+        <tr><td>84</td><td>月亮 與 天王星 成赤緯平行</td><td>—</td><td>δ(天王星)=-23.437613836493167；δ(月亮)=-22.670683463312763</td><td>誤差(度)=0.7669303731804042</td><td>—</td></tr>
+        <tr><td>85</td><td>月亮 與 海王星 成赤緯平行</td><td>—</td><td>δ(月亮)=-22.670683463312763；δ(海王星)=-21.801182847417373</td><td>誤差(度)=0.8695006158953902</td><td>—</td></tr>
+        <tr><td>86</td><td>木星 與 天王星 成赤緯反平行</td><td>—</td><td>δ(天王星)=-23.437613836493167；δ(木星)=23.243917069693293</td><td>誤差(度)=0.19369676679987435</td><td>—</td></tr>
+        <tr><td>87</td><td>土星 與 海王星 成赤緯平行</td><td>—</td><td>δ(土星)=-20.93537166925474；δ(海王星)=-21.801182847417373</td><td>誤差(度)=0.8658111781626339</td><td>—</td></tr>
+        <tr><td>88</td><td>凱龍星 與 北交點(平均) 成赤緯反平行</td><td>—</td><td>δ(凱龍星)=16.40803737282183；δ(北交點(平均))=-17.375645539722985</td><td>誤差(度)=0.9676081669011545</td><td>—</td></tr>
+        <tr><td>89</td><td>凱龍星 與 南交點(平均) 成赤緯平行</td><td>—</td><td>δ(凱龍星)=16.40803737282183；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.9676081669011545</td><td>—</td></tr>
+        <tr><td>90</td><td>北交點(密切) 與 北交點(平均) 成赤緯平行</td><td>—</td><td>δ(北交點(密切))=-17.672069819888172；δ(北交點(平均))=-17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
+        <tr><td>91</td><td>北交點(密切) 與 南交點(密切) 成赤緯反平行</td><td>—</td><td>δ(北交點(密切))=-17.672069819888172；δ(南交點(密切))=17.672069819888172</td><td>誤差(度)=0</td><td>—</td></tr>
+        <tr><td>92</td><td>北交點(密切) 與 南交點(平均) 成赤緯反平行</td><td>—</td><td>δ(北交點(密切))=-17.672069819888172；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
+        <tr><td>93</td><td>北交點(平均) 與 南交點(密切) 成赤緯反平行</td><td>—</td><td>δ(北交點(平均))=-17.375645539722985；δ(南交點(密切))=17.672069819888172</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
+        <tr><td>94</td><td>北交點(平均) 與 南交點(平均) 成赤緯反平行</td><td>—</td><td>δ(北交點(平均))=-17.375645539722985；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0</td><td>—</td></tr>
+        <tr><td>95</td><td>南交點(密切) 與 南交點(平均) 成赤緯平行</td><td>—</td><td>δ(南交點(密切))=17.672069819888172；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
+        <tr><td>96</td><td>整宮配置 (method=whole_sign_configuration_v1)</td><td>星座距離 = min((星座B − 星座A) mod 12, 12 − 同值)；0/2/3/4/6 → 合/六分/刑/拱/沖，其餘不合意</td><td>參與者數=16</td><td>成整宮相位者=61；組合總數=119</td><td>此層不需容許度：星座距離是算術，配置名稱是希臘化占星的成文教義。</td></tr>
+        <tr><td>97</td><td>逐度相位 (method=named_degree_aspect_set_with_explicit_orb_policy_v1, orb_configuration=named_profile)</td><td>成立條件由 degree_based.orb_receipt.pair_threshold_formula 與每一 pair 的 pair_orb_threshold_degrees 完整記錄</td><td>orb收據={&quot;angle_pair_threshold_degrees&quot;:null,&quot;applicable&quot;:true,&quot;available&quot;:true,&quot;configuration_mode&quot;:&quot;named_profile&quot;,&quot;executed&quot;:true,&quot;fixed_pair_threshold_degrees&quot;:null,&quot;pair_threshold_formula&quot;:&quot;(orb_a + orb_b) / 2&quot;,&quot;participant_orbs&quot;:[{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;sun&quot;,&quot;orb_degrees&quot;:17,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;moon&quot;,&quot;orb_degrees&quot;:12.5,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;mercury&quot;,&quot;orb_degrees&quot;:7,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;venus&quot;,&quot;orb_degrees&quot;:8,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;mars&quot;,&quot;orb_degrees&quot;:7.5,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;jupiter&quot;,&quot;orb_degrees&quot;:12,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;saturn&quot;,&quot;orb_degrees&quot;:10,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;lunar_node&quot;,&quot;key&quot;:&quot;true_node&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lunar_node&quot;,&quot;key&quot;:&quot;mean_node&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;uranus&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;neptune&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;pluto&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lot&quot;,&quot;key&quot;:&quot;fortune&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lot&quot;,&quot;key&quot;:&quot;spirit&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;angle&quot;,&quot;key&quot;:&quot;asc&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;angle&quot;,&quot;key&quot;:&quot;mc&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;}],&quot;profile_key&quot;:&quot;lilly_1647_experience_v1&quot;,&quot;reason_code&quot;:null,&quot;requested&quot;:true,&quot;rule&quot;:&quot;moiety&quot;,&quot;scale_percent&quot;:null,&quot;source&quot;:&quot;single_named_author_stated_as_personal_experience&quot;,&quot;source_verification&quot;:{&quot;evidence_standard&quot;:&quot;secondary_tabulation_permitted_when_disclosed&quot;,&quot;finding&quot;:&quot;RT-BACKEND-9-E-011&quot;,&quot;note&quot;:&quot;A scan of Christian Astrology exists at archive.org/details/b30338724; the page was not independently transcribed for this implementation.&quot;,&quot;primary_texts_independently_transcribed&quot;:false,&quot;ruling&quot;:&quot;Sebastian 2026-08-03, E-011 甲&quot;,&quot;tabulated_from&quot;:&quot;Steven Birchfield, 'Orbs of Influence', 2nd ed. 2013 (secondary), quoting Lilly p.107&quot;}}；逐度相位集合=modern_minor_combined_v1</td><td>成逐度相位者=8；明細=[&quot;太陽拱月亮（差 +0.2008°，入相位）&quot;,&quot;太陽拱土星（差 -1.0781°，入相位）&quot;,&quot;月亮六分火星（差 -5.8107°，出相位）&quot;,&quot;月亮合土星（差 +1.2789°，入相位）&quot;,&quot;水星六分木星（差 +1.4564°，出相位）&quot;,&quot;金星刑木星（差 -3.0585°，出相位）&quot;,&quot;火星拱木星（差 -8.6652°，出相位）&quot;,&quot;火星六分土星（差 -7.0896°，入相位）&quot;]</td><td>orb 數值出自具名歷史來源，見本模組 docstring；method_status 仍為待審閱，不表示本產品已採用該表為正式技法。</td></tr>
+        <tr><td>98</td><td>具名古典尊貴元件</td><td>tropical longitude -&gt; whole-sign domicile/exaltation match and/or source-named half-open table; no scoring or interpretation</td><td>sect_basis=sun_center_true_altitude_gt_zero_v1_exact_birth_time；sect_is_day=true；selected_profiles={&quot;bounds&quot;:&quot;lilly_received_bounds_1647_v1&quot;,&quot;domicile_exaltation&quot;:&quot;traditional_seven_domicile_exaltation_signs_v1&quot;,&quot;face_decan&quot;:&quot;manilius_sign_decans_astronomica_iv_v1&quot;,&quot;triplicity&quot;:&quot;lilly_triplicity_compact_1647_v1&quot;}；triplicity_research_comparison=true</td><td>profile_ids=[&quot;traditional_seven_domicile_exaltation_signs_v1&quot;,&quot;lilly_received_bounds_1647_v1&quot;,&quot;manilius_sign_decans_astronomica_iv_v1&quot;,&quot;lilly_triplicity_compact_1647_v1&quot;,&quot;dorothean_triplicity_three_rulers_v1&quot;,&quot;ptolemy_triplicity_textual_corulership_v1&quot;]</td><td>Traditional-seven whole-sign domicile/exaltation is kept separate from exact exaltation-degree traditions. Dorothean, Ptolemy textual, Lilly compact, Egyptian, Chaldaean, Robbins and Lilly tables remain separate profiles.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-v">
+    <h3>輸出契約
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">VERIFICATION 驗證</p>
+    <p class="dossier-note">契約狀態：provisional——provisional 表示欄位仍可能變動，不是已凍結的公開 API。</p>
+    <p class="dossier-note">相容性政策：additive_during_0.x_unless_a_documented_correctness_fix_requires_change</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>三層的定義（後端原文）</caption>
+        <thead><tr><th>層</th><th>定義</th></tr></thead>
+        <tbody>
+        <tr><td>astronomical_data</td><td>直接天文計算與座標／時間轉換</td></tr>
+        <tr><td>derived_geometry</td><td>只需明示公式的幾何轉換</td></tr>
+        <tr><td>derived_methods</td><td>需要占星方法或門檻選擇的結果；預設不計算</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dossier-section" data-ring="ring-v">
+    <h3>計算收據
+      <span class="dossier-status" data-state="present">已計算</span>
+    </h3>
+    <p class="dossier-layer">VERIFICATION 驗證</p>
+    <p class="dossier-note">這是本次計算的可重現證據，不是占星解讀，也不是任何外部天文、方法、資安或法規認證。</p>
+    <p class="dossier-note">隱私聲明狀態為後端原值 provisional_pending_external_review——它不等於已通過外部審查。</p>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>版本與來源</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>API schema</td><td>0.13.0</td></tr>
+        <tr><td>Calculation Dossier</td><td>0.6.0</td></tr>
+        <tr><td>Dossier 狀態</td><td>provisional</td></tr>
+        <tr><td>Dossier 權威</td><td>backend_effective_runtime</td></tr>
+        <tr><td>建置識別</td><td>—</td></tr>
+        <tr><td>pyswisseph</td><td>2.10.3.2</td></tr>
+        <tr><td>Swiss Ephemeris</td><td>2.10.03</td></tr>
+        <tr><td>時區資料庫</td><td>2026c（zoneinfo_file:+VERSION）</td></tr>
+        <tr><td>星曆來源</td><td>Swiss Ephemeris files</td></tr>
+        <tr><td>星曆譜系</td><td>JPL DE441；Swiss Ephemeris compressed files；sepl_18.se1、semo_18.se1；狀態：declared_from_bundled_file_headers</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>已驗證的輸入（input receipt）</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>出生時刻把握程度</td><td>exact</td></tr>
+        <tr><td>本地時間</td><td>1990-05-15 14:30:00.00</td></tr>
+        <tr><td>時區</td><td>Asia/Taipei</td></tr>
+        <tr><td>UTC 偏移（小時）</td><td>8.00</td></tr>
+        <tr><td>UTC</td><td>1990-05-15 06:30:00.000</td></tr>
+        <tr><td>儒略日 JD(UT)</td><td>2448026.770834</td></tr>
+        <tr><td>ΔT（秒）</td><td>57.105</td></tr>
+        <tr><td>Swiss 時間輸入語義</td><td>utc</td></tr>
+        <tr><td>ΔT 模型狀態</td><td>model_value</td></tr>
+        <tr><td>緯度</td><td>24.147700</td></tr>
+        <tr><td>經度</td><td>120.673600</td></tr>
+        <tr><td>海拔（公尺）</td><td>80.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>地點解析</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>地點標籤</td><td>—</td></tr>
+        <tr><td>來源</td><td>manual</td></tr>
+        <tr><td>目錄記錄 id</td><td>—</td></tr>
+        <tr><td>位置精度</td><td>user_supplied_coordinates</td></tr>
+        <tr><td>驗證狀態</td><td>user_supplied</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>計算政策</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>黃道</td><td>tropical</td></tr>
+        <tr><td>歲差校正</td><td>fagan_bradley</td></tr>
+        <tr><td>計算中心</td><td>geocentric</td></tr>
+        <tr><td>位置模式</td><td>apparent</td></tr>
+        <tr><td>黃道框架</td><td>of_date</td></tr>
+        <tr><td>旗標政策</td><td>base_position_flags：FLG_SWIEPH＋FLG_SPEED（258）；equatorial_source_flags：FLG_SWIEPH＋FLG_SPEED＋FLG_EQUATORIAL（2306）；horizontal_source_flags：FLG_SWIEPH＋FLG_SPEED（258）；semantics：policy flags requested by the App; actual calculation sources are proven by returned retflags in provenance</td></tr>
+        <tr><td>月亮位置</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>軌跡收據</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>逐步軌跡步數</td><td>98</td></tr>
+        <tr><td>後端回報步數</td><td>98</td></tr>
+        <tr><td>序列化雜湊 SHA-256</td><td>537297e226df46d56341fe5b34512fcddca80286cbfa60b821f96f9456e21f1b</td></tr>
+        <tr><td>跨語言可攜</td><td>否（僅供完整性核對）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>隱私聲明</caption>
+        <thead><tr><th>項目</th><th>數值</th></tr></thead>
+        <tbody>
+        <tr><td>聲明版本</td><td>1.3.0</td></tr>
+        <tr><td>聲明狀態（後端原值）</td><td>provisional_pending_external_review</td></tr>
+        <tr><td>含敏感出生資料</td><td>是</td></tr>
+        <tr><td>可匿名分享</td><td>否</td></tr>
+        <tr><td>已列出的未涵蓋層</td><td>reverse_proxy_cdn_waf（outside_current_control_scope）、hosting_supervisor（outside_current_control_scope）、third_party_telemetry（outside_current_control_scope）、browser_os_native_memory（outside_current_control_scope）</td></tr>
+        <tr><td>App 持久化邊界</td><td>計算期間不寫檔、不建立帳號或命盤資料庫；下載是你主動觸發的本機寫入，本頁無法收回</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+</details>

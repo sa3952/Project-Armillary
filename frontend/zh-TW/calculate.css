@@ -7,6 +7,8 @@ body{
   font-family:var(--sans); font-size:16px; line-height:1.8;
   font-feature-settings:"palt" 1;
 }
+.skip-link{position:fixed;z-index:1000;top:var(--s2);left:var(--s2);padding:.55rem .75rem;background:var(--paper);color:var(--ink);border:2px solid var(--accent);border-radius:var(--radius);transform:translateY(-180%)}
+.skip-link:focus{transform:translateY(0)}
 .wrap{max-width:var(--wrap); margin:0 auto; padding:0 var(--pad)}
 .mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
 [hidden]{display:none !important}
@@ -50,9 +52,11 @@ legend{
 input,select{
   font-family:var(--mono); font-size:.95rem; font-variant-numeric:tabular-nums;
   background:var(--paper-2); color:var(--ink);
-  border:1px solid var(--hair); border-radius:var(--radius);
+  border:1px solid var(--ink-faint); border-radius:var(--radius);
   padding:.6rem .7rem; width:100%;
 }
+input::placeholder{color:var(--ink-faint); opacity:1}
+input,select,button{min-width:0; max-width:100%}
 input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{
   outline:2px solid var(--accent); outline-offset:2px;
 }
@@ -101,9 +105,9 @@ button.ghost{background:transparent; color:var(--ink)}
 button.ghost:hover:not(:disabled){background:var(--ink); color:var(--paper)}
 button.small{font-size:.82rem; padding:.45rem 1rem}
 
-.status-line{font-size:.88rem; color:var(--ink-dim)}
+.status-line{font-size:.88rem; color:var(--ink-dim); overflow-wrap:anywhere}
 /* FPI-2026-08-06-E-010：按鈕旁的短訊，與 #status-line 同文。 */
-.inline-status{font-size:.82rem; color:var(--ink-dim); margin-left:.5rem}
+.inline-status{font-size:.82rem; color:var(--ink-dim); margin-left:.5rem; overflow-wrap:anywhere}
 .inline-status[data-tone="error"]{color:var(--accent)}
 .status-line[data-tone="error"]{color:var(--accent)}
 /* warning 是第三個狀態，不是 info 的別名：查詢被截斷時結果仍然有用，
@@ -117,17 +121,17 @@ button.small{font-size:.82rem; padding:.45rem 1rem}
   background:var(--paper-2); padding:var(--s2) var(--s3); margin-top:var(--s3);
 }
 .error-panel h2{font-size:1rem; margin-bottom:.4rem}
-.error-panel p{color:var(--ink-dim); font-size:.92rem}
+.error-panel p{color:var(--ink-dim); font-size:.92rem; overflow-wrap:anywhere}
 .error-panel ul{margin:.6rem 0 0 1.1rem; font-size:.88rem; color:var(--ink-dim)}
 
 /* ── 結果 ───────────────────────────────────────── */
 .results{padding:0 0 var(--s6)}
 .result-head{border-top:1px solid var(--ink); padding:var(--s3) 0; display:flex; flex-wrap:wrap; gap:var(--s2) var(--s3); align-items:baseline}
 .result-head h2{font-family:var(--serif); font-weight:400; font-size:1.6rem}
-.versions{margin-left:auto; font-family:var(--mono); font-size:.7rem; color:var(--ink-faint); letter-spacing:.1em}
+.versions{margin-left:auto; font-family:var(--mono); font-size:.7rem; color:var(--ink-faint); letter-spacing:.1em; overflow-wrap:anywhere}
 
 .warnings{border:1px solid var(--hair); padding:var(--s2) var(--s3); margin-bottom:var(--s3)}
-.warnings li{list-style:none; font-size:.88rem; color:var(--ink-dim)}
+.warnings li{list-style:none; font-size:.88rem; color:var(--ink-dim); overflow-wrap:anywhere}
 .warnings li b{font-family:var(--mono); font-size:.74rem; color:var(--accent); letter-spacing:.08em; margin-right:.5rem}
 
 .toolbar{display:flex; flex-wrap:wrap; gap:var(--s1); align-items:center; padding:var(--s2) 0; border-bottom:1px solid var(--hair-soft)}
@@ -153,9 +157,9 @@ button.small{font-size:.82rem; padding:.45rem 1rem}
 .state[data-state="refused"]{
   color:var(--paper); background:var(--state-refused); border-color:var(--state-refused);
 }
-.reason-code{font-family:var(--mono); font-size:.7rem; color:var(--accent); letter-spacing:.06em}
+.reason-code{font-family:var(--mono); font-size:.7rem; color:var(--accent); letter-spacing:.06em; overflow-wrap:anywhere}
 
-.section-note{max-width:var(--measure); font-size:.9rem; color:var(--ink-dim); margin-top:var(--s1)}
+.section-note{max-width:var(--measure); font-size:.9rem; color:var(--ink-dim); margin-top:var(--s1); overflow-wrap:anywhere}
 .section-block{font-family:var(--mono); font-size:.8rem; color:var(--ink-dim); margin-top:var(--s2); word-break:break-word}
 td:first-child{color:var(--ink)}
 
@@ -222,8 +226,8 @@ footer span{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); l
   border:0; padding:.7rem .9rem; cursor:pointer; border-radius:0;
 }
 .place-option:hover{background:var(--paper-2)}
-.place-option b{display:block; font-weight:600; font-size:.92rem}
-.place-meta{display:block; font-size:.72rem; color:var(--ink-faint); margin-top:.2rem}
+.place-option b{display:block; font-weight:600; font-size:.92rem; overflow-wrap:anywhere}
+.place-meta{display:block; font-size:.72rem; color:var(--ink-faint); margin-top:.2rem; overflow-wrap:anywhere}
 .place-receipt{border:1px solid var(--hair); background:var(--paper-2); padding:var(--s2) var(--s3); margin-top:var(--s2)}
 .place-receipt dl{display:grid; grid-template-columns:11rem 1fr; gap:.3rem var(--s2); margin-top:.6rem}
 .place-receipt dt{font-size:.78rem; color:var(--ink-faint)}
@@ -355,6 +359,11 @@ input[type="checkbox"].option-control:checked::after{
 }
 input[type="checkbox"].option-control:disabled{
   border-color:var(--hair); background:var(--paper-2); cursor:not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .choice input[type="radio"],
+  input[type="checkbox"].option-control{transition:none}
 }
 .option-control{justify-self:end}
 

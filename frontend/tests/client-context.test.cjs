@@ -3,9 +3,30 @@ const {
   PROFILES,
   validateClientConfiguration,
   formatApiError,
+  apiErrorActions,
   networkErrorMessage,
   placeQueryNotice,
 } = require("../zh-TW/client-context.js");
+
+assert.match(
+  formatApiError({ code: "request_capacity_exhausted" }, 503),
+  /不是.*輸入|忙碌/
+);
+assert.match(
+  formatApiError({ code: "compute_capacity_exhausted" }, 503),
+  /稍後|重試/
+);
+assert.deepStrictEqual(
+  apiErrorActions(
+    503, "5", PROFILES.PRIVATE_ALPHA
+  ),
+  ["約 5 秒後重試。", "若持續發生，請聯絡邀請者。"]
+);
+assert.ok(
+  !apiErrorActions(
+    503, null, PROFILES.PRIVATE_ALPHA
+  ).some((value) => value.includes("修正輸入"))
+);
 
 assert.deepEqual(validateClientConfiguration({ profile: "local" }), {
   profile: "local",

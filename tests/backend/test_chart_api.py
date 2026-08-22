@@ -7,6 +7,7 @@
     pytest tests/ -v
 """
 
+import ast
 import concurrent.futures
 import datetime as dt
 import hashlib
@@ -44,6 +45,143 @@ def base_payload():
             "include_declination_aspects": True,
         },
     }
+
+
+def test_trace_describes_swiss_julian_day_return_order_correctly():
+    response = client.post("/api/chart", json=base_payload())
+    assert response.status_code == 200
+
+    formulas: list[str] = []
+
+    def collect(node):
+        if isinstance(node, dict):
+            if isinstance(node.get("formula"), str):
+                formulas.append(node["formula"])
+            for value in node.values():
+                collect(value)
+        elif isinstance(node, list):
+            for value in node:
+                collect(value)
+
+    collect(response.json())
+    assert "JD_ET, JD_UT = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)" in formulas
+    assert not any(formula.startswith("JD_UT, JD_ET = swe.utc_to_jd") for formula in formulas)
+
+
+def test_runtime_refuses_ambient_ephemeris_path_override(monkeypatch):
+    monkeypatch.setenv("SE_EPHE_PATH", "/attacker-controlled/empty")
+    with pytest.raises(RuntimeError, match="override the bundled dataset"):
+        ephemeris.init_ephemeris()
+
+
+def test_known_utc_leap_second_is_accepted_and_preserved_in_receipt():
+    payload = base_payload()
+    payload["datetime"] = {
+        "year": 2016,
+        "month": 12,
+        "day": 31,
+        "hour": 23,
+        "minute": 59,
+        "second": 60,
+    }
+    payload["timezone"] = {"mode": "iana", "iana_name": "UTC"}
+    payload["options"] = {}
+
+    response = client.post("/api/chart", json=payload)
+
+    assert response.status_code == 200
+    time = response.json()["calculation_dossier"]["time_conversion"]
+    assert time["utc_iso_8601"] == "2016-12-31T23:59:60.000Z"
+    assert time["leap_second_input"] is True
+    assert time["swiss_time_input_semantics"] == "utc"
+
+
+def test_unknown_or_non_utc_leap_second_is_rejected():
+    payload = base_payload()
+    payload["datetime"] = {
+        "year": 2017,
+        "month": 12,
+        "day": 31,
+        "hour": 23,
+        "minute": 59,
+        "second": 60,
+    }
+    payload["timezone"] = {"mode": "iana", "iana_name": "UTC"}
+    assert client.post("/api/chart", json=payload).status_code == 422
+
+    payload["datetime"]["year"] = 2016
+    payload["timezone"] = {"mode": "iana", "iana_name": "Asia/Taipei"}
+    assert client.post("/api/chart", json=payload).status_code == 422
+
+
+def test_pre_1972_and_far_epoch_time_model_semantics_are_explicit():
+    payload = base_payload()
+    payload["options"] = {}
+    payload["datetime"].update({"year": 1900, "month": 6, "day": 15})
+    old = client.post("/api/chart", json=payload)
+    assert old.status_code == 200
+    old_data = old.json()
+    old_time = old_data["calculation_dossier"]["time_conversion"]
+    assert old_time["swiss_time_input_semantics"] == (
+        "ut1_before_1972_swiss_rule"
+    )
+    assert any(
+        warning["code"] == "pre_1972_ut1_input_semantics"
+        for warning in old_data["calculation_dossier"]["warnings"]
+    )
+    assert any(
+        step["title"].startswith("UT1-like input")
+        for step in old_data["calculation_trace"]
+    )
+
+    payload["datetime"]["year"] = 2399
+    future = client.post("/api/chart", json=payload)
+    assert future.status_code == 200
+    future_data = future.json()
+    model = future_data["calculation_dossier"]["time_conversion"][
+        "delta_t_model"
+    ]
+    assert model["status"] == "far_epoch_extrapolation"
+    assert model["accuracy_status"] == (
+        "not_independently_established_for_this_epoch"
+    )
+    assert any(
+        warning["code"] == "delta_t_far_epoch_extrapolation"
+        for warning in future_data["calculation_dossier"]["warnings"]
+    )
+
+
+def test_topocentric_analytic_speed_limitation_is_machine_readable():
+    payload = base_payload()
+    payload["computation_mode"] = {"center": "topocentric"}
+    payload["options"] = {}
+
+    response = client.post("/api/chart", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    bodies = {item["key"]: item for item in data["astronomical_data"]["bodies"]}
+    for key in ("sun", "moon"):
+        assert bodies[key]["speed_source"] == (
+            "swiss_ephemeris_flg_speed_analytic"
+        )
+        assert bodies[key]["speed_position_derivative_status"] == (
+            "known_internal_disagreement_for_sun_moon"
+        )
+    assert any(
+        warning["code"] == "topocentric_analytic_speed_limitation"
+        for warning in data["calculation_dossier"]["warnings"]
+    )
+
+
+def test_every_registered_api_route_returns_allow_for_a_wrong_method():
+    application = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    with TestClient(application) as api:
+        assert api.get("/", follow_redirects=False).status_code == 308
+        for path in ("/api/health", "/api/client-config", "/api/chart", "/api/places/search"):
+            response = api.request("DELETE", path)
+            assert response.status_code == 405, path
+            assert response.headers.get("Allow"), path
 
 
 def test_chart_request_reasserts_ephemeris_path_in_worker_thread(monkeypatch):
@@ -106,6 +244,87 @@ def test_ephemeris_path_is_set_once_per_thread_not_once_per_request():
     another.start()
     another.join()
     assert second == [True]
+
+
+def test_chart_releases_thread_local_ephemeris_state_after_each_calculation(monkeypatch):
+    """A worker thread must not retain Swiss global state between requests."""
+    import app.main as main_module
+
+    released = []
+    monkeypatch.setattr(main_module, "_compute_chart_locked", lambda _req: "ok")
+    monkeypatch.setattr(
+        main_module,
+        "release_ephemeris_for_thread",
+        lambda: released.append(True),
+        raising=False,
+    )
+
+    assert main_module.compute_chart(object()) == "ok"
+    assert released == [True]
+
+
+def test_file_backed_swiss_calls_cannot_bypass_the_chart_lifecycle_boundary():
+    """New Swiss call sites must remain behind compute_chart's lock/finally."""
+
+    app_root = Path(__file__).resolve().parents[2] / "backend" / "app"
+    direct_call_sites: set[str] = set()
+    for path in app_root.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            function = node.func
+            if (
+                isinstance(function, ast.Attribute)
+                and isinstance(function.value, ast.Name)
+                and function.value.id == "swe"
+            ):
+                direct_call_sites.add(path.relative_to(app_root).as_posix())
+
+    # Core calculation modules may call Swiss directly.  The only non-core
+    # owner is ephemeris.py, which owns set_ephe_path/close themselves.  A new
+    # route, middleware, background task or utility call fails here until its
+    # lifecycle and same-thread cleanup are deliberately reviewed.
+    assert direct_call_sites
+    assert all(
+        path == "ephemeris.py" or path.startswith("core/")
+        for path in direct_call_sites
+    )
+
+    main_path = app_root / "main.py"
+    main_tree = ast.parse(main_path.read_text(encoding="utf-8"), filename=str(main_path))
+    functions = {
+        node.name: node
+        for node in main_tree.body
+        if isinstance(node, ast.FunctionDef)
+    }
+    wrapper = functions["compute_chart"]
+    locked = functions["_compute_chart_locked"]
+
+    wrapper_calls = {
+        node.func.id
+        for node in ast.walk(wrapper)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    assert "_compute_chart_locked" in wrapper_calls
+    assert any(
+        isinstance(node, ast.Try)
+        and any(
+            isinstance(child, ast.Call)
+            and isinstance(child.func, ast.Name)
+            and child.func.id == "release_ephemeris_for_thread"
+            for statement in node.finalbody
+            for child in ast.walk(statement)
+        )
+        for node in ast.walk(wrapper)
+    )
+
+    locked_calls = {
+        node.func.id
+        for node in ast.walk(locked)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    assert "ensure_ephemeris_initialized_for_thread" in locked_calls
 
 
 def test_private_runtime_health_proves_knowledge_of_launcher_secret(monkeypatch):
@@ -1346,6 +1565,16 @@ def test_invalid_timezone_rejected_with_422():
     assert resp.status_code == 422
 
 
+def test_timezone_key_must_use_portable_canonical_case():
+    payload = base_payload()
+    payload["timezone"] = {"mode": "iana", "iana_name": "ASIA/TAIPEI"}
+
+    response = client.post("/api/chart", json=payload)
+
+    assert response.status_code == 422
+    assert "ASIA/TAIPEI" not in response.text
+
+
 def test_invalid_house_system_rejected_with_422():
     payload = base_payload()
     payload["options"] = {"house_system": "X"}
@@ -1367,6 +1596,25 @@ def test_placidus_at_polar_latitude_is_an_explicit_unavailable_calculation():
         "house_system": "P",
         "latitude": 70.0,
     }
+
+
+def test_regiomontanus_rejects_non_cyclic_high_latitude_cusps():
+    """Swiss can return twelve distinct cusps that wrap around 11 times."""
+    payload = base_payload()
+    payload["datetime"] = {
+        "year": 2000, "month": 6, "day": 15,
+        "hour": 0, "minute": 0, "second": 0,
+    }
+    payload["timezone"] = {"mode": "iana", "iana_name": "UTC"}
+    payload["location"] = {
+        "latitude": 69.65, "longitude": 18.96, "altitude_m": 0,
+    }
+    payload["options"] = {"house_system": "R"}
+
+    response = client.post("/api/chart", json=payload)
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "house_system_unavailable"
 
 
 def test_degenerate_regiomontanus_cusps_at_geographic_pole_are_rejected():

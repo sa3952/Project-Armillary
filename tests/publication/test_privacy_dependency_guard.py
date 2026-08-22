@@ -158,3 +158,37 @@ def test_privacy_dependency_guard_rejects_distribution_families_and_file_urls(
 
     with pytest.raises(guard.PrivacyDependencyFailure):
         guard.check_requirements(requirements)
+
+
+def test_privacy_dependency_guard_follows_nested_local_requirement_files(tmp_path):
+    guard = _load_guard()
+    root = tmp_path / "requirements.txt"
+    nested = tmp_path / "nested.txt"
+    root.write_text("-r nested.txt\n", encoding="utf-8")
+    nested.write_text("sentry-sdk==2.0.0\n", encoding="utf-8")
+
+    with pytest.raises(guard.PrivacyDependencyFailure, match="privacy-sensitive"):
+        guard.check_requirements(root)
+
+
+def test_privacy_dependency_guard_rejects_named_direct_urls(tmp_path):
+    guard = _load_guard()
+    requirements = tmp_path / "requirements.txt"
+    requirements.write_text(
+        "ordinary-package @ https://example.invalid/package.whl\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(guard.PrivacyDependencyFailure, match="direct-URL"):
+        guard.check_requirements(requirements)
+
+
+def test_privacy_dependency_guard_rejects_include_escape(tmp_path):
+    guard = _load_guard()
+    root = tmp_path / "reviewed" / "requirements.txt"
+    root.parent.mkdir()
+    root.write_text("-r ../outside.txt\n", encoding="utf-8")
+    (tmp_path / "outside.txt").write_text("fastapi==1\n", encoding="utf-8")
+
+    with pytest.raises(guard.PrivacyDependencyFailure, match="escapes"):
+        guard.check_requirements(root)

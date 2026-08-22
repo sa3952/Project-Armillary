@@ -305,6 +305,9 @@
   const placeQuery = el("place-query");
   const placeResults = el("place-results");
   const placeStatus = el("place-status");
+  const PLACE_SEARCH_TIMEOUT_MS = 10000;
+  let activePlaceSearchController = null;
+  let activePlaceSearchGeneration = 0;
 
   el("place-search-button").addEventListener("click", searchPlaces);
   placeQuery.addEventListener("keydown", (event) => {
@@ -312,6 +315,9 @@
   });
 
   function searchPlaces() {
+    if (activePlaceSearchController) activePlaceSearchController.abort();
+    const generation = ++activePlaceSearchGeneration;
+    activePlaceSearchController = null;
     const query = placeQuery.value.trim();
     placeResults.replaceChildren();
     placeResults.hidden = true;
@@ -322,16 +328,25 @@
     }
     placeStatus.textContent = "查詢中…";
     placeStatus.dataset.tone = "info";
+    const controller = new AbortController();
+    activePlaceSearchController = controller;
+    let timedOut = false;
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, PLACE_SEARCH_TIMEOUT_MS);
 
     fetch("/api/places/search", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ query, limit: 10 }),
+      signal: controller.signal,
     })
       .then((response) =>
         response.json().catch(() => null).then((body) => ({ response, body }))
       )
       .then(({ response, body }) => {
+        if (generation !== activePlaceSearchGeneration) return;
         if (!response.ok) {
           placeStatus.textContent = window.ClientContext.formatApiError(
             body && body.detail, response.status
@@ -358,10 +373,18 @@
         found.forEach((place) => placeResults.appendChild(buildPlaceRow(place)));
         placeResults.hidden = false;
       })
-      .catch(() => {
-        placeStatus.textContent =
-          "地名查詢沒有完成。這個查詢只讀取內建目錄，不會對外連線；請重試，或在下方手動輸入座標與時區。";
+      .catch((error) => {
+        if (generation !== activePlaceSearchGeneration) return;
+        placeStatus.textContent = timedOut && error && error.name === "AbortError"
+          ? "地名查詢逾時。請重試，或在下方手動輸入座標與時區。"
+          : "地名查詢沒有完成。這個查詢只讀取內建目錄，不會對外連線；請重試，或在下方手動輸入座標與時區。";
         placeStatus.dataset.tone = "error";
+      })
+      .finally(() => {
+        window.clearTimeout(timer);
+        if (generation === activePlaceSearchGeneration) {
+          activePlaceSearchController = null;
+        }
       });
   }
 
@@ -731,8 +754,11 @@
     errorActions.replaceChildren();
   }
 
+  let submissionQueued = false;
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (submissionQueued) return;
     hideError();
     const built = buildPayload();
     if (!built.ok) {
@@ -749,6 +775,8 @@
       setStatus("尚未送出。", "error");
       return;
     }
+    submissionQueued = true;
+    submitButton.disabled = true;
     profileReady.then(() => submitPayload(built.payload));
   });
 
@@ -775,7 +803,14 @@
    */
   const REQUEST_TIMEOUT_MS = 30000;
 
+  function isJsonResponse(response) {
+    const mediaType = (response.headers.get("Content-Type") || "")
+      .split(";", 1)[0].trim().toLowerCase();
+    return mediaType === "application/json" || mediaType.endsWith("+json");
+  }
+
   function submitPayload(payload) {
+    dropResultsForNewAttempt();
     const controller = new AbortController();
     const token = lifecycle.beginRequest(controller);
     let timedOut = false;
@@ -798,12 +833,21 @@
       body: JSON.stringify(payload),
       signal: controller.signal,
     })
-      .then((response) =>
-        response.json().catch(() => null).then((body) => ({ response, body }))
-      )
-      .then(({ response, body }) => {
+      .then((response) => {
+        if (response.ok && !isJsonResponse(response)) {
+          return { response, body: null, invalidJsonMedia: true };
+        }
+        return response.json().catch(() => null)
+          .then((body) => ({ response, body, invalidJsonMedia: false }));
+      })
+      .then(({ response, body, invalidJsonMedia }) => {
         if (!lifecycle.isCurrentRequest(token)) return;   // late response 丟棄
-        if (!response.ok) { handleApiError(response.status, body); return; }
+        if (invalidJsonMedia) {
+          showError("計算服務的回應格式不是 JSON。", ["請稍後重試。"]);
+          setStatus("服務回應格式錯誤。", "error");
+          return;
+        }
+        if (!response.ok) { handleApiError(response, body); return; }
         renderResponse(body);
       })
       .catch((error) => {
@@ -830,6 +874,7 @@
       })
       .finally(() => {
         finishAttempt();
+        submissionQueued = false;
         if (lifecycle.isCurrentRequest(token)) {
           lifecycle.finishRequest(token);
           submitButton.disabled = false;
@@ -842,15 +887,15 @@
    * local profile 的 422 會把整份 request body 放進 `detail[].input`——
    * 那裡面有出生日期、時刻與精確座標，一個字都不會進入畫面（契約 §9）。
    */
-  function handleApiError(statusCode, body) {
+  function handleApiError(response, body) {
+    const statusCode = response.status;
     const detail = body && typeof body === "object" ? body.detail : null;
     const message = window.ClientContext.formatApiError(detail, statusCode);
-    const actions = ["修正輸入後再送出一次。"];
-    if (statusCode >= 500) actions.push("稍後重試。");
-    if (statusCode === 413 || statusCode === 415) actions.push("重新載入頁面。");
-    if (profile === window.ClientContext.PROFILES.PRIVATE_ALPHA) {
-      actions.push("若持續發生，請聯絡邀請者。");
-    }
+    const actions = window.ClientContext.apiErrorActions(
+      statusCode,
+      response.headers.get("Retry-After"),
+      profile
+    );
     showError(message, actions);
     setStatus("服務拒絕了這次計算。", "error");
   }
@@ -862,8 +907,10 @@
       canonical = window.ChartExport.createDocument(
         response, window.ChartViewModel.buildSections(response)
       );
-    } catch (error) {
-      showError(`這個版本的頁面無法安全呈現本次回應：${error.message}`,
+    } catch (_error) {
+      // 回應裡的 schema/status 值不可信。即使以 textContent 顯示不會造成 XSS，
+      // 把原始例外文字放進 role=alert 仍會讓對方的文字看起來像本站公告。
+      showError("這個版本的頁面無法安全呈現本次回應。",
         ["重新載入頁面以取得對應版本。", "若重新載入後仍失敗，請聯絡服務管理者。"]);
       setStatus("回應無法呈現。", "error");
       return;
@@ -1012,6 +1059,8 @@
     const wrap = document.createElement("div");
     wrap.className = "table-wrap";
     wrap.tabIndex = 0;
+    wrap.setAttribute("role", "region");
+    wrap.setAttribute("aria-label", model.title || "可橫向捲動的資料表");
     const table = document.createElement("table");
     if (sectionId) table.dataset.section = sectionId;
     if (model.title) {
@@ -1083,7 +1132,13 @@
     button.addEventListener("click", () => {
       let text;
       try {
-        text = window.ChartExport.renderPlainText(lifecycle.requireCanonicalDocument());
+        const canonical = lifecycle.requireCanonicalDocument();
+        text = window.ChartExport.renderPlainText(
+          window.ChartExport.projectOutputDocument(
+            canonical,
+            el("export-detail-mode").value,
+          )
+        );
       } catch (error) {
         reportAt(button, `複製失敗：${error.message}`, "error");
         return;
@@ -1102,7 +1157,10 @@
         return;
       }
       const outcome = window.ChartExport.runDownloadAction(
-        canonical, button.dataset.download, deliverArtifact
+        canonical,
+        button.dataset.download,
+        deliverArtifact,
+        el("export-detail-mode").value,
       );
       reportAt(
         button,
@@ -1136,15 +1194,19 @@
   });
 
   // ══ 兩種清除（匯出契約驗收 16）══════════════════════════
-  function dropResults() {
+  function dropResultsForNewAttempt() {
     lifecycle.clear();
     sectionSnapshots.clear();
     sectionsHost.replaceChildren();
     warningsHost.replaceChildren();
     versionsHost.textContent = "";
     results.hidden = true;
-    submitButton.disabled = false;
     hideError();
+  }
+
+  function dropResults() {
+    dropResultsForNewAttempt();
+    submitButton.disabled = false;
   }
 
   // 送出中唯一可達的中止入口。只停這一次請求，不動已算出的結果——
@@ -1193,11 +1255,4 @@
   applyPrecisionConsequences();
   applyZodiacConsequences();
 
-  window.__calculatePageInspect = () => ({
-    ...lifecycle.inspect(),
-    option_values: optionValues,
-    request_options: Catalogue.toRequestOptions(optionValues),
-    selected_place: selectedPlace ? selectedPlace.display_name : null,
-    section_snapshot_count: sectionSnapshots.size,
-  });
 })();

@@ -106,6 +106,29 @@ def test_catalog_builder_and_runtime_share_one_text_normalizer():
     assert build_place_catalog.normalize_search_text is normalize_search_text
 
 
+def test_catalog_builder_rejects_oversized_source_before_parsing(tmp_path, monkeypatch):
+    from scripts.validation import build_place_catalog
+
+    source = tmp_path / "oversized.txt"
+    source.write_bytes(b"12345")
+    monkeypatch.setattr(build_place_catalog, "MAX_INPUT_BYTES", 4)
+
+    with pytest.raises(ValueError, match="bounded byte limit"):
+        list(build_place_catalog._geonames_lines(source))
+
+
+def test_catalog_builder_rejects_zip_uncompressed_expansion(tmp_path, monkeypatch):
+    from scripts.validation import build_place_catalog
+
+    source = tmp_path / "expanded.zip"
+    with zipfile.ZipFile(source, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("cities500.txt", "x" * 64)
+    monkeypatch.setattr(build_place_catalog, "MAX_UNCOMPRESSED_BYTES", 32)
+
+    with pytest.raises(ValueError, match="uncompressed"):
+        list(build_place_catalog._geonames_lines(source))
+
+
 @pytest.mark.parametrize(
     ("stored_name", "query"),
     [
@@ -442,6 +465,16 @@ def test_search_expression_bounds_prefix_breadth_and_token_count():
 
     # Tokenisation still strips every FTS5 metacharacter before quoting.
     assert expression('taipei" OR place_search MATCH "x') == '"taipei"* "or"* "place_search"* "match"* "x"'
+
+
+def test_prefix_cost_guard_uses_fts_effective_length_after_diacritic_removal():
+    from app.core.place_catalog import _fts_query
+
+    disguised_one_character = "e" + "\u0301" * 99
+    expression, _receipt = _fts_query(disguised_one_character)
+
+    assert not expression.endswith('"*')
+    assert _fts_query("臺中")[0] == '"臺中"*'
 
 
 def test_token_truncation_is_reported_instead_of_silently_dropping_the_query():

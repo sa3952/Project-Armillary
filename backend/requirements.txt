@@ -2,3 +2,4 @@
 fastapi==0.141.1
 uvicorn==0.52.1
 pyswisseph==2.10.3.2
+exceptiongroup; python_version < "3.11"

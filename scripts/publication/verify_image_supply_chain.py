@@ -19,6 +19,8 @@ import sys
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from scripts.tools.output_confinement import external_output_path
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PRODUCTION_LOCK = PROJECT_ROOT / "deploy" / "requirements.lock"
@@ -197,6 +199,37 @@ def _python_inventory(sbom: dict[str, Any]) -> set[str]:
     return packages
 
 
+def _python_inventory_versions(sbom: dict[str, Any]) -> dict[str, str]:
+    versions: dict[str, str] = {}
+    for artifact in sbom.get("artifacts", []):
+        if artifact.get("type") != "python":
+            continue
+        name = _normalized(artifact.get("name", ""))
+        version = str(artifact.get("version") or "")
+        if name and version:
+            versions[name] = version
+    return versions
+
+
+def _verify_python_versions(
+    sbom: dict[str, Any], dependencies: list[dict[str, Any]]
+) -> dict[str, str]:
+    installed = _python_inventory_versions(sbom)
+    expected = {
+        _normalized(item.get("name", "")): str(item.get("version") or "")
+        for item in dependencies
+        if item.get("name") and item.get("version")
+    }
+    mismatches = {
+        name: f"expected={version}, installed={installed.get(name, 'missing')}"
+        for name, version in expected.items()
+        if installed.get(name) != version
+    }
+    if mismatches:
+        raise AuditFailure(f"Python inventory version mismatch: {mismatches}")
+    return expected
+
+
 def _matches(grype: dict[str, Any]) -> list[dict[str, Any]]:
     normalized = []
     for match in grype.get("matches", []):
@@ -234,7 +267,11 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        output = args.output_dir.resolve()
+        output = external_output_path(
+            args.output_dir,
+            source_root=PROJECT_ROOT,
+            role="image supply-chain output",
+        )
         output.mkdir(parents=True, exist_ok=True)
         sbom_path = output / "sbom.syft.json"
         spdx_path = output / "sbom.spdx.json"
@@ -301,6 +338,7 @@ def main() -> int:
             if isinstance(pip_audit, list)
             else pip_audit.get("dependencies", [])
         )
+        verified_versions = _verify_python_versions(sbom, dependencies)
         vulnerabilities = sum(
             len(item.get("vulns", [])) for item in dependencies
         )
@@ -353,6 +391,7 @@ def main() -> int:
             "inventory": {
                 "sbom_packages": len(sbom.get("artifacts", [])),
                 "production_python_distributions": len(python_packages),
+                "lock_bound_python_versions": dict(sorted(verified_versions.items())),
                 "required_packages_present": sorted(REQUIRED),
                 "forbidden_packages_present": sorted(forbidden),
                 "pip_present": "pip" in python_packages,
@@ -388,7 +427,11 @@ def main() -> int:
                 ),
             ],
         }
-        receipt_path = args.receipt or output / "receipt.json"
+        receipt_path = external_output_path(
+            args.receipt or output / "receipt.json",
+            source_root=PROJECT_ROOT,
+            role="image supply-chain receipt",
+        )
         receipt_path.parent.mkdir(parents=True, exist_ok=True)
         receipt_path.write_text(
             json.dumps(receipt, indent=2, sort_keys=True) + "\n",

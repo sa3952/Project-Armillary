@@ -69,6 +69,12 @@
     internal_server_error: (
       "服務暫時無法完成計算。請稍後重試；若持續發生，請聯絡服務管理者。"
     ),
+    request_capacity_exhausted: (
+      "服務目前忙碌，這不是你的輸入有問題；請稍後重試。"
+    ),
+    compute_capacity_exhausted: (
+      "計算佇列仍在忙碌，暫時無法開始這次計算；請依下方提示稍後重試。"
+    ),
   });
 
   function validateClientConfiguration(payload) {
@@ -163,6 +169,26 @@
     return "無法確認目前執行環境或連線到計算服務。請重新載入頁面後再試。";
   }
 
+  function apiErrorActions(statusCode, retryAfterHeader, profile) {
+    const actions = [];
+    if (statusCode >= 500) {
+      const raw = typeof retryAfterHeader === "string" ? retryAfterHeader.trim() : "";
+      const seconds = /^\d+$/.test(raw) ? Number(raw) : 0;
+      actions.push(
+        seconds >= 1 && seconds <= 3600
+          ? `約 ${seconds} 秒後重試。`
+          : "稍後重試。"
+      );
+    } else {
+      actions.push("修正輸入後再送出一次。");
+    }
+    if (statusCode === 413 || statusCode === 415) actions.push("重新載入頁面。");
+    if (profile === PROFILES.PRIVATE_ALPHA) {
+      actions.push("若持續發生，請聯絡邀請者。");
+    }
+    return actions;
+  }
+
   /**
    * 地名查詢的 token 截斷告知（PIA-2026-08-06-009）。
    *
@@ -200,6 +226,7 @@
     PROFILES,
     validateClientConfiguration,
     formatApiError,
+    apiErrorActions,
     networkErrorMessage,
     placeQueryNotice,
   });

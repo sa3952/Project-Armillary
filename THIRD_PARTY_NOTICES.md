@@ -58,12 +58,13 @@ distribution.
 
 ## Obtaining the Corresponding Source
 
-The Corresponding Source for this service is published at:
+The designated publication location for an eligible hosted release is:
 
     https://github.com/sa3952/Project-Armillary
 
-No account is required and no credential is involved; the repository is
-readable anonymously.
+Release engineering must verify that the exact revision is readable there
+anonymously before treating a deployment as eligible. This maintained candidate
+does not itself prove that the repository or the matching revision is public.
 
 **Do not guess which revision a given deployment was built from.** The service
 reports it. The release identity returned by the running service, and the
@@ -80,6 +81,26 @@ This section previously said the public location was pending, and deliberately
 named no URL rather than name one that did not resolve. The location above was
 published and confirmed anonymously reachable before this paragraph replaced
 it.
+
+## The Debian base of the runtime image
+
+The hosted service runs in a container built on `python:3.13-slim-trixie`,
+pinned by digest in `deploy/Dockerfile`. That base carries Debian packages,
+many of them licensed under the GPL or LGPL.
+
+This section is disclosure, not a source offer, and the distinction is
+deliberate. The GPL's source obligation is triggered by conveying a binary to
+someone. This image is conveyed to no one: it is not published to any
+registry, and people who use the service receive HTTP responses, not the
+image. What network use does trigger is AGPL section 13, which covers this
+application and pyswisseph — and that obligation is discharged by the
+repository named above.
+
+Should that ever change — if the image were pushed to a registry, handed to
+anyone, or run by a third party — a source route for the Debian components
+would be required, and this notice would have to say so. Until then, the
+upstream sources for those packages are the ones Debian itself publishes, for
+the exact versions recorded in `deploy/sbom.cyclonedx.json`.
 
 ## Other dependencies
 

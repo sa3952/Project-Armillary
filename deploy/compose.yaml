@@ -1,12 +1,9 @@
 services:
   private-alpha-app:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-      args:
-        VCS_REF: "${VCS_REF:-uncommitted}"
-      secrets:
-        - "private_alpha_probe"
+    # Runtime consumer only.  Candidate images are built through the governed
+    # materializer and verified before this file receives the release tag.
+    # Keeping `build:` here created a second raw-root context whose effective
+    # Docker input was 5,900 files instead of the governed 55-file universe.
     image: "classical-astrology-private-alpha:${IMAGE_TAG:-local}"
     init: true
     read_only: true
@@ -75,7 +72,3 @@ services:
 networks:
   private-alpha-internal:
     internal: true
-
-secrets:
-  private_alpha_probe:
-    file: "./buildkit-probe.txt"

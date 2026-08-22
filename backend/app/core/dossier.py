@@ -732,6 +732,24 @@ def _structured_warnings(
             sect=sect,
         )
     )
+    limited_topocentric_speeds = [
+        body.get("key")
+        for body in bodies
+        if body.get("speed_position_derivative_status")
+        == "known_internal_disagreement_for_sun_moon"
+    ]
+    if limited_topocentric_speeds:
+        warnings.append(
+            _warning(
+                "topocentric_analytic_speed_limitation",
+                "warning",
+                "站心speed_*是Swiss FLG_SPEED解析值；太陽／月亮部分欄位已知"
+                "不等於同次站心position的有限差分導數。位置仍可使用，但"
+                "這些speed欄位不得解讀為已驗證的導數精度。",
+                "RT-2026-08-21-VALIDATOR-V2-PRODUCT-E-005",
+                ["astronomical_data.bodies"],
+            )
+        )
 
     if time_conversion["dst_warning"]:
         warnings.append(
@@ -744,6 +762,29 @@ def _structured_warnings(
                     "calculation_dossier.time_conversion",
                     "astronomical_data.time",
                 ],
+            )
+        )
+
+    if time_conversion["swiss_time_input_semantics"] == "ut1_before_1972_swiss_rule":
+        warnings.append(
+            _warning(
+                "pre_1972_ut1_input_semantics",
+                "warning",
+                "Swiss Ephemeris在1972年前把utc_to_jd輸入視為UT1；"
+                "civil-time標籤不可解讀為現代UTC leap-second尺度。",
+                "Swiss Ephemeris handling_of_leap_seconds",
+                ["calculation_dossier.time_conversion"],
+            )
+        )
+    if time_conversion["delta_t_model"]["status"] == "far_epoch_extrapolation":
+        warnings.append(
+            _warning(
+                "delta_t_far_epoch_extrapolation",
+                "warning",
+                "此年代的ΔT是Swiss內部遠期模型值；精度未由本產品獨立確立，"
+                "不可把顯示的小數位讀成已知真值。",
+                "Swiss Ephemeris delta_t future estimate",
+                ["calculation_dossier.time_conversion.delta_t_model"],
             )
         )
 
@@ -1692,6 +1733,11 @@ def build_calculation_dossier(
             "jd_ut1": time_conversion["jd_ut"],
             "jd_tt": time_conversion["jd_et"],
             "delta_t_seconds": time_conversion["delta_t_seconds"],
+            "delta_t_model": time_conversion["delta_t_model"],
+            "swiss_time_input_semantics": time_conversion[
+                "swiss_time_input_semantics"
+            ],
+            "leap_second_input": time_conversion["leap_second_input"],
             "ecl_nut_retflag": _retflag_receipt(
                 time_conversion["ecl_nut_retflag"]
             ),

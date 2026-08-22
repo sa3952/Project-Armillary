@@ -1,0 +1,263 @@
+<div class="wrap page-body strata">
+
+  <section class="tr-hero">
+    <p class="eyebrow">信任 · TRUST</p>
+    <h1>你的出生資料，<br>我們沒有地方可以存。</h1>
+    <p class="lede">不是「我們承諾不保存」。是應用程式裡<b>沒有一個可以保存的位置</b>——沒有帳號資料庫、沒有命盤資料庫、沒有工作階段儲存、沒有請求快取。</p>
+    <div class="facts">
+      <div><b>0</b><span>個帳號</span><i>免註冊、免 email、免密碼</i></div>
+      <div><b>0</b><span>次寫檔</span><i>請求處理期間只要出現一次帶寫入旗標的檔案呼叫，測試就失敗</i></div>
+      <div><b>10</b><span>個日誌欄位</span><i>沒有一個是個人資料。不含 IP、User-Agent 或請求內容</i></div>
+      <div><b>0</b><span>個第三方</span><i>不引入追蹤、分析或遠端日誌相依</i></div>
+      <div><b>CH</b><span>瑞士</span><i>網域註冊、DNS 權威伺服器、主機——三者同一家瑞士公司</i></div>
+    </div>
+    <p class="tr-sub">但上面這四句話，每個產品都寫得出來。<b>所以這一頁的其餘部分只做一件事：把每一項承諾放回它實際被執行的那一層，並寫出那一層能被反證到什麼程度。</b>打勾符號不會告訴你這些——是程式碼？是容器設定？是主機上的一行組態？還是供應商合約裡的一句話？四者的強度差很多，而打勾符號長得一模一樣。</p>
+  </section>
+
+  <div class="audit">
+    <p class="au-k">每一次交付都要跑完這些</p>
+    <p class="au-line">具名檢測分成天文正確性、程式與契約、供應鏈與隱私、治理四組；exact stage與執行次數以current delivery receipt為準。<b>其中一項的工作，是證明其餘幾項沒有漏掉東西。</b></p>
+    <div class="roster">
+      <div>
+        <span class="ro-k">天文正確性</span>
+        <ul>
+          <li>對 DE442 ＋ Astropy／ERFA 獨立管線的逐小時比對，<b>2,244,088 列</b>（1990–2026，日月與傳統五政，apparent geocentric tropical）</li>
+          <li>五大行星停滯點順逆行分類：448 個零點、1,792 個 ±1h／±6h probes，<b>零符號翻轉</b></li>
+        </ul>
+      </div>
+      <div>
+        <span class="ro-k">程式與契約</span>
+        <ul>
+          <li><b>完整Python迴歸與驗證測試</b>；exact數量、選集與結果由每次delivery receipt記錄，不在本頁手填一個會漂移的總數</li>
+          <li><b>突變測試</b>：exact-population ratchet固定具名突變體，每一個都必須被自己的expected consumers殺死——<b>這一項檢的不是程式對不對，是測試會不會漏</b></li>
+          <li>mypy 型別檢查（baseline 模式）、ESLint、前端單元測試、5 個 JS 檔語法檢查</li>
+        </ul>
+      </div>
+      <div>
+        <span class="ro-k">供應鏈與隱私</span>
+        <ul>
+          <li><b>CycloneDX SBOM</b>，與 lockfile 比對，過期即失敗</li>
+          <li><b>隱私相依守衛</b>：以具名清單阻擋 analytics、opentelemetry、sentry 這類套件進入相依樹</li>
+          <li>容器 parity baseline、docker context 完整性、staging 組態靜態契約</li>
+        </ul>
+      </div>
+      <div>
+        <span class="ro-k">治理</span>
+        <ul>
+          <li><b>分層登錄檔 verifier</b>：每個使用者可見介面都必須有分層指派，未分類即硬性失敗</li>
+          <li>repository 完整性（9 項子檢查）、稽核檢查點閉合、紅隊範圍檢查</li>
+          <li>具名記錄的獨立 AI 紅隊與外部模型審查；輪次與狀態以current audit registry為準</li>
+        </ul>
+      </div>
+    </div>
+    <p class="au-note">上面每一項都是這個 repository 裡跑得出來的檢查。<b>應用層沒有第三方安全認證，也沒有專業滲透測試</b>——那兩件事我們沒有做過，也不把紅隊審查說成滲透測試。<b>主機層則兩者都有</b>：供應商持 ISO/IEC 27001:2022 認證，並依合約每年執行入侵測試（見層五）。<b>兩層的證據強度不同，我們不把它們混成一句。</b></p>
+  </div>
+
+  <!-- ═══ 01 執行層 ═══ -->
+  <section class="tr-sec">
+    <p class="sig">01</p>
+    <h2>承諾放在它被執行的那一層</h2>
+    <p>由上而下，反證的難度遞增、我們的控制力遞減。<b>最上層可以由測試反覆反證；最下層只是別人的一句承諾。</b></p>
+
+    <div class="stack">
+
+      <div class="tier t-app">
+        <div class="tier-head">
+          <span class="tier-n">層一</span>
+          <b>應用程式</b>
+          <span class="tier-how">可被測試反證　·　反例會讓測試變紅</span>
+        </div>
+        <ul class="claims">
+          <li><b>不建立帳號資料庫</b><span>免註冊、免 email、免密碼。存取憑證在代理層，不在應用程式。</span></li>
+          <li><b>出生資料不寫入資料庫、快取、佇列或檔案</b><span>測試會替換掉 <span class="mono">builtins.open</span>、<span class="mono">io.open</span> 與 <span class="mono">os.open</span>，請求處理期間只要有任何一次帶寫入旗標的呼叫，測試就失敗。<b>涵蓋的是 Python 層的寫入</b>——原生函式庫的行為與記憶體抹除不在內。</span></li>
+          <li><b>伺服器日誌只允許十個固定欄位</b><span>事件版本、事件名、請求 ID、路由、方法、狀態碼、耗時分桶、大小分桶、結果、錯誤碼。<b>就這十個</b>，欄位組合不符即拒絕寫出。不含出生資料、IP、User-Agent 或請求內容。</span></li>
+          <li><b>不引入第三方追蹤、分析或遠端日誌相依</b><span>相依守衛以具名清單阻擋（analytics、opentelemetry、sentry 等）。<b>這是對已知名稱的阻擋，不是完整的資訊流分析</b>——一個沒被列名的新套件不會被它擋下。</span></li>
+          <li><b>錯誤訊息不回顯例外原文或本機路徑</b><span>含串流與背景工作的失敗路徑。已知的輸入錯誤仍會回傳你需要的診斷。</span></li>
+        </ul>
+      </div>
+
+      <div class="tier t-container">
+        <div class="tier-head">
+          <span class="tier-n">層二</span>
+          <b>容器</b>
+          <span class="tier-how">可在 compose 與映像檔中逐行核對</span>
+        </div>
+        <ul class="claims">
+          <li><b>根檔案系統唯讀</b><span><span class="mono">read_only: true</span>。</span></li>
+          <li><b>丟棄全部 Linux capability、禁止提權</b><span><span class="mono">cap_drop: ALL</span>、<span class="mono">no-new-privileges:true</span>。</span></li>
+          <li><b>唯一可寫的位置是一塊 64 MB 的暫時檔案系統</b><span>掛在 <span class="mono">/tmp</span>，標記 <span class="mono">noexec,nosuid,nodev</span>，容器結束即消失。<b>先前這一頁寫「無掛載點」，那不精確——它存在，只是不持久。</b></span></li>
+        </ul>
+      </div>
+
+      <div class="tier t-host">
+        <div class="tier-head">
+          <span class="tier-n">層三</span>
+          <b>反向代理與作業系統</b>
+          <span class="tier-how">只能在真實主機上驗，且只代表驗的那個時間點</span>
+        </div>
+        <ul class="claims">
+          <li><b>存取憑證在代理層</b><span>2026-08-19的具名實測中，本站回傳 <span class="mono">401</span> 與 <span class="mono">WWW-Authenticate: Basic realm="Private Alpha"</span>。<b>這是歷史觀察，不自動代表目前live state</b>；release前須重新驗證。</span></li>
+          <li><b>不記錄存取日誌、不轉送原始 IP</b><span>有歷史執行證據。<b>供應商、DNS 與 Internet 轉送環節仍會為了建立連線而處理連線 metadata</b>——我們可以不記錄，不能宣稱它在網路上不存在。</span></li>
+          <li><b>系統日誌短保留、停用 swap 與當機傾印</b><span>有歷史執行證據。這一層的每一項都需要重新在主機上驗證才能宣稱現況。</span></li>
+        </ul>
+      </div>
+
+      <div class="tier t-client">
+        <div class="tier-head">
+          <span class="tier-n">層四</span>
+          <b>你的瀏覽器</b>
+          <span class="tier-how">在你的裝置上執行　·　你可以自己打開開發者工具查</span>
+        </div>
+        <ul class="claims">
+          <li><b>不使用瀏覽器持久化儲存</b><span>不用 localStorage、sessionStorage、IndexedDB、Cache Storage、beacon。</span></li>
+          <li><b>匯出檔名不含個人資料</b><span>固定通用檔名。<b>你另存或改名之後就不在我們控制內了。</b></span></li>
+        </ul>
+      </div>
+
+      <div class="tier t-vendor">
+        <div class="tier-head">
+          <span class="tier-n">層五</span>
+          <b>供應商</b>
+          <span class="tier-how">合約與第三方認證　·　可查條號，但約束的是供應商</span>
+        </div>
+        <ul class="claims">
+          <li><b>資料僅存放於瑞士，且機房為供應商自有</b><span>不是租用第三方雲端再標上「瑞士區域」。<span class="cite-x">使用條款 Art. 15.1</span></span></li>
+          <li><b>未經我們書面同意，不得將資料移出 EU／EEA</b><span>這是硬約束，不是盡力條款。<span class="cite-x">資料處理協議 Art. 13.1</span></span></li>
+          <li><b>收到當局索資時須先通知我們，且只能交出對方明確要求的部分</b><span>除非法律明文禁止告知。<span class="cite-x">資料處理協議 Art. 2.1.13、12.1</span></span></li>
+          <li><b>每年執行一次入侵測試</b><span>目的是確保客戶之間不會互相外洩。<b>這是合約義務，不是行銷詞。</b><span class="cite-x">資料處理協議 Art. 2.1.8</span></span></li>
+          <li><b>服務終止後三十日內刪除所有副本，並出具書面刪除證明</b><span><span class="cite-x">資料處理協議 Art. 7.1–7.2</span></span></li>
+          <li><b>員工受職業保密義務拘束，離職後持續有效</b><span>瑞士法下的「職業保密」帶刑事責任，比一般保密協議重。<span class="cite-x">使用條款 Art. 16.2</span></span></li>
+          <li><b>資訊安全管理系統經第三方認證</b><span>ISO/IEC 27001:2022，發證機構 SGS（UKAS 認可、IAF 互認），證號 CH21/0527.00，效期至 2027-03-29，<b>Annex A 無排除項</b>，2021 年起連續認證。<b>這是供應商的認證，不是本產品的認證</b>——應用層沒有任何第三方安全認證。</span></li>
+          <li><b>持有 Swiss Hosting 標章</b><span>該標章要求：持證公司<b>及其管理層</b>在法律上與實體上位於瑞士；機房在瑞士且適用瑞士法；並要求「資料完全留在瑞士，<b>不得被外國組織或政府取得或請求</b>」。<b>這一條補的正是「瑞士機房」平常最大的破洞——機房在瑞士，不代表公司不受外國法律管轄。</b></span></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <p class="limit">同一張表在別的網站上會是十一個打勾。<b>打勾把層一與層五畫成同一件事，而它們的證據強度差了一個數量級。</b></p>
+  </section>
+
+  <!-- ═══ 02 瑞士 ═══ -->
+  <section class="tr-sec">
+    <p class="sig">02</p>
+    <h2>如果有人真的來要你的資料</h2>
+    <p>我們把整套服務——<b>網域註冊、DNS 權威伺服器、主機</b>——都放在瑞士，而且是同一家瑞士公司。那不是為了聽起來高級，是為了下面這六道。</p>
+    <p class="limit">由上而下，是它們被觸發的順序。<b>第一道最強，而且已經讓後面五道幾乎沒有用武之地</b>——但我們還是把後面五道備齊了。</p>
+
+    <ol class="moat">
+      <li>
+        <div class="mo-h"><span class="mo-n">第一道</span><b>沒有東西可以被拿走</b></div>
+        <p>我們不保存你的出生資料。這件事由測試強制，不是由承諾。<b>一個空的抽屜，搜索票開得再漂亮也搜不出東西。</b></p>
+        <p class="mo-src">見本頁層一</p>
+      </li>
+      <li>
+        <div class="mo-h"><span class="mo-n">第二道</span><b>我們不在留存義務的範圍內</b></div>
+        <p>瑞士的通訊監控法把協力與留存義務綁在「<b>使人得以進行單向或多向通訊</b>」的服務上——郵政、電信、衍生通訊服務、網路營運者。<b>一個回傳天體位置的計算器，不使任何人與任何人通訊</b>，六類全部不適用。</p>
+        <p class="mo-src">《瑞士郵政與電信監控法》SPTA／LSCPT，SR 780.1，Art. 2；六個月 metadata 留存義務見同法 Art. 26 第 5 項，該義務只綁電信服務商</p>
+      </li>
+      <li>
+        <div class="mo-h"><span class="mo-n">第三道</span><b>要監控，得先過法院</b></div>
+        <p><b>刑事：</b>郵件與電信之監控「須經<b>強制處分法院</b>之授權」；連 metadata 也一樣，且回溯上限六個月。門檻是<b>窮舉的罪名清單</b>加上罪責嚴重性，再加上「其他偵查手段已失敗或顯無實益」。</p>
+        <p><b>情報：</b>需授權的措施——電信監控、定位、竊聽、電腦入侵、搜索處所——必須<b>同時</b>取得<b>聯邦行政法院</b>授權（院長五個工作日內裁定）<b>與國防部長核准</b>，後者還須先諮詢外交部與司法警察部。<b>一個法院加一個政治問責點，缺一不可。</b></p>
+        <p class="mo-src">《瑞士刑事訴訟法》StPO，SR 312.0，Art. 269、272 第 1 項、273 第 2–3 項　／　《瑞士情報服務法》IntelSA／LRens，SR 121，Art. 26、27、29、30</p>
+      </li>
+      <li>
+        <div class="mo-h"><span class="mo-n">第四道</span><b>而且你會被通知，可以上訴</b></div>
+        <p><b>刑事：</b>檢察官「<b>應</b>於預審程序終結前」通知受監控人監控之理由、方式與期間。要延後或免除，必須經強制處分法院同意，且<b>同時</b>滿足兩個條件：所得資料不作為法庭證據，且為保護優越利益所必要。<b>收到通知後可以提起抗告。</b></p>
+        <p><b>情報：</b>情報局應於行動結束後<b>一個月內</b>通知受監控人。</p>
+        <p class="mo-src">StPO Art. 279（抗告依 Art. 393–397）　／　IntelSA Art. 33</p>
+      </li>
+      <li>
+        <div class="mo-h"><span class="mo-n">第五道</span><b>外國政府不能自己來——那在瑞士是犯罪</b></div>
+        <p>未經授權在瑞士境內代表外國執行公權力，<b>本身就構成刑事犯罪</b>。外國當局只能走司法互助程序，而瑞士在對方另有管道時經常直接拒絕。</p>
+        <p class="mo-src">《瑞士刑法》StGB，SR 311.0，Art. 271</p>
+      </li>
+      <li>
+        <div class="mo-h"><span class="mo-n">第六道</span><b>底下還有憲法，以及一個國內法院之上的法院</b></div>
+        <p>瑞士憲法第 13 條第 2 項：「任何人均有權受保護，<b>免於其個人資料遭濫用</b>。」第 36 條要求限制基本權須有法律依據、公共利益與比例原則，並且<b>「基本權之核心內涵不可侵犯」</b>。</p>
+        <p>這之上還有《歐洲人權公約》第 8 條；用盡國內救濟後，可向史特拉斯堡的歐洲人權法院個人申訴。</p>
+        <p class="mo-src">《瑞士聯邦憲法》SR 101，Art. 13、36　／　《歐洲人權公約》ECHR Art. 8</p>
+      </li>
+    </ol>
+
+    <div class="nodef"><span class="nd-k">為什麼是瑞士</span><span>關鍵不是機房的地理位置，是<b>供應商受不受外國法管轄</b>。美國的 CLOUD Act 觸及的是受美國法拘束的業者——<b>一家美國公司在蘇黎世開的機房，資料照樣可能被要求交出</b>。所以「瑞士區域」與「瑞士公司的自有瑞士機房」是兩件不同的事，而我們買的是後者。</span></div>
+
+    <p class="limit"><b>必須講清楚的界線：</b>上面這六道保護的是<b>資料在瑞士期間、以及誰有辦法伸手</b>。它們不會取代你所在地的個資法——台灣使用者的資料主體權利仍然來自台灣個資法。我們也<b>沒有</b>端到端加密；我們的資產是管轄權與「不保存」，不是密碼學。</p>
+  </section>
+
+  <!-- ═══ 02 層之外 ═══ -->
+  <section class="tr-sec">
+    <p class="sig">03</p>
+    <h2>這些事發生在你的電腦上</h2>
+    <p>下面這些不在上面任何一層裡，因為它們不在我們這一側。<b>我們不能控制它們，也不應該有能力控制它們</b>——一個能伸手進你作業系統去清 swap 的網頁服務，是比它想解決的問題更嚴重的問題。</p>
+    <p class="limit"><b>沒有任何線上服務做得到這幾件事。</b>宣稱做得到的，不是誤解了自己的系統，就是在騙你。我們把它們列出來，是為了讓你知道真正的邊界在哪裡——而不是讓你以為交出資料以後就萬事太平。</p>
+
+    <div class="beyond">
+      <div><b>你電腦的記憶體</b><span>計算期間你的出生資料會存在於瀏覽器與伺服器行程的記憶體裡，之後由執行環境回收。<b>我們沒有能力覆寫它，任何服務都沒有。</b></span></div>
+      <div><b>作業系統留下的副本</b><span>swap、當機傾印、工作階段還原、螢幕截圖、無障礙介面、瀏覽器擴充套件——都可能持有你螢幕上的內容。這是你的裝置在替你做事，<b>網站沒有權限干預，也不該有</b>。</span></div>
+      <div><b>你按下複製或下載之後</b><span>檔案就是你的了，由你的裝置與它的同步備份設定決定去哪裡。<b>我們無法撤回、刪除或追蹤</b>——如果可以，那才叫可怕。</span></div>
+      <div><b>已經拿到你電腦權限的人</b><span>如果有人能操作你的帳號，他看得到的東西跟你一樣多。這道防線在你的裝置上，不在我們的伺服器上。</span></div>
+      <div><b>連線本身</b><span>網際網路要把封包送到你手上就需要位址。<b>我們可以不記錄，但不能宣稱它在網路上不存在</b>——能這樣宣稱的服務並不存在。</span></div>
+    </div>
+  </section>
+
+  <!-- ═══ 03 已驗證的四種強度 ═══ -->
+  <section class="tr-sec">
+    <p class="sig">04</p>
+    <h2>「已驗證」在這裡分成四種</h2>
+    <p>把四種混成一個字，是信任頁最常見的失準方式。</p>
+
+    <div class="grades">
+      <div><span class="gr-k">已由測試反證</span><p>有失敗優先的測試，反例會讓測試變紅。這是最強的一種。</p></div>
+      <div><span class="gr-k">已在主機驗證</span><p>只描述具名時間點的歷史執行。主機組態可以在我們不知情的情況下改變，所以它不自動代表現況。</p></div>
+      <div><span class="gr-k">已裁決來源</span><p>這條規則依據哪個文本、哪個版本，已經確定。這是方法層的強度，不是安全層的。</p></div>
+      <div><span class="gr-k">待方法審閱</span><p>算得出來，但採用哪一套文獻尚未裁決。</p></div>
+    </div>
+
+    <p class="limit"><b>repository 裡的測試是設計期的迴歸證據，不會在你每次計算時重跑。</b>卷宗裡的證據欄位是指向那些測試的指標，不是「這一次執行過並通過」的紀錄。最新一次完整執行的exact revision、選集、數量與結果由current delivery evidence記錄；本頁不複製一個會隨開發漂移的總數。</p>
+
+    <p>我們<b>沒有</b>第三方安全認證，<b>沒有</b>專業滲透測試，<b>沒有</b>法規合規認證；<b>有</b>具名記錄的獨立 AI 紅隊與外部模型審查，exact輪次與status以current audit registry為準。<b>紅隊審查與滲透測試不是同一種證據，我們不把前者說成後者。</b></p>
+  </section>
+
+  <!-- ═══ 04 產品邊界與可查證性 ═══ -->
+  <section class="tr-sec">
+    <p class="sig">05</p>
+    <h2>兩件寫在別頁、但你在這裡就該知道的事</h2>
+    <ul class="ticks">
+      <li><b>我們只計算，不解盤。</b>不是因為解盤沒有價值，是因為還沒有能力把它做到跟前兩階同樣的嚴謹度。每一條規則的來歷、依據與待決項目逐條列在〈<a href="/zh-TW/methods">方法</a>〉。</li>
+      <li><b>每一次計算都附一份可重算的卷宗。</b>口徑、時間換算、引擎與星曆版本、各項方法狀態、軌跡步數與 SHA-256 收據都在裡面，另一個人拿著它可以重建等價請求核對你的結果。實際長什麼樣子見〈<a href="/zh-TW/validation">驗證</a>〉，能力清單見〈<a href="/zh-TW/features">功能</a>〉。</li>
+    </ul>
+  </section>
+
+  <!-- ═══ 05 我們靠什麼活下去 ═══ -->
+  <section class="tr-sec">
+    <p class="sig">06</p>
+    <h2>我們不會靠你的出生資料賺錢</h2>
+    <p class="vow">我們承諾<b>永遠不會出售、交換或分析你的出生資料</b>——不只是不用它獲利，連不獲利的用途也不會用。</p>
+    <p><b>這句話的分量不在承諾，在於我們根本記錄不下來。</b>沒有帳號、沒有資料庫、請求處理期間不寫任何檔案，計算結束後那些數字就不在我們這裡了。一個做不到保存的系統，也做不到出售。</p>
+    <p class="limit">這不是自律，是<b>結構</b>。自律可以改變主意，結構要改變主意就得改程式——而程式是公開的，改了看得見。</p>
+  </section>
+
+  <!-- ═══ 06 條文 ═══ -->
+  <section class="tr-sec">
+    <p class="sig">07</p>
+    <h2>完整條文</h2>
+    <div class="beyond docs">
+      <div><b><a href="/zh-TW/legal/privacy">隱私政策</a></b><span>實際處理哪些資料、保存多久、誰會接觸到。</span></div>
+      <div><b><a href="/zh-TW/legal/terms">使用條款</a></b><span>服務範圍、使用者責任、責任界線。</span></div>
+      <div><b><a href="/zh-TW/legal/copyright">著作權與原始碼</a></b><span>AGPL、取得你正在使用那一版的路徑、隨服務送出的物料清單。</span></div>
+      <div><b><a href="/zh-TW/security">安全</a></b><span>技術細節、威脅模型與我們控制不了的部分。</span></div>
+      <div><b><a href="/zh-TW/contact">聯絡方式</a></b><span>隱私請求與安全通報。</span></div>
+    </div>
+    <p class="limit">本頁是摘要，<b>條文以法律頁為準。</b></p>
+  </section>
+
+  <section class="tr-close">
+    <div>
+      <h2>與其相信這一頁，<br>不如去驗上面任何一項。</h2>
+      <p>每一條都寫了它在哪一層、能被反證到什麼程度，以及誰有能力反證它。</p>
+    </div>
+    <p><a class="btn" href="/zh-TW/calculate">排一張盤 →</a></p>
+  </section>
+
+</div>

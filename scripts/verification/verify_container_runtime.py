@@ -26,6 +26,16 @@ import uuid
 from scripts.verification.verify_docker_context import (
     materialize_context,
 )
+from scripts.verification.build_release_image import (
+    BUILD_PURPOSES,
+    BUILD_EVIDENCE_PATH,
+    CONTEXT_DISCRIMINATION_BYTES,
+    CONTEXT_DISCRIMINATION_PATH,
+    assert_embedded_contract_consistent,
+    assert_context_receipts_match,
+    build_image as build_release_image,
+    context_manifest,
+)
 from scripts.verification.container_platform_contract import (
     platform_args as _platform_args,
     platform_contract,
@@ -34,13 +44,18 @@ from scripts.deployment.frontend_release import (
     build_release as build_frontend_release,
     combined_release_id,
 )
+from scripts.tools.semantic_currentness import protected_semantic_mismatches
+from scripts.tools.output_confinement import external_output_path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
 DEFAULT_IMAGE = "classical-astrology-private-alpha:runtime-test"
 CANARY = "PRIVATE_ALPHA_BUILD_SECRET_CANARY_8f38f0696df24f8c"
-PARITY_BASELINE = PROJECT_ROOT / "deploy" / "parity-baseline-arm64.json"
+PARITY_BASELINES = {
+    "linux/amd64": PROJECT_ROOT / "deploy" / "parity-baseline-amd64.json",
+    "linux/arm64": PROJECT_ROOT / "deploy" / "parity-baseline-arm64.json",
+}
 CROSS_PLATFORM_FIXED_STAR_SPEED_DISTANCE_TOLERANCE = 5e-3
 SAME_RUNTIME_FIXED_STAR_SPEED_DISTANCE_TOLERANCE = 1e-8
 CROSS_PLATFORM_NUMERIC_ABSOLUTE_TOLERANCE = 2e-8
@@ -148,15 +163,51 @@ def _run(
     return completed
 
 
-def _copy_build_context(destination: Path) -> Path:
+def _git_snapshot(revision: str, destination: Path) -> Path:
+    archive = destination / "source.tar"
+    snapshot = destination / "source"
+    destination.mkdir(parents=True, exist_ok=True)
+    _run(
+        [
+            "git", "archive", "--format=tar", "--output", str(archive),
+            revision,
+        ]
+    )
+    snapshot.mkdir()
+    with tarfile.open(archive, "r:") as source:
+        for member in source.getmembers():
+            relative = Path(member.name)
+            if relative.is_absolute() or ".." in relative.parts:
+                raise GateFailure("Git snapshot contains an unsafe path")
+            target = snapshot / relative
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+            elif member.isfile():
+                payload = source.extractfile(member)
+                if payload is None:
+                    raise GateFailure("Git snapshot file cannot be read")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open("xb") as output:
+                    shutil.copyfileobj(payload, output)
+            elif member.issym():
+                link = Path(member.linkname)
+                if link.is_absolute() or ".." in link.parts:
+                    raise GateFailure("Git snapshot contains an unsafe symlink")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.symlink_to(member.linkname)
+            else:
+                raise GateFailure("Git snapshot contains an unsupported object")
+    return snapshot
+
+
+def _copy_build_context(destination: Path, revision: str) -> Path:
+    snapshot = _git_snapshot(revision, destination / "snapshot")
     context = destination / "context"
     materialize_context(
-        PROJECT_ROOT,
+        snapshot,
         context,
         control_files={
-            Path("build-context-probe-8f38f069.txt"): (CANARY + "\n").encode(
-                "utf-8"
-            )
+            CONTEXT_DISCRIMINATION_PATH: CONTEXT_DISCRIMINATION_BYTES
         },
     )
     return context
@@ -169,54 +220,129 @@ def _platform_contract(platform: str) -> tuple[str, str]:
         raise GateFailure(str(exc)) from exc
 
 
-def _build_image(
-    image: str, *, require_clean: bool, platform: str | None
-) -> dict[str, Any]:
-    dirty_entries = _run(
-        ["git", "status", "--porcelain=v1", "-z"]
-    ).stdout.count("\0")
-    if require_clean and dirty_entries:
+_BUILD_INPUT_PATHS = ("deploy", "backend", "scripts", "third_party")
+
+
+def _assert_evidence_context_matches_image(image_revision: str | None) -> None:
+    if not image_revision or not re.fullmatch(r"[0-9a-f]{40}", image_revision):
+        raise GateFailure("release evidence requires a full image source revision")
+    head = _run(["git", "rev-parse", "HEAD"], check=False).stdout.strip()
+    if head != image_revision:
         raise GateFailure(
-            f"release build requires a clean checkout; found "
-            f"{dirty_entries} changed path(s)"
+            "release evidence source differs from image source: "
+            f"image={image_revision}, checkout={head}"
         )
-    with tempfile.TemporaryDirectory(prefix="private-alpha-build-") as raw_tmp:
-        temporary = Path(raw_tmp)
-        context = _copy_build_context(temporary)
-        secret_file = temporary / "buildkit-secret"
-        secret_file.write_text(CANARY + "\n", encoding="utf-8")
-        revision = _run(["git", "rev-parse", "HEAD"]).stdout.strip()
-        completed = _run(
-            [
-                "docker",
-                "build",
-                *_platform_args(platform),
-                "--file",
-                "deploy/Dockerfile",
-                "--tag",
-                image,
-                "--build-arg",
-                f"VCS_REF={revision}",
-                "--secret",
-                f"id=private_alpha_probe,src={secret_file}",
-                ".",
-            ],
-            cwd=context,
-            timeout=1800,
+    dirty = _run(
+        ["git", "status", "--porcelain=v1", "-z", "--", *_BUILD_INPUT_PATHS],
+        check=False,
+    ).stdout.count("\0")
+    if dirty:
+        raise GateFailure(
+            f"release evidence requires clean build inputs; found {dirty} changed path(s)"
         )
-    if CANARY in completed.stdout or CANARY in completed.stderr:
-        raise GateFailure("build output disclosed the secret canary")
+
+
+def _image_evidence_json(
+    image: str, platform: str | None, filename: str
+) -> dict[str, Any]:
+    output = _run(
+        [
+            "docker", "run", "--rm", *_platform_args(platform),
+            "--entrypoint", "/bin/cat", image,
+            f"{BUILD_EVIDENCE_PATH}/{filename}",
+        ]
+    ).stdout
+    try:
+        value = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise GateFailure(f"image build evidence is invalid: {filename}") from error
+    if not isinstance(value, dict):
+        raise GateFailure(f"image build evidence is not an object: {filename}")
+    return value
+
+
+def _exported_release_evidence(
+    image: str, platform: str | None, image_revision: str | None
+) -> dict[str, Any]:
+    """Read receipts embedded by the exact image's own builder transaction."""
+    _assert_evidence_context_matches_image(image_revision)
+    filenames = {
+        "source_build": "pyswisseph-linux-source-build.json",
+        "buildkit_probe": "buildkit-probe-consumed.json",
+        "buildkit_context": "build-context-received.json",
+        "builder_toolchain": "builder-toolchain.json",
+        "build_contract": "build-contract.json",
+        "native_extensions": "native-extensions.json",
+    }
+    evidence = {
+        key: _image_evidence_json(image, platform, filename)
+        for key, filename in filenames.items()
+    }
+    with tempfile.TemporaryDirectory(prefix="release-evidence-context-") as raw:
+        context = _copy_build_context(Path(raw), str(image_revision))
+        expected_context = context_manifest(context)
+    try:
+        assert_context_receipts_match(
+            expected_context, evidence["buildkit_context"]
+        )
+    except Exception as error:
+        raise GateFailure(str(error)) from None
+    if platform is None:
+        raise GateFailure("image build contract verification requires a platform")
+    try:
+        assert_embedded_contract_consistent(
+            contract=evidence["build_contract"],
+            context=evidence["buildkit_context"],
+            toolchain=evidence["builder_toolchain"],
+            revision=str(image_revision),
+            platform=platform,
+        )
+    except Exception as error:
+        raise GateFailure(str(error)) from None
+    return evidence
+
+
+def _build_image(
+    image: str,
+    *,
+    require_clean: bool,
+    platform: str | None,
+    purpose: str = "diagnostic",
+    publication_receipt: Path | None = None,
+    evidence_dir: Path | None = None,
+) -> dict[str, Any]:
+    if platform is None:
+        raise GateFailure("release-capable build requires an explicit platform")
+    temporary_evidence: tempfile.TemporaryDirectory[str] | None = None
+    if evidence_dir is None:
+        temporary_evidence = tempfile.TemporaryDirectory(
+            prefix="private-alpha-build-evidence-"
+        )
+        evidence_dir = Path(temporary_evidence.name) / "evidence"
+    try:
+        transaction = build_release_image(
+            source_root=PROJECT_ROOT,
+            image=image,
+            platform=platform,
+            purpose=purpose,
+            publication_receipt=publication_receipt,
+            evidence_dir=evidence_dir,
+            require_clean=require_clean,
+        )
+    except Exception as error:
+        raise GateFailure(str(error)) from None
+    finally:
+        if temporary_evidence is not None:
+            temporary_evidence.cleanup()
     return {
         "image": image,
-        "revision": revision,
-        "clean_checkout": dirty_entries == 0,
+        "revision": transaction["source_revision"],
+        "clean_checkout": require_clean,
         "clean_checkout_required": require_clean,
         "platform": platform,
-        # Without these, "reproducible" is a claim nobody can falsify later.
-        # This is also where the receipt says out loud that it came from a
-        # developer workstation, so a reader does not assume a hermetic CI
-        # build produced it.
-        "builder": _builder_environment(),
+        "purpose": purpose,
+        "publication_status": transaction["publication_status"],
+        "transaction": transaction,
     }
 
 
@@ -227,16 +353,57 @@ def _inspect_image(image: str, platform: str | None) -> dict[str, Any]:
     if config["User"] != "10001:10001":
         raise GateFailure(f"unexpected image user: {config['User']!r}")
     environment = config.get("Env") or []
-    environment_keys = {item.split("=", maxsplit=1)[0] for item in environment}
-    forbidden_keys = [
-        key
-        for key in environment_keys
-        if any(fragment in key.upper() for fragment in ("SECRET", "TOKEN", "PASSWORD"))
-    ]
-    if forbidden_keys:
-        raise GateFailure(f"secret-like image environment keys: {forbidden_keys}")
-    if "CLASSICAL_ASTROLOGY_PROFILE=private_alpha" not in environment:
-        raise GateFailure("hosted profile is not fixed in the image")
+    pairs: dict[str, str] = {}
+    for item in environment:
+        if not isinstance(item, str) or "=" not in item:
+            raise GateFailure("image environment contains an invalid entry")
+        key, value = item.split("=", maxsplit=1)
+        if key in pairs:
+            raise GateFailure(f"image environment repeats key: {key}")
+        pairs[key] = value
+    expected_keys = {
+        "PATH", "LANG", "GPG_KEY", "PYTHON_VERSION", "PYTHON_SHA256",
+        "CLASSICAL_ASTROLOGY_PROFILE",
+        "CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE",
+        "CLASSICAL_ASTROLOGY_SOURCE_REVISION",
+        "PYTHONFAULTHANDLER", "PYTHONUNBUFFERED", "PYTHONDONTWRITEBYTECODE",
+    }
+    if set(pairs) != expected_keys:
+        raise GateFailure(
+            "image environment differs from the closed pinned-base/application "
+            f"contract: missing={sorted(expected_keys - set(pairs))} "
+            f"unexpected={sorted(set(pairs) - expected_keys)}"
+        )
+    labels = config.get("Labels", {})
+    publication_status = labels.get("org.projectarmillary.publication.status")
+    if publication_status not in {
+        "provisional_unpublished",
+        "published_anonymously_reachable",
+    }:
+        raise GateFailure("image publication status is absent or invalid")
+    exact_values = {
+        "LANG": "C.UTF-8",
+        "PYTHON_VERSION": "3.13.14",
+        "CLASSICAL_ASTROLOGY_PROFILE": "private_alpha",
+        "CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE": "1",
+        "CLASSICAL_ASTROLOGY_SOURCE_REVISION": labels.get(
+            "org.opencontainers.image.revision"
+        ),
+        "PYTHONFAULTHANDLER": "1",
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PATH": (
+            "/opt/venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:"
+            "/usr/sbin:/usr/bin:/sbin:/bin"
+        ),
+    }
+    for key, expected in exact_values.items():
+        if pairs.get(key) != expected:
+            raise GateFailure(f"image environment value mismatch: {key}")
+    if not re.fullmatch(r"[0-9A-F]{40}", pairs["GPG_KEY"]):
+        raise GateFailure("pinned base GPG_KEY provenance value is malformed")
+    if not re.fullmatch(r"[0-9a-f]{64}", pairs["PYTHON_SHA256"]):
+        raise GateFailure("pinned base PYTHON_SHA256 provenance value is malformed")
     healthcheck = config.get("Healthcheck") or {}
     if "container_healthcheck.py" not in " ".join(healthcheck.get("Test") or []):
         raise GateFailure("image healthcheck does not use the bounded readiness probe")
@@ -259,11 +426,16 @@ def _inspect_image(image: str, platform: str | None) -> dict[str, Any]:
         "os": image_info["Os"],
         "architecture": image_info["Architecture"],
         "user": config["User"],
-        "environment_keys": sorted(environment_keys),
+        "environment_keys": sorted(pairs),
+        "environment_value_sha256": {
+            key: hashlib.sha256(value.encode("utf-8")).hexdigest()
+            for key, value in sorted(pairs.items())
+        },
         "healthcheck": healthcheck,
         "revision": config.get("Labels", {}).get(
             "org.opencontainers.image.revision"
         ),
+        "publication_status": publication_status,
     }
 
 
@@ -272,7 +444,7 @@ def _inspect_image(image: str, platform: str | None) -> dict[str, Any]:
 DOCKER_INJECTED_PATHS = frozenset({"/etc/hostname", "/etc/hosts", "/etc/resolv.conf"})
 
 APP_TREE_MANIFEST = PROJECT_ROOT / "deploy" / "image-app-tree.json"
-COMPILED_ARTIFACTS_MANIFEST = PROJECT_ROOT / "deploy" / "image-compiled-artifacts.json"
+COMPILED_ARTIFACTS_MANIFEST = PROJECT_ROOT / "deploy" / "image-app-built-extensions.json"
 
 
 # Only the extensions installed into our own virtualenv. Sweeping every `.so`
@@ -285,6 +457,39 @@ COMPILED_ARTIFACT_ROOT = "/opt/venv/"
 def _is_compiled_artifact(path: str) -> bool:
     return path.startswith(COMPILED_ARTIFACT_ROOT) and (
         path.endswith(".so") or ".so." in path.rsplit("/", 1)[-1]
+    )
+
+
+CONTENT_IDENTITY_SCHEMA = "content-identity-v2"
+
+
+def _content_identity_row(
+    member: tarfile.TarInfo,
+    normalized: str,
+    payload_digest: str,
+) -> str:
+    """Serialize fields that can change an entry's effective content."""
+
+    security_pax = sorted(
+        (key, value)
+        for key, value in (member.pax_headers or {}).items()
+        if key.startswith("SCHILY.xattr.security.")
+        or key.startswith("SCHILY.xattr.trusted.")
+        or key in {"SCHILY.acl.access", "SCHILY.acl.default"}
+    )
+    return json.dumps(
+        [
+            normalized,
+            f"{member.mode:04o}",
+            member.uid,
+            member.gid,
+            member.type.decode("ascii"),
+            payload_digest,
+            member.linkname,
+            security_pax,
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
     )
 
 
@@ -483,24 +688,28 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                         extracted = archive.extractfile(member)
                         if extracted is not None:
                             digest = hashlib.sha256()
-                            scanned = b""
+                            canary_bytes = CANARY.encode()
+                            canary_tail = b""
                             while True:
                                 chunk = extracted.read(1024 * 1024)
                                 if not chunk:
                                     break
                                 digest.update(chunk)
-                                if len(scanned) < 8 * 1024 * 1024:
-                                    scanned += chunk
+                                if canary_bytes in canary_tail + chunk:
+                                    canary_found = True
+                                canary_tail = (canary_tail + chunk)[
+                                    -max(len(canary_bytes) - 1, 0):
+                                ]
                             payload_digest = digest.hexdigest()
-                            if CANARY.encode() in scanned:
-                                canary_found = True
                             if _is_compiled_artifact(normalized):
                                 compiled_artifacts[normalized] = payload_digest
                     if normalized not in DOCKER_INJECTED_PATHS:
                         content_identity_rows.append(
-                            f"{normalized}\t{member.mode:04o}\t{member.uid}"
-                            f"\t{member.gid}\t{member.type.decode('ascii')}"
-                            f"\t{payload_digest}"
+                            _content_identity_row(
+                                member,
+                                normalized,
+                                payload_digest,
+                            )
                         )
             if canary_found:
                 raise GateFailure("image filesystem contains the secret canary")
@@ -552,18 +761,18 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
             "-c",
             (
                 "import importlib.metadata,json,platform;"
-                "r=json.load(open('/app/release/"
-                "pyswisseph-linux-source-build.json'));"
-                "p=json.load(open('/app/release/"
-                "buildkit-probe-consumed.json'));"
                 "print(json.dumps({'python':platform.python_version(),"
                 "'machine':platform.machine(),"
-                "'pyswisseph':importlib.metadata.version('pyswisseph'),"
-                "'source_build':r,'buildkit_probe':p}))"
+                "'pyswisseph':importlib.metadata.version('pyswisseph')}))"
             ),
         ]
     ).stdout
     runtime = json.loads(runtime_output.strip().splitlines()[-1])
+    runtime.update(
+        _exported_release_evidence(
+            image, platform, _inspect_image(image, platform)["revision"]
+        )
+    )
     source_build = runtime["source_build"]
     image_architecture = _inspect_image(image, platform)["architecture"]
     expected_machine = MACHINE_BY_DOCKER_ARCHITECTURE.get(
@@ -584,7 +793,10 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
         or source_build.get("wheel", {}).get("extension_format") != "ELF"
         or source_build.get("wheel", {}).get("elf_e_machine")
         != expected_elf_machine
-        or runtime.get("buildkit_probe") != {"consumed": True}
+        or runtime.get("buildkit_probe", {}).get("consumed") is not True
+        or runtime.get("buildkit_probe", {}).get("nonempty") is not True
+        or len(str(runtime.get("buildkit_probe", {}).get("secret_sha256", "")))
+        != 64
     ):
         raise GateFailure(
             "Linux source-build, architecture, BuildKit probe, or runtime "
@@ -601,6 +813,7 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
         # amendment to a ratified digest.  This value does not move for that
         # reason, so it is the thing worth ratifying; the digest stays as the
         # deployment pointer.
+        "content_identity_schema": CONTENT_IDENTITY_SCHEMA,
         "content_identity": content_identity,
         "compiled_artifacts": dict(sorted(compiled_artifacts.items())),
         "production_packages": sorted(packages),
@@ -710,36 +923,75 @@ def _payloads() -> list[dict[str, Any]]:
 def _local_baselines(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
     # The backend package is not installed in the repository development environment.
     # This local parity probe therefore exposes that one package root explicitly.
-    sys.path.insert(0, str(BACKEND_ROOT))
-    from fastapi.testclient import TestClient
-    from app.main import create_app
-    from app.settings import AppProfile, AppSettings
+    backend_path = str(BACKEND_ROOT)
+    added_path = backend_path not in sys.path
+    if added_path:
+        sys.path.insert(0, backend_path)
+    try:
+        from fastapi.testclient import TestClient
+        from app.main import create_app
+        from app.settings import AppProfile, AppSettings
 
-    with TestClient(create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))) as client:
-        results = []
-        for payload in payloads:
-            response = client.post("/api/chart", json=payload)
-            if response.status_code != 200:
-                raise GateFailure(
-                    f"local baseline failed with HTTP {response.status_code}"
-                )
-            results.append(response.json())
-    return results
+        with TestClient(
+            create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+        ) as client:
+            results = []
+            for payload in payloads:
+                response = client.post("/api/chart", json=payload)
+                if response.status_code != 200:
+                    raise GateFailure(
+                        f"local baseline failed with HTTP {response.status_code}"
+                    )
+                results.append(response.json())
+        return results
+    finally:
+        if added_path:
+            sys.path.remove(backend_path)
 
 
 def _load_committed_cross_platform_baseline(
     payloads: list[dict[str, Any]],
+    *,
+    platform: str = "linux/arm64",
+    require_public_identity: bool = False,
 ) -> list[dict[str, Any]]:
     try:
-        baseline = json.loads(PARITY_BASELINE.read_text(encoding="utf-8"))
+        baseline_path = PARITY_BASELINES[platform]
+    except KeyError:
+        raise GateFailure(
+            f"unsupported committed baseline platform: {platform}"
+        ) from None
+    try:
+        baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise GateFailure(
-            f"cannot read committed cross-platform baseline: {exc}"
+            f"cannot read committed {platform} baseline: {exc}"
         ) from exc
+    expected_architecture = platform.split("/", 1)[1]
+    source = baseline.get("source", {})
+    schema_version = baseline.get("schema_version")
+    legacy_arm64 = (
+        schema_version == "private-alpha-four-mode-parity-baseline-v1"
+        and platform == "linux/arm64"
+        and not require_public_identity
+    )
+    platform_bound = (
+        schema_version == "private-alpha-platform-parity-baseline-v2"
+        and source.get("platform") == platform
+        and source.get("public_source_revision") == source.get("revision")
+        and re.fullmatch(
+            r"[0-9a-f]{40}",
+            str(source.get("public_source_revision", "")),
+        )
+        and re.fullmatch(
+            r"sha256:[0-9a-f]{64}",
+            str(source.get("image_id", "")),
+        )
+    )
     if (
-        baseline.get("schema_version")
-        != "private-alpha-four-mode-parity-baseline-v1"
-        or baseline.get("source", {}).get("architecture") != "arm64"
+        not (legacy_arm64 or platform_bound)
+        or source.get("architecture") != expected_architecture
+        or source.get("os") != "linux"
         or baseline.get("producer", {}).get("module")
         != "scripts.verification.generate_parity_baseline"
         or baseline.get("payloads") != payloads
@@ -749,9 +1001,46 @@ def _load_committed_cross_platform_baseline(
     return baseline["responses"]
 
 
+def _assert_build_identity_shape(value: Any, path: str) -> None:
+    if not isinstance(value, dict):
+        raise GateFailure(f"response type mismatch at {path}")
+    common = {"status", "source_revision", "revision_source"}
+    status = value.get("status")
+    if status == "available":
+        expected_keys = common | {"release_identity"}
+        if value.keys() != expected_keys:
+            raise GateFailure(
+                f"response key mismatch at {path}: "
+                f"expected={sorted(expected_keys)} actual={sorted(value)}"
+            )
+        if not isinstance(value["source_revision"], str) or not isinstance(
+            value["revision_source"], str
+        ):
+            raise GateFailure(f"response scalar type mismatch at {path}")
+        if not isinstance(value["release_identity"], dict):
+            raise GateFailure(
+                f"response type mismatch at {path}.release_identity"
+            )
+        return
+    if status == "unavailable":
+        if value.keys() != common:
+            raise GateFailure(
+                f"response key mismatch at {path}: "
+                f"expected={sorted(common)} actual={sorted(value)}"
+            )
+        if value["source_revision"] is not None or value["revision_source"] is not None:
+            raise GateFailure(f"response nullability mismatch at {path}")
+        return
+    raise GateFailure(f"response build-identity status mismatch at {path}")
+
+
 def _assert_response_shape(expected: Any, actual: Any, path: str = "$") -> None:
+    # Runtime-specific values still have a stable JSON shape.  Exclusions apply
+    # to value parity below, never to key, container-type, or leaf-type checks.
     normalized_path = re.sub(r"^\$\[\d+\]", "$", path)
-    if normalized_path in RUNTIME_SPECIFIC_PARITY_PATHS:
+    if normalized_path == "$.calculation_dossier.build_identity":
+        _assert_build_identity_shape(expected, path)
+        _assert_build_identity_shape(actual, path)
         return
     if isinstance(expected, dict):
         if not isinstance(actual, dict):
@@ -799,18 +1088,172 @@ def _assert_response_shape(expected: Any, actual: Any, path: str = "$") -> None:
         raise GateFailure(f"response scalar type mismatch at {path}")
 
 
-def verify_committed_parity_baseline() -> dict[str, Any]:
-    """Compare committed/current response structure before a Docker build."""
+def _project_actual_to_expected_shape(
+    expected: Any,
+    actual: Any,
+    path: str = "$",
+) -> tuple[Any, list[str]]:
+    """Project additive current fields without hiding missing baseline fields."""
+
+    additions: list[str] = []
+    if re.sub(r"^\$\[\d+\]", "$", path) == (
+        "$.calculation_dossier.build_identity"
+    ):
+        return actual, additions
+    if (
+        re.sub(r"^\$\[\d+\]", "$", path)
+        == "$.calculation_dossier.warnings"
+        and isinstance(expected, list)
+        and isinstance(actual, list)
+        and all(isinstance(item, dict) and isinstance(item.get("code"), str) for item in expected)
+        and all(isinstance(item, dict) and isinstance(item.get("code"), str) for item in actual)
+    ):
+        def warning_key(item):
+            return item["code"], item.get("source")
+
+        actual_by_key = {warning_key(item): item for item in actual}
+        if len(actual_by_key) != len(actual):
+            raise GateFailure("current response has duplicate warning code/source pairs")
+        missing_codes = [
+            warning_key(item)
+            for item in expected
+            if warning_key(item) not in actual_by_key
+        ]
+        if missing_codes:
+            raise GateFailure(
+                f"response warning set lost baseline codes at {path}: {missing_codes}"
+            )
+        projected_warnings: list[Any] = []
+        for item in expected:
+            key = warning_key(item)
+            value, nested = _project_actual_to_expected_shape(
+                item,
+                actual_by_key[key],
+                f"{path}[code={key[0]},source={key[1]}]",
+            )
+            projected_warnings.append(value)
+            additions.extend(nested)
+        expected_codes = {warning_key(item) for item in expected}
+        additions.extend(
+            f"{path}[code={key[0]},source={key[1]}]"
+            for key in sorted(
+                set(actual_by_key) - expected_codes,
+                key=lambda item: (str(item[0]), str(item[1])),
+            )
+        )
+        return projected_warnings, additions
+    if isinstance(expected, dict):
+        if not isinstance(actual, dict):
+            return actual, additions
+        missing = set(expected) - set(actual)
+        if missing:
+            raise GateFailure(
+                f"response key mismatch at {path}: missing={sorted(missing)}"
+            )
+        projected_mapping: dict[str, Any] = {}
+        for key in expected:
+            projected_mapping[key], nested = _project_actual_to_expected_shape(
+                expected[key], actual[key], f"{path}.{key}"
+            )
+            additions.extend(nested)
+        additions.extend(
+            f"{path}.{key}" for key in sorted(set(actual) - set(expected))
+        )
+        return projected_mapping, additions
+    if isinstance(expected, list) and isinstance(actual, list):
+        if len(expected) != len(actual):
+            return actual, additions
+        projected_items: list[Any] = []
+        for index, (expected_item, actual_item) in enumerate(
+            zip(expected, actual, strict=True)
+        ):
+            item, nested = _project_actual_to_expected_shape(
+                expected_item, actual_item, f"{path}[{index}]"
+            )
+            projected_items.append(item)
+            additions.extend(nested)
+        return projected_items, additions
+    return actual, additions
+
+
+def _assert_numeric_values(
+    expected: Any,
+    actual: Any,
+    path: str = "$",
+) -> None:
+    """Compare numeric leaves after `_assert_response_shape` has passed."""
+    normalized_path = re.sub(r"^\$\[\d+\]", "$", path)
+    if normalized_path in RUNTIME_SPECIFIC_PARITY_PATHS:
+        return
+    if isinstance(expected, dict):
+        for key in expected:
+            _assert_numeric_values(expected[key], actual[key], f"{path}.{key}")
+        return
+    if isinstance(expected, list):
+        for index, (expected_item, actual_item) in enumerate(
+            zip(expected, actual, strict=True)
+        ):
+            _assert_numeric_values(
+                expected_item,
+                actual_item,
+                f"{path}[{index}]",
+            )
+        return
+    if isinstance(expected, (int, float)) and not isinstance(expected, bool):
+        _assert_parity(
+            expected,
+            actual,
+            path,
+            parity_scope="cross_platform",
+        )
+
+
+def verify_committed_parity_baseline(
+    *,
+    require_protected_semantics: bool = False,
+    baseline_platform: str = "linux/arm64",
+    require_public_identity: bool = False,
+) -> dict[str, Any]:
+    """Compare shape/numerics and report the separate protected-semantic axis."""
     payloads = _payloads()
-    expected = _load_committed_cross_platform_baseline(payloads)
+    expected = _load_committed_cross_platform_baseline(
+        payloads,
+        platform=baseline_platform,
+        require_public_identity=require_public_identity,
+    )
     actual = _local_baselines(payloads)
+    semantic_mismatches: list[dict[str, Any]] = []
+    additive_paths: list[dict[str, Any]] = []
     for index, (expected_response, actual_response) in enumerate(
         zip(expected, actual, strict=True)
     ):
-        _assert_response_shape(
+        projected_actual, additions = _project_actual_to_expected_shape(
             expected_response,
             actual_response,
             f"$[{index}]",
+        )
+        additive_paths.extend({"case": index, "path": path} for path in additions)
+        _assert_response_shape(
+            expected_response,
+            projected_actual,
+            f"$[{index}]",
+        )
+        _assert_numeric_values(
+            expected_response,
+            projected_actual,
+            f"$[{index}]",
+        )
+        semantic_mismatches.extend({
+            **mismatch,
+            "case": index,
+        } for mismatch in protected_semantic_mismatches(
+            expected_response,
+            actual_response,
+        ))
+    if require_protected_semantics and (semantic_mismatches or additive_paths):
+        raise GateFailure(
+            "committed baseline protected semantics differ from current backend: "
+            f"semantic={semantic_mismatches[:5]} additive={additive_paths[:5]}"
         )
     schema_versions = {
         response.get("schema_version")
@@ -822,9 +1265,22 @@ def verify_committed_parity_baseline() -> dict[str, Any]:
             f"{sorted(schema_versions, key=str)}"
         )
     return {
-        "status": "compatible",
+        "status": (
+            "shape_numeric_compatible_with_additive_image_pending"
+            if additive_paths
+            else "shape_numeric_compatible"
+        ),
         "cases": len(actual),
         "response_schema_version": schema_versions.pop(),
+        "protected_semantic_status": (
+            "current" if not semantic_mismatches else "image_rebuild_pending"
+        ),
+        "protected_semantic_mismatch_count": len(semantic_mismatches),
+        "protected_semantic_mismatches": semantic_mismatches,
+        "additive_image_pending_count": len(additive_paths),
+        "additive_image_pending_paths": additive_paths,
+        "baseline_platform": baseline_platform,
+        "baseline_public_identity_required": require_public_identity,
     }
 
 
@@ -838,7 +1294,8 @@ def _assert_parity(
     # The dossier explicitly labels this Python-runtime JSON digest as
     # non-portable. The trace it receipts is still compared below, field by
     # field, including every numeric value.
-    if path in RUNTIME_SPECIFIC_PARITY_PATHS:
+    normalized_path = re.sub(r"^\$\[\d+\]", "$", path)
+    if normalized_path in RUNTIME_SPECIFIC_PARITY_PATHS:
         return
     if isinstance(expected, bool):
         if actual is not expected:
@@ -850,7 +1307,10 @@ def _assert_parity(
     if expected is None or isinstance(expected, str):
         if actual != expected:
             if (
-                re.fullmatch(r"^\$\.calculation_trace\[\d+\]\.title$", path)
+                re.fullmatch(
+                    r"^\$\.calculation_trace\[\d+\]\.title$",
+                    normalized_path,
+                )
                 and isinstance(actual, str)
                 and isinstance(expected, str)
                 and expected.startswith("恆星 ")
@@ -863,7 +1323,7 @@ def _assert_parity(
                 return
             if re.fullmatch(
                 r"^\$\.astronomical_data\.fixed_stars\[\d+\]\.catalog_name$",
-                path,
+                normalized_path,
             ):
                 if not isinstance(expected, str) or not isinstance(actual, str):
                     raise GateFailure(
@@ -884,7 +1344,7 @@ def _assert_parity(
             raise GateFailure(f"parity mismatch at {path}")
         return
     if isinstance(expected, (int, float)) and isinstance(actual, (int, float)):
-        if FIXED_STAR_DISTANCE_SPEED_PATH.fullmatch(path):
+        if FIXED_STAR_DISTANCE_SPEED_PATH.fullmatch(normalized_path):
             absolute_tolerance = (
                 CROSS_PLATFORM_FIXED_STAR_SPEED_DISTANCE_TOLERANCE
                 if parity_scope == "cross_platform"
@@ -1157,7 +1617,11 @@ def _runtime_controls(container: str, base_url: str) -> dict[str, Any]:
         raise GateFailure("bounded tmpfs did not accept a temporary write")
 
     status, body, headers = _http(base_url, "/api/health")
-    if status != 200 or json.loads(body) != {"status": "ok", "ready": True}:
+    if status != 200 or json.loads(body) != {
+        "status": "ok",
+        "ready": True,
+        "readiness_scope": "process_liveness_only",
+    }:
         raise GateFailure("hosted readiness endpoint contract failed")
     normalized_headers = {key.casefold(): value for key, value in headers.items()}
     if (
@@ -1841,10 +2305,23 @@ def _resilience_and_soak(
         shutil.rmtree(frontend_temporary, ignore_errors=True)
 
 
+def _container_verdict_scope(worker_resilience: object | None) -> str:
+    if worker_resilience is None:
+        return "container_parity_only_worker_resilience_not_run"
+    return "container_parity_and_worker_resilience"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", default=DEFAULT_IMAGE)
     parser.add_argument("--build", action="store_true")
+    parser.add_argument(
+        "--build-purpose",
+        choices=BUILD_PURPOSES,
+        default="diagnostic",
+    )
+    parser.add_argument("--publication-receipt", type=Path)
+    parser.add_argument("--build-evidence-dir", type=Path)
     parser.add_argument(
         "--require-clean",
         action="store_true",
@@ -1881,19 +2358,60 @@ def main() -> int:
         action="store_true",
         help="check committed response parity without Docker",
     )
+    parser.add_argument(
+        "--require-protected-semantics",
+        action="store_true",
+        help=(
+            "with --baseline-only, fail unless the committed image baseline "
+            "also matches current protected semantic strings"
+        ),
+    )
+    parser.add_argument(
+        "--baseline-platform",
+        choices=tuple(PARITY_BASELINES),
+        default="linux/arm64",
+        help="platform identity of the committed parity receipt",
+    )
+    parser.add_argument(
+        "--require-baseline-public-identity",
+        action="store_true",
+        help=(
+            "with --baseline-only, reject legacy receipts and require image, "
+            "architecture and exact public-source identity"
+        ),
+    )
     args = parser.parse_args()
     if args.require_clean and not args.build:
         parser.error("--require-clean requires --build")
+    if not args.build and (
+        args.publication_receipt is not None
+        or args.build_evidence_dir is not None
+        or args.build_purpose != "diagnostic"
+    ):
+        parser.error("build publication/evidence options require --build")
+    if (
+        args.build
+        and args.build_purpose != "diagnostic"
+        and args.build_evidence_dir is None
+    ):
+        parser.error("release/comparison builds require --build-evidence-dir")
     if args.baseline_only:
         try:
-            result = verify_committed_parity_baseline()
+            result = verify_committed_parity_baseline(
+                require_protected_semantics=args.require_protected_semantics,
+                baseline_platform=args.baseline_platform,
+                require_public_identity=args.require_baseline_public_identity,
+            )
         except (GateFailure, OSError, ValueError) as exc:
             print(f"FAIL: {exc}", file=sys.stderr)
             return 1
         print(
-            "PARITY BASELINE COMPATIBLE "
+            "COMMITTED BASELINE SHAPE/NUMERIC COMPATIBLE "
             f"cases={result['cases']} "
-            f"schema={result['response_schema_version']}"
+            f"schema={result['response_schema_version']} "
+            f"protected_semantics={result['protected_semantic_status']} "
+            f"semantic_mismatches={result['protected_semantic_mismatch_count']}"
+            f" platform={result['baseline_platform']}"
         )
         return 0
 
@@ -1904,6 +2422,9 @@ def main() -> int:
                 args.image,
                 require_clean=args.require_clean,
                 platform=args.platform,
+                purpose=args.build_purpose,
+                publication_receipt=args.publication_receipt,
+                evidence_dir=args.build_evidence_dir,
             )
             if args.build
             else {
@@ -1957,19 +2478,25 @@ def main() -> int:
             "single_worker": single_worker,
             "two_worker": two_worker,
             "worker_resilience": resilience,
+            "verdict_scope": _container_verdict_scope(resilience),
             "elapsed_seconds": round(time.monotonic() - started, 3),
         }
         if args.receipt is not None:
-            args.receipt.parent.mkdir(parents=True, exist_ok=True)
-            args.receipt.write_text(
+            receipt_path = external_output_path(
+                args.receipt,
+                source_root=PROJECT_ROOT,
+                role="container runtime receipt",
+            )
+            receipt_path.parent.mkdir(parents=True, exist_ok=True)
+            receipt_path.write_text(
                 json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
         if args.quiet:
+            scope = receipt["verdict_scope"]
             print(
-                "OK: production container gate passed "
-                f"({len(payloads)} modes, architecture="
-                f"{image['architecture']})"
+                f"OK: {scope} "
+                f"({len(payloads)} modes, architecture={image['architecture']})"
             )
         else:
             print(json.dumps(receipt, indent=2, sort_keys=True))

@@ -18,6 +18,8 @@ heliocentric/barycentric，這裡算出來的宮位仍然是地球上的觀測�
 所以在 heliocentric/barycentric 模式下會額外寫一筆 trace 註明。
 """
 
+import math
+
 import swisseph as swe
 
 from ..config import HOUSE_SYSTEMS
@@ -115,6 +117,22 @@ def _has_duplicate_cusps(cusps: tuple[float, ...], tolerance: float = 1e-7) -> b
     return False
 
 
+def _has_invalid_cusp_cycle(
+    cusps: tuple[float, ...], tolerance: float = 1e-7
+) -> bool:
+    """Reject distinct cusp lists that wind around the zodiac more than once."""
+
+    normalized = [cusp % 360.0 for cusp in cusps]
+    spans = [
+        (normalized[(index + 1) % 12] - normalized[index]) % 360.0
+        for index in range(12)
+    ]
+    return (
+        any(span <= tolerance or span >= 180.0 for span in spans)
+        or not math.isclose(sum(spans), 360.0, abs_tol=1e-6)
+    )
+
+
 def compute_houses(house_system_code: str, jd_ut: float, location, ctx, trace: Trace) -> dict:
     ayanamsa = ctx.ayanamsa_value(jd_ut) if ctx.mode.zodiac == "sidereal" else None
     swiss_sidereal_whole_sign = (
@@ -150,12 +168,14 @@ def compute_houses(house_system_code: str, jd_ut: float, location, ctx, trace: T
             name=name,
             latitude=location.latitude,
         ) from exc
-    if code != "W" and _has_duplicate_cusps(cusps):
+    if code != "W" and (
+        _has_duplicate_cusps(cusps) or _has_invalid_cusp_cycle(cusps)
+    ):
         raise HouseSystemUnavailableError(
             code=code,
             name=name,
             latitude=location.latitude,
-            reason="十二宮宮頭並非十二個相異方向",
+            reason="十二宮宮頭未形成單一、依序且完整的黃道分割",
         )
 
     cusps_shifted = [shift(c) for c in cusps]

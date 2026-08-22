@@ -16,14 +16,23 @@ import json
 import logging
 import math
 import re
+import sys
 import time
 import uuid
+
+if sys.version_info < (3, 11):
+    # Directly declared for the supported Python 3.10 floor. Import failure is
+    # fatal: silently losing mixed-group cancellation semantics would violate
+    # the privacy boundary's process-control contract.
+    from exceptiongroup import BaseExceptionGroup  # type: ignore[import-not-found]
 from collections.abc import Callable, Mapping
 from typing import Final
 
 from starlette.datastructures import MutableHeaders
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from .request_limits import BOUNDARY_REASON_STATE_KEY
 
 
 EVENT_SCHEMA_VERSION: Final = "privacy-request-event-v1"
@@ -55,12 +64,24 @@ _ALLOWED_ROUTES: Final = frozenset(
 )
 _ALLOWED_ERROR_CODES: Final = frozenset(
     {
+        "compute_capacity_exhausted",
+        "conflicting_request_framing",
+        "empty_request_body",
+        "invalid_content_length",
+        "request_body_too_large",
+        "request_capacity_exhausted",
+        "request_headers_too_large",
         "request_rejected",
         "server_error",
         "internal_server_error",
+        "unsupported_media_type",
+        "unsupported_method",
         "unclassified",
     }
 )
+_BOUNDARY_REJECTION_CODES: Final = _ALLOWED_ERROR_CODES - {
+    "server_error", "internal_server_error", "unclassified"
+}
 _ALLOWED_DURATION_BUCKETS: Final = frozenset(
     {
         "invalid",
@@ -187,7 +208,7 @@ def _outcome(status_code: int, error_code: str | None) -> str:
     # operation as an error.
     if error_code in {"internal_server_error", "server_error"}:
         return "error"
-    if error_code == "request_rejected":
+    if error_code in _BOUNDARY_REJECTION_CODES:
         return "rejected"
     if 200 <= status_code <= 399:
         return "success"
@@ -204,6 +225,16 @@ def _safe_error_code(value: object) -> str | None:
     if isinstance(value, str) and value in _ALLOWED_ERROR_CODES:
         return value
     return "unclassified"
+
+
+def _boundary_reason(scope: Scope) -> str | None:
+    state = scope.get("state")
+    if not isinstance(state, Mapping):
+        return None
+    value = state.get(BOUNDARY_REASON_STATE_KEY)
+    if isinstance(value, str) and value in _BOUNDARY_REJECTION_CODES:
+        return value
+    return None
 
 
 def _safe_request_id(value: object) -> str:
@@ -474,7 +505,10 @@ class PrivacyBoundaryMiddleware:
                 )
             ):
                 if error_code is None:
-                    if 400 <= status_code <= 499:
+                    boundary_reason = _boundary_reason(scope)
+                    if boundary_reason is not None:
+                        error_code = boundary_reason
+                    elif 400 <= status_code <= 499:
                         error_code = "request_rejected"
                     elif status_code >= 500:
                         error_code = "server_error"

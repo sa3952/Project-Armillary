@@ -8,6 +8,9 @@ import swisseph as swe
 from .trace import Trace
 
 
+DELTA_T_FAR_EPOCH_YEAR = 2100
+
+
 class NonexistentLocalTimeError(ValueError):
     """Raised when an IANA-zone wall-clock time has no corresponding UTC instant."""
 
@@ -115,10 +118,30 @@ def compute_time_conversion(
     if dst_warning:
         trace.add("⚠ 日光節約時間(DST)警告", note=dst_warning)
 
-    utc_sec = utc_dt.second + utc_dt.microsecond / 1_000_000
+    leap_second = dt_input.second == 60
+    swiss_input = (
+        utc_dt - dtmod.timedelta(minutes=1)
+        if leap_second
+        else utc_dt
+    )
+    utc_sec = (
+        60.0
+        if leap_second
+        else swiss_input.second + swiss_input.microsecond / 1_000_000
+    )
+    utc_label = (
+        f"{swiss_input:%Y-%m-%d %H:%M}:60.000"
+        if leap_second
+        else utc_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    )
+    swiss_time_input_semantics = (
+        "ut1_before_1972_swiss_rule"
+        if swiss_input.year < 1972
+        else "utc"
+    )
     jd_et, jd_ut = swe.utc_to_jd(
-        utc_dt.year, utc_dt.month, utc_dt.day,
-        utc_dt.hour, utc_dt.minute, utc_sec,
+        swiss_input.year, swiss_input.month, swiss_input.day,
+        swiss_input.hour, swiss_input.minute, utc_sec,
         swe.GREG_CAL,
     )
 
@@ -131,14 +154,34 @@ def compute_time_conversion(
             "時區": tz_label,
             "時區偏移(小時)": round(offset_hours, 4),
         },
-        result={"UTC時間": utc_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]},
+        result={"UTC時間": utc_label},
     )
 
     trace.add(
-        "UTC -> 儒略日 (swe.utc_to_jd)",
-        formula="JD_UT, JD_ET = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
-        inputs={"UTC": utc_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]},
+        (
+            "UT1-like input -> 儒略日 (1972年前 Swiss 規則)"
+            if swiss_time_input_semantics == "ut1_before_1972_swiss_rule"
+            else "UTC -> 儒略日 (swe.utc_to_jd)"
+        ),
+        formula=(
+            "JD_ET, JD_UT = swe.utc_to_jd(UT1年,月,日,時,分,秒, 格里曆)"
+            if swiss_time_input_semantics == "ut1_before_1972_swiss_rule"
+            else "JD_ET, JD_UT = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)"
+        ),
+        inputs={
+            (
+                "UT1-like input"
+                if swiss_time_input_semantics == "ut1_before_1972_swiss_rule"
+                else "UTC"
+            ): utc_label
+        },
         result={"JD(UT)": jd_ut, "JD(ET/TT)": jd_et},
+        note=(
+            "Swiss Ephemeris在1972年前把utc_to_jd輸入視為UT1；"
+            "本欄不宣稱存在當代UTC leap-second語義。"
+            if swiss_time_input_semantics == "ut1_before_1972_swiss_rule"
+            else ""
+        ),
     )
 
     delta_t_seconds = (jd_et - jd_ut) * 86400.0
@@ -213,10 +256,22 @@ def compute_time_conversion(
         "input_semantics": input_semantics,
         "timezone_label": tz_label,
         "utc_offset_hours": offset_hours,
-        "utc_time": utc_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+        "utc_time": utc_label,
+        "swiss_time_input_semantics": swiss_time_input_semantics,
+        "leap_second_input": leap_second,
         "jd_ut": jd_ut,
         "jd_et": jd_et,
         "delta_t_seconds": delta_t_seconds,
+        "delta_t_model": {
+            "source": "swiss_ephemeris_internal_delta_t",
+            "status": (
+                "far_epoch_extrapolation"
+                if dt_input.year >= DELTA_T_FAR_EPOCH_YEAR
+                else "model_value"
+            ),
+            "accuracy_status": "not_independently_established_for_this_epoch",
+            "far_epoch_warning_year": DELTA_T_FAR_EPOCH_YEAR,
+        },
         "gast_hours": gast_hours,
         "gmst_hours": gmst_hours,
         "last_hours": last_hours,

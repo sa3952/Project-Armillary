@@ -9,11 +9,29 @@ schema 層驗證，而非留給下游計算時才失敗：這樣所有輸入錯�
 import datetime as _dt
 import unicodedata
 from typing import Literal, Optional
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+
+# Dates whose final UTC minute contains a positive leap second in the bundled
+# Swiss 2.10.03 table.  The API accepts 60 only at 23:59 on one of these UTC
+# dates; future additions require an explicit source/table update rather than
+# making every arbitrary `:60` look valid.
+KNOWN_UTC_LEAP_SECOND_DATES = frozenset({
+    (1972, 6, 30), (1972, 12, 31), (1973, 12, 31), (1974, 12, 31),
+    (1975, 12, 31), (1976, 12, 31), (1977, 12, 31), (1978, 12, 31),
+    (1979, 12, 31), (1981, 6, 30), (1982, 6, 30), (1983, 6, 30),
+    (1985, 6, 30), (1987, 12, 31), (1989, 12, 31), (1990, 12, 31),
+    (1992, 6, 30), (1993, 6, 30), (1994, 6, 30), (1995, 12, 31),
+    (1997, 6, 30), (1998, 12, 31), (2005, 12, 31), (2008, 12, 31),
+    (2012, 6, 30), (2015, 6, 30), (2016, 12, 31),
+})
+
 from .config import AYANAMSA_OPTIONS, PRODUCT_YEAR_RANGE
+
+
+_PORTABLE_IANA_TIMEZONE_KEYS = frozenset(available_timezones())
 
 
 # `place_label` is the only free-text field the request schema accepts, and it
@@ -84,7 +102,7 @@ class DateTimeInput(StrictInputModel):
     day: int = Field(ge=1, le=31)
     hour: int = Field(ge=0, le=23)
     minute: int = Field(ge=0, le=59)
-    second: float = Field(ge=0, lt=60, default=0.0)
+    second: float = Field(ge=0, le=60, default=0.0)
 
     @model_validator(mode="after")
     def check_valid_calendar_date(self):
@@ -148,6 +166,11 @@ class TimezoneInput(StrictInputModel):
         if self.mode == "iana":
             if not self.iana_name:
                 raise ValueError("mode='iana' 時必須提供 iana_name，例如 'Asia/Taipei'")
+            if self.iana_name not in _PORTABLE_IANA_TIMEZONE_KEYS:
+                raise ValueError(
+                    "無效或非標準大小寫的 IANA 時區名稱；"
+                    "請使用如 'Asia/Taipei' 的標準名稱。"
+                )
             try:
                 ZoneInfo(self.iana_name)
             except (ZoneInfoNotFoundError, ValueError) as exc:
@@ -581,6 +604,29 @@ class ChartRequest(StrictInputModel):
 
     @model_validator(mode="after")
     def check_birth_time_precision(self):
+        if self.datetime.second == 60:
+            utc_zone = (
+                self.timezone.mode == "iana"
+                and self.timezone.iana_name == "UTC"
+            ) or (
+                self.timezone.mode == "fixed_offset"
+                and self.timezone.utc_offset_hours == 0
+            )
+            if (
+                self.birth_time_precision != "exact"
+                or not utc_zone
+                or self.datetime.hour != 23
+                or self.datetime.minute != 59
+            ):
+                raise ValueError(
+                    "second=60只接受已知UTC閏秒：exact、UTC、23:59:60"
+                )
+            if (
+                self.datetime.year,
+                self.datetime.month,
+                self.datetime.day,
+            ) not in KNOWN_UTC_LEAP_SECOND_DATES:
+                raise ValueError("指定日期不是bundled Swiss已知的UTC閏秒")
         if (
             self.options.moon_position_profile
             == "moon_only_topocentric_v1"

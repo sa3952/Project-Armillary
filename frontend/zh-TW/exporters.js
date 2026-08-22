@@ -6,6 +6,13 @@
   "use strict";
 
   const EXPORT_CONTRACT_VERSION = "0.1.2";
+  const OUTPUT_MODES = Object.freeze({
+    chart_data_only: "chart_data_only",
+    reproducibility_detail: "reproducibility_detail",
+  });
+  const REPRODUCIBILITY_SECTION_IDS = new Set([
+    "trace", "requested_options", "contract", "receipt",
+  ]);
   const SUPPORTED_RESPONSE_CONTRACTS = Object.freeze({
     "0.13.0": Object.freeze(["0.6.0"]),
   });
@@ -36,6 +43,10 @@
   function text(value) {
     if (value === null || value === undefined) return "—";
     return String(value);
+  }
+
+  function plainScalar(value) {
+    return text(value).replace(/[\t\r\n]+/g, " ");
   }
 
   function normalizeTable(table) {
@@ -105,6 +116,20 @@
     };
   }
 
+  function projectOutputDocument(document, mode = OUTPUT_MODES.reproducibility_detail) {
+    if (!Object.prototype.hasOwnProperty.call(OUTPUT_MODES, mode)) {
+      throw new Error(`不支援的輸出詳細度: ${mode}`);
+    }
+    return {
+      ...document,
+      output_mode: mode,
+      include_reproducibility: mode === OUTPUT_MODES.reproducibility_detail,
+      sections: mode === OUTPUT_MODES.reproducibility_detail
+        ? document.sections
+        : document.sections.filter((section) => !REPRODUCIBILITY_SECTION_IDS.has(section.id)),
+    };
+  }
+
   // FPI-2026-08-06-E-009。契約 §2 說 section copy 是「TSV 型純文字，供貼入
   // 筆記或試算表」。TSV 的欄界是 tab、列界是換行，所以儲存格裡的 tab 會多切出
   // 一欄、換行會拆成兩列——而使用者貼進試算表後**不會察覺資料已錯位**。
@@ -131,19 +156,19 @@
     if (!section || typeof section !== "object" || Array.isArray(section)) {
       throw new Error("缺少可用的 canonical section。");
     }
-    const lines = [`## ${section.title}`];
-    if (section.layer_label) lines.push(`層級: ${section.layer_label}`);
+    const lines = [`## ${plainScalar(section.title)}`];
+    if (section.layer_label) lines.push(`層級: ${plainScalar(section.layer_label)}`);
     if (section.status && section.status.state !== "present") {
-      lines.push(`狀態: ${section.status.label}`);
+      lines.push(`狀態: ${plainScalar(section.status.label)}`);
       if (section.status.reason_code) {
-        lines.push(`原因代碼: ${section.status.reason_code}`);
+        lines.push(`原因代碼: ${plainScalar(section.status.reason_code)}`);
       }
     }
-    section.notes.forEach((note) => lines.push(`備註: ${note}`));
+    section.notes.forEach((note) => lines.push(`備註: ${plainScalar(note)}`));
     section.tables.forEach((table) => {
       lines.push("", renderTableText(table));
     });
-    section.blocks.forEach((block) => lines.push("", block));
+    section.blocks.forEach((block) => lines.push("", plainScalar(block)));
     return lines.join("\n").trim();
   }
 
@@ -174,19 +199,21 @@
       lines.push("", "============================================================", "");
       lines.push(renderSectionText(section));
     });
-    lines.push(
-      "",
-      "============================================================",
-      "",
-      "## Calculation Dossier（機器可讀）",
-      JSON.stringify(dossier, null, 2)
-    );
+    if (document.include_reproducibility !== false) {
+      lines.push(
+        "",
+        "============================================================",
+        "",
+        "## Calculation Dossier（機器可讀）",
+        JSON.stringify(dossier, null, 2)
+      );
+    }
     return lines.join("\n").trim() + "\n";
   }
 
   function csvCell(value) {
     let raw = text(value);
-    const formulaLike = /^[\t\r\n ]*[=+\-@]/.test(raw);
+    const formulaLike = /^[\t\r\n \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[=+\-@]/u.test(raw);
     const numericLiteral = /^[\t\r\n ]*[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?[\t\r\n ]*$/.test(raw);
     if (formulaLike && !numericLiteral) raw = "'" + raw;
     return /[",\r\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
@@ -211,21 +238,19 @@
         flattenedDossier.push([path, scalar]);
       }
     }
-    flatten(dossier, "");
-    flattenedDossier.unshift(
-      ["export_contract_version", document.export_contract_version],
-      ["api_schema_version", document.source_response.schema_version || "—"]
-    );
-    flattenedDossier.forEach(([field, value], index) => {
-      rows.push([
-        "_dossier",
-        "Calculation Dossier",
-        "JSON paths",
-        index + 1,
-        field,
-        value,
-      ]);
-    });
+    if (document.include_reproducibility !== false) {
+      flatten(dossier, "");
+      flattenedDossier.unshift(
+        ["export_contract_version", document.export_contract_version],
+        ["api_schema_version", document.source_response.schema_version || "—"]
+      );
+      flattenedDossier.forEach(([field, value], index) => {
+        rows.push([
+          "_dossier", "Calculation Dossier", "JSON paths",
+          index + 1, field, value,
+        ]);
+      });
+    }
     document.sections.forEach((section) => {
       rows.push([
         section.id,
@@ -269,9 +294,17 @@
   }
 
   function renderJson(document) {
+    const sourceResponse = { ...document.source_response };
+    if (document.include_reproducibility === false) {
+      for (const field of [
+        "calculation_dossier", "calculation_trace",
+        "requested_options", "output_contract",
+      ]) delete sourceResponse[field];
+    }
     return JSON.stringify({
       export_contract_version: document.export_contract_version,
-      source_response: document.source_response,
+      output_mode: document.output_mode || OUTPUT_MODES.reproducibility_detail,
+      source_response: sourceResponse,
       display_sections: document.sections,
     }, null, 2) + "\n";
   }
@@ -290,7 +323,9 @@
     return text(value)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+      .replace(/>/g, "&gt;")
+      .replace(/([\\`*_{}\[\]()#+|])/g, "\\$1")
+      .replace(/\r\n?|\n/g, "<br>");
   }
 
   function markdownCell(value) {
@@ -400,15 +435,13 @@
       });
     });
 
-    lines.push(
-      "",
-      "## Calculation Dossier（機器可讀）",
-      "",
-      "以下區塊是本次回應內同一份後端收據；可用來核對輸入、時間轉換、計算政策、星曆來源與警告。",
-      "",
-      markdownCodeFence(dossier),
-      ""
-    );
+    if (document.include_reproducibility !== false) {
+      lines.push(
+        "", "## Calculation Dossier（機器可讀）", "",
+        "以下區塊是本次回應內同一份後端收據；可用來核對輸入、時間轉換、計算政策、星曆來源與警告。",
+        "", markdownCodeFence(dossier), ""
+      );
+    }
     return lines.join("\n").replace(/\n{3,}/g, "\n\n");
   }
 
@@ -420,7 +453,11 @@
     return `classical-astrology-export.${clean}`;
   }
 
-  function buildDownloadArtifact(document, format) {
+  function buildDownloadArtifact(
+    document,
+    format,
+    mode = OUTPUT_MODES.reproducibility_detail,
+  ) {
     const definitions = {
       csv: {
         renderer: renderCsv,
@@ -445,16 +482,17 @@
     };
     const definition = definitions[format];
     if (!definition) throw new Error(`不支援的匯出格式: ${format}`);
+    const projected = projectOutputDocument(document, mode);
     return {
       filename: buildDownloadName(format),
       mime_type: definition.mime_type,
-      content: definition.prefix + definition.renderer(document),
+      content: definition.prefix + definition.renderer(projected),
     };
   }
 
-  function runDownloadAction(document, format, deliverArtifact) {
+  function runDownloadAction(document, format, deliverArtifact, mode) {
     try {
-      deliverArtifact(buildDownloadArtifact(document, format));
+      deliverArtifact(buildDownloadArtifact(document, format, mode));
       return { ok: true, error_message: null };
     } catch (error) {
       return {
@@ -466,10 +504,12 @@
 
   return {
     EXPORT_CONTRACT_VERSION,
+    OUTPUT_MODES,
     SECTION_STATES,
     SUPPORTED_RESPONSE_CONTRACTS,
     assertCompatibleSourceResponse,
     createDocument,
+    projectOutputDocument,
     normalizeTable,
     renderSectionText,
     renderPlainText,

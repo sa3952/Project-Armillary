@@ -28,6 +28,9 @@ from fastapi.testclient import TestClient
 import pytest
 import swisseph as swe
 
+if sys.version_info < (3, 11):
+    from exceptiongroup import BaseExceptionGroup
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
@@ -50,6 +53,42 @@ EXPECTED_EVENT_FIELDS = {
     "outcome",
     "error_code",
 }
+
+
+def test_privacy_real_server_commands_pin_the_production_h11_parser():
+    """The canaries must not let an incidental local extra choose the parser."""
+
+    source = Path(__file__).read_text(encoding="utf-8")
+    run_call = "uvicorn." + "run(main.app"
+    parser_pin = "http=" + "'h11'"
+    assert source.count(run_call) == 4
+    assert source.count(parser_pin) == 4
+
+
+def test_python310_exception_groups_are_explicit_and_fail_closed():
+    requirements = (BACKEND_ROOT / "requirements.txt").read_text(encoding="utf-8")
+    source = (BACKEND_ROOT / "app" / "privacy_logging.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'exceptiongroup; python_version < "3.11"' in requirements
+    assert "BaseExceptionGroup = ()" not in source
+    assert "from exceptiongroup import BaseExceptionGroup" in source
+
+
+def test_python310_exception_group_dependency_has_hash_pinned_lock_closure():
+    root = Path(__file__).resolve().parents[2]
+    for relative in (
+        "backend/requirements.lock",
+        "backend/requirements-dev.lock",
+        "deploy/requirements.lock",
+    ):
+        lock = (root / relative).read_text(encoding="utf-8")
+        assert "exceptiongroup==" in lock, relative
+        assert 'python_version < "3.11"' in lock, relative
+        block = lock[lock.index("exceptiongroup==") :]
+        block = block[: block.index("\n    # via")]
+        assert "--hash=sha256:" in block, relative
 
 
 def _unused_local_port() -> int:
@@ -284,7 +323,52 @@ def test_capacity_rejection_stays_inside_headers_and_telemetry_boundary():
         event for event in events if event["status_code"] == 503
     ]
     assert len(rejected_events) == 1
-    assert rejected_events[0]["outcome"] == "error"
+    assert rejected_events[0]["outcome"] == "rejected"
+    assert rejected_events[0]["error_code"] == "request_capacity_exhausted"
+
+
+def test_boundary_reason_producer_and_privacy_consumer_are_closed():
+    from app import privacy_logging, request_limits
+
+    for reason in (
+        "request_body_too_large",
+        "request_headers_too_large",
+        "conflicting_request_framing",
+        "request_capacity_exhausted",
+        "compute_capacity_exhausted",
+    ):
+        scope = {"type": "http", "state": {}}
+        request_limits._mark_boundary_reason(scope, reason)
+        assert privacy_logging._boundary_reason(scope) == reason
+        event = privacy_logging.build_request_event(
+            request_id="a" * 32,
+            method="POST",
+            path="/api/chart",
+            status_code=503 if "capacity" in reason else 413,
+            duration_ms=1,
+            content_length="1",
+            error_code=privacy_logging._boundary_reason(scope),
+        )
+        assert event["error_code"] == reason
+        assert event["outcome"] == "rejected"
+
+    assert privacy_logging._boundary_reason({
+        "type": "http",
+        "state": {
+            request_limits.BOUNDARY_REASON_STATE_KEY: "attacker_text"
+        },
+    }) is None
+
+
+def test_boundary_reason_is_single_assignment_and_preserves_first_producer():
+    from app import privacy_logging, request_limits
+
+    scope = {"type": "http", "state": {}}
+    request_limits._mark_boundary_reason(scope, "request_body_too_large")
+    with pytest.raises(RuntimeError, match="already assigned"):
+        request_limits._mark_boundary_reason(scope, "compute_capacity_exhausted")
+
+    assert privacy_logging._boundary_reason(scope) == "request_body_too_large"
 
 
 def test_hostile_scope_header_iterator_is_reduced_without_escaping():
@@ -366,7 +450,7 @@ def test_process_control_base_exceptions_remain_propagating():
 @pytest.mark.parametrize(
     "control_error",
     [
-        asyncio.CancelledError(),
+        asyncio.CancelledError("middleware-cancellation-canary"),
         BaseExceptionGroup(
             "cancelled task group",
             [asyncio.CancelledError()],
@@ -409,14 +493,18 @@ def test_process_control_exceptions_propagate_through_middleware(control_error):
         assert privacy_logging._is_process_control_exception(captured.value)
         assert len(captured.value.exceptions) == 1
     else:
-        assert captured.value is control_error
+        # Python 3.10 asyncio.run re-raises cancellation as a fresh
+        # CancelledError with empty args.  The invariant at this boundary is
+        # that cancellation remains process control and is not converted into
+        # an ordinary application failure or swallowed by privacy telemetry.
+        assert isinstance(captured.value, asyncio.CancelledError)
     assert captured_events == []
 
 
 def test_process_control_exception_from_event_emitter_is_not_silenced():
     from app import privacy_logging
 
-    control_error = asyncio.CancelledError()
+    control_error = asyncio.CancelledError("event-emitter-cancellation-canary")
 
     async def app(_scope, _receive, send):
         await send(
@@ -455,7 +543,7 @@ def test_process_control_exception_from_event_emitter_is_not_silenced():
             )
         )
 
-    assert captured.value is control_error
+    assert isinstance(captured.value, asyncio.CancelledError)
 
 
 def test_mixed_exception_group_propagates_only_process_control_subgroup():
@@ -735,7 +823,7 @@ def test_real_uvicorn_unexpected_error_does_not_emit_traceback_or_canary():
             "main._compute_chart_locked = fail",
             (
                 "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False)"
+                f"port={port}, access_log=False, http='h11')"
             ),
         )
     )
@@ -805,7 +893,7 @@ def test_real_uvicorn_non_control_base_exception_is_contained():
             ),
             (
                 "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False)"
+                f"port={port}, access_log=False, http='h11')"
             ),
         )
     )
@@ -868,7 +956,7 @@ def test_real_uvicorn_event_emitter_failure_is_isolated():
             "main.emit_security_event = fail_emitter",
             (
                 "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False)"
+                f"port={port}, access_log=False, http='h11')"
             ),
         )
     )
@@ -956,7 +1044,7 @@ def test_real_uvicorn_post_start_errors_are_contained_and_reported():
             ),
             (
                 "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False)"
+                f"port={port}, access_log=False, http='h11')"
             ),
         )
     )

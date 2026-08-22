@@ -26,9 +26,19 @@
       "version": "8.4.2"
     },
     {
+      "name": "coverage",
+      "sha256": "3df60dc267f0a2ca23cb7a9ab1109c62b9335ffbf519fcfe167157c28c09b81d",
+      "version": "7.15.2"
+    },
+    {
       "name": "dunamai",
       "sha256": "84ea45eddf9bb4b40df7610b1b22a03137365e6257dbf9d7b72128fdccca564c",
       "version": "1.26.2"
+    },
+    {
+      "name": "exceptiongroup",
+      "sha256": "8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219",
+      "version": "1.3.1"
     },
     {
       "name": "fastapi",
@@ -174,6 +184,11 @@
       "name": "starlette",
       "sha256": "05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0",
       "version": "1.3.1"
+    },
+    {
+      "name": "tomli",
+      "sha256": "7c7e1a961a0b2f2472c1ac5b69affa0ae1132c39adcb67aba98568702b9cc23f",
+      "version": "2.4.1"
     },
     {
       "name": "tomlkit",

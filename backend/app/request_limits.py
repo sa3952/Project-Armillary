@@ -34,6 +34,17 @@ _BOUNDED_JSON_PATHS: Final = frozenset(
         "/api/places/search",
     }
 )
+BOUNDARY_REASON_STATE_KEY: Final = "armillary.boundary_reason.v1"
+
+
+def _mark_boundary_reason(scope: Scope, reason: str) -> None:
+    state = scope.get("state")
+    if not isinstance(state, dict):
+        state = {}
+        scope["state"] = state
+    if BOUNDARY_REASON_STATE_KEY in state:
+        raise RuntimeError("request boundary reason was already assigned")
+    state[BOUNDARY_REASON_STATE_KEY] = reason
 
 
 class ApiMethodBoundary:
@@ -71,6 +82,7 @@ class ApiMethodBoundary:
                 self.route_methods.get(path) if isinstance(path, str) else None
             )
             if methods is not None and method not in methods:
+                _mark_boundary_reason(scope, "unsupported_method")
                 await JSONResponse(
                     status_code=405,
                     headers={"Allow": ", ".join(sorted(methods))},
@@ -149,9 +161,12 @@ class RequestCapacityBoundary:
                 if accepted:
                     self._active += 1
         if not accepted:
-            # One reason code for both pools: the client's recovery is the
-            # same either way, and an unconsumed second code would be a field
-            # with no consumer (CG-11).
+            _mark_boundary_reason(
+                scope,
+                "compute_capacity_exhausted"
+                if compute
+                else "request_capacity_exhausted",
+            )
             await _error_response(
                 503,
                 "request_capacity_exhausted",
@@ -202,11 +217,10 @@ def _content_length(scope: Scope) -> int | None:
 def _has_conflicting_framing(scope: Scope) -> bool:
     """Reject a body framed by both Content-Length and Transfer-Encoding.
 
-    RFC 9112 forbids the combination.  h11 accepts it and prefers
-    Content-Length, and the reverse proxy normalizes it in the supported
-    deployment, so this boundary previously relied on a layer it does not
-    own.  Rejecting here makes the application's own framing contract
-    explicit instead of assumed.
+    RFC 9112 forbids the combination.  A parser or proxy can normalize the
+    ambiguity before ASGI exposes it, so relying on one layer's precedence
+    would make the application contract parser-dependent.  Rejecting the
+    combination here keeps the application's own framing contract explicit.
     """
 
     return bool(
@@ -268,6 +282,7 @@ class ChartRequestBoundary:
             return
 
         if _header_bytes(scope) > MAX_HOSTED_HEADER_BYTES:
+            _mark_boundary_reason(scope, "request_headers_too_large")
             await _error_response(
                 431,
                 "request_headers_too_large",
@@ -276,6 +291,7 @@ class ChartRequestBoundary:
             return
 
         if not _is_supported_json_content_type(scope):
+            _mark_boundary_reason(scope, "unsupported_media_type")
             await _error_response(
                 415,
                 "unsupported_media_type",
@@ -284,6 +300,7 @@ class ChartRequestBoundary:
             return
 
         if _has_conflicting_framing(scope):
+            _mark_boundary_reason(scope, "conflicting_request_framing")
             await _error_response(
                 400,
                 "conflicting_request_framing",
@@ -294,6 +311,7 @@ class ChartRequestBoundary:
         try:
             content_length = _content_length(scope)
         except ValueError:
+            _mark_boundary_reason(scope, "invalid_content_length")
             await _error_response(
                 400,
                 "invalid_content_length",
@@ -304,6 +322,7 @@ class ChartRequestBoundary:
             content_length is not None
             and content_length > self.max_body_bytes
         ):
+            _mark_boundary_reason(scope, "request_body_too_large")
             await _error_response(
                 413,
                 "request_body_too_large",
@@ -311,6 +330,7 @@ class ChartRequestBoundary:
             )(scope, receive, send)
             return
         if content_length == 0:
+            _mark_boundary_reason(scope, "empty_request_body")
             # A declared empty body reaches Pydantic as a JSON parse failure and
             # comes back as a 422 listing every missing field, which describes
             # the schema rather than the actual fault.  The body framing is this
@@ -322,33 +342,33 @@ class ChartRequestBoundary:
             )(scope, receive, send)
             return
 
+        # Read the complete, already bounded JSON body before entering the
+        # application.  This prevents an application that responds before
+        # consuming its whole receive stream from starting a 2xx response and
+        # only then discovering a late oversized chunk.
+        buffered: list[Message] = []
         received_bytes = 0
-        response_started = False
-
-        async def receive_with_limit() -> Message:
-            nonlocal received_bytes
+        while True:
             message = await receive()
             if message["type"] != "http.request":
-                return message
-            body = message.get("body", b"")
-            received_bytes += len(body)
+                buffered.append(message)
+                break
+            received_bytes += len(message.get("body", b""))
             if received_bytes > self.max_body_bytes:
-                raise _RequestBodyTooLarge
-            return message
+                _mark_boundary_reason(scope, "request_body_too_large")
+                await _error_response(
+                    413,
+                    "request_body_too_large",
+                    "請求內容超過 16 KiB 上限。",
+                )(scope, receive, send)
+                return
+            buffered.append(message)
+            if not message.get("more_body", False):
+                break
 
-        async def send_with_state(message: Message) -> None:
-            nonlocal response_started
-            if message["type"] == "http.response.start":
-                response_started = True
-            await send(message)
+        async def receive_buffered() -> Message:
+            if buffered:
+                return buffered.pop(0)
+            return {"type": "http.disconnect"}
 
-        try:
-            await self.app(scope, receive_with_limit, send_with_state)
-        except _RequestBodyTooLarge:
-            if response_started:
-                raise
-            await _error_response(
-                413,
-                "request_body_too_large",
-                "請求內容超過 16 KiB 上限。",
-            )(scope, receive, send)
+        await self.app(scope, receive_buffered, send)

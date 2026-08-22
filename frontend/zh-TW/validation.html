@@ -6,10 +6,12 @@
 <meta name="robots" content="noindex, nofollow">
 <title>驗證｜渾儀 Armillary</title>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
 </head>
 <body>
+
+<a class="skip-link" href="#main-content">跳到主要內容</a>
 
 <header>
   <div class="wrap">
@@ -24,17 +26,17 @@
       <span>渾儀<small>ARMILLARY</small></span>
     </a>
     <nav class="site-nav" aria-label="主要導覽">
-      <a href="/zh-TW/calculate">計算</a>
       <a href="/zh-TW/features">功能</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>
       <a href="/zh-TW/about">關於</a>
+      <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
   </div>
 </header>
 
-<main>
+<main id="main-content">
 <div class="wrap page-body">
   <div class="eyebrow">驗證 · VALIDATION</div>
   <h1>「已驗證」如果沒有附帶範圍，等於沒說。</h1>
@@ -44,7 +46,8 @@
 
   <section>
     <h2>我們拿產品去對一套完全不同的管線</h2>
-    <p><strong>只用同一套函式庫自我驗證，沒有意義。</strong>所以我們用 JPL 的 DE442 星曆核心，經由 Astropy／ERFA 建立一條<strong>完全獨立</strong>的參考管線，與產品使用的 Swiss Ephemeris 逐小時比對。</p>
+    <p><strong>只用同一套函式庫自我驗證，沒有意義。</strong>所以我們用 JPL 的 DE442 星曆核心，經由 Astropy／ERFA 建立另一條參考管線，與產品使用的 Swiss Ephemeris 逐小時比對。它在幾何星曆與主要轉換實作上獨立，但仍共享 IERS／IAU 標準、部分觀測資料譜系與視位置定義；因此不能簡寫成「完全獨立」。</p>
+    <p>本頁下列 1990–2026 統計是<strong>歷史驗證批次</strong>，不是每次開頁重跑，也不是目前 candidate image 的收據。後續 validator v2 使用 frozen backend <code>70a6a8b</code> 作更深的成因與邊界研究；正式 candidate 必須另以 exact source／image identity重播，不能把歷史數字自動貼到新映像。</p>
     <table class="log">
       <thead><tr><th>項目</th><th>設定</th></tr></thead>
       <tbody>
@@ -70,6 +73,7 @@
     </table>
     <p><strong>五大行星的位置沒有任何一項未通過。</strong>代表性最大位置差：水星赤緯 4.8 角秒、金星赤經 4.0 角秒、土星赤經 1.7 角秒。月亮的位置一致到 0.005 角秒以內。</p>
     <p>距離差：水星 2.3 公里、金星 2.3 公里、火星 1.9 公里、木星 3.5 公里、土星 10.7 公里。</p>
+    <p><strong>站心速度另有已知限制：</strong>Swiss <code>FLG_SPEED</code> 回傳的太陽／月亮部分站心解析速度，不等於同次站心位置的有限差分導數。位置比較仍然良好，但這些速度欄位不宣稱已驗證的導數精度；詳情會隨每次站心回應的warning與receipt一起出現。</p>
   </section>
 
   <section>
@@ -108,9 +112,9 @@
     <p>1990 至 2026 年間，五大行星的黃經速度零點共 <strong>448 個</strong>。每個零點前後各 1 小時與 6 小時比較順行／逆行符號，共 <strong>1,792 次檢查</strong>——<strong>零次分類翻轉。</strong></p>
     <p>最大零點時間差：水星 1.65 秒、金星 4.94 秒、火星 12.19 秒、木星 12.85 秒、土星 42.52 秒。</p>
 
-    <h2>還在做的邊界檢查</h2>
-    <p>星座、界、相位、宮頭與角點的邊界語料庫。<strong>界與相位是產品實際輸出的東西，也最容易被幾角秒翻轉</strong>，所以這一項的優先度很高。</p>
-    <p>上升點與宮頭另外還受出生時間、經緯度、海拔、大氣折射與地球自轉資料影響——<strong>行星星曆比對完全沒有涵蓋這些軸向。</strong></p>
+    <h2>後續完成的邊界檢查</h2>
+    <p>Validator v2在frozen backend上建立289個crossings、70,155個application samples與8,824個reference samples；涵蓋星座、旬、Egyptian bounds、station、sect與exact aspect，沒有unshared bracket或double-boundary scan step。最大時間差依family約0.026秒至58.044秒；這是歷史run evidence，仍需在exact candidate重播。</p>
+    <p>Orb edge、quadrant cusp、固定星、日月食shadow、廣泛升降／上下中天與非預設center／frame仍沒有同等覆蓋。上升點與宮頭另受出生時間、經緯度、海拔、大氣折射與地球自轉資料影響，不能由行星星曆比對外推。</p>
   </section>
 
   <section>
@@ -127,7 +131,7 @@
     <p><strong>這份範例由後端實際計算產生，不是手寫的。</strong>使用的是一組標示為範例的出生資料。</p>
 <!-- 由 scripts/frontend/render_example_dossier.cjs 產生，請勿手改。 -->
 <details class="dossier">
-  <summary>展開完整範例卷宗（28 節、492 列）</summary>
+  <summary>展開完整範例卷宗（28 節、496 列）</summary>
   <div class="dossier-body">
   <p class="dossier-lede"><strong>這是範例，不是任何人的真實出生資料。</strong>
   底下每一個數值都由後端實際計算產生，不是手寫的；使用的是一組標示為範例的輸入。</p>
@@ -138,8 +142,8 @@
     <dt>API schema 版本</dt><dd class="mono">0.13.0</dd>
     <dt>卷宗版本</dt><dd class="mono">0.6.0</dd>
   </dl>
-  <h3 class="dossier-warnings-title">本次回應附帶的警告（8）</h3>
-    <ul class="dossier-warnings"><li><code>mixed_origin_moon_position</code> 本次全盤採地心座標，但有效月亮改採觀測地站心座標。兩個月亮數值均保留，所有下游判定使用站心月亮；這是刻意的混合原點研究 profile，不代表站心值普遍較準。</li><li><code>provisional_method_result</code> house_division 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> planet_in_house 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> aspects 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> sect 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> lots 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> void_of_course 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> declination_aspects 已計算，但方法仍待審閱，不能視為正式採用。</li></ul>
+  <h3 class="dossier-warnings-title">本次回應附帶的警告（9）</h3>
+    <ul class="dossier-warnings"><li><code>topocentric_analytic_speed_limitation</code> 站心speed_*是Swiss FLG_SPEED解析值；太陽／月亮部分欄位已知不等於同次站心position的有限差分導數。位置仍可使用，但這些speed欄位不得解讀為已驗證的導數精度。</li><li><code>mixed_origin_moon_position</code> 本次全盤採地心座標，但有效月亮改採觀測地站心座標。兩個月亮數值均保留，所有下游判定使用站心月亮；這是刻意的混合原點研究 profile，不代表站心值普遍較準。</li><li><code>provisional_method_result</code> house_division 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> planet_in_house 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> aspects 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> sect 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> lots 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> void_of_course 已計算，但方法仍待審閱，不能視為正式採用。</li><li><code>provisional_method_result</code> declination_aspects 已計算，但方法仍待審閱，不能視為正式採用。</li></ul>
   <section class="dossier-section" data-ring="ring-1">
     <h3>時間轉換
       <span class="dossier-status" data-state="present">已計算</span>
@@ -157,6 +161,8 @@
         <tr><td>UTC</td><td>1990-05-15 06:30:00.000</td></tr>
         <tr><td>儒略日 JD(UT)</td><td>2448026.770834</td></tr>
         <tr><td>ΔT（秒）</td><td>57.105</td></tr>
+        <tr><td>Swiss 時間輸入語義</td><td>utc</td></tr>
+        <tr><td>ΔT 模型狀態</td><td>model_value</td></tr>
         <tr><td>地方真恆星時 LAST（小時）</td><td>6.060282</td></tr>
         <tr><td>真黃赤交角 ε</td><td>23°26′31.79″</td></tr>
         </tbody>
@@ -170,6 +176,7 @@
     <p class="dossier-layer">RING I 天文事實</p>
     <p class="dossier-note">黃道、赤道、地平三套座標一次輸出，不必換工具重填生辰。</p>
     <p class="dossier-note">星座與宮內度數由後端黃經以 30° 分段換寫，非另一次計算；完整精度在 JSON 匯出中。</p>
+    <p class="dossier-note">站心速度為 Swiss FLG_SPEED 解析值；太陽／月亮部分欄位已知不等於同次位置的有限差分導數，請勿把它當作已驗證的導數精度。</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>本命天體</caption>
@@ -906,14 +913,14 @@
     <p class="dossier-layer">VERIFICATION 驗證</p>
     <p class="dossier-note">本次共 98 步。步數隨你勾選的模組而變，不是固定值。</p>
     <p class="dossier-note">整份可複製貼出去逐步對照；每一步都列出算式、輸入與結果。</p>
-    <p class="dossier-note">序列化雜湊 97fc1d6ec787001af0e6c6dce536a0a99915ff3e9dfb72c47c30ddab12faf74f（對 Python 固定參數序列化的結果計算，不跨語言可攜，證明的是完整性而非跨實作指紋）</p>
+    <p class="dossier-note">序列化雜湊 537297e226df46d56341fe5b34512fcddca80286cbfa60b821f96f9456e21f1b（對 Python 固定參數序列化的結果計算，不跨語言可攜，證明的是完整性而非跨實作指紋）</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>軌跡</caption>
         <thead><tr><th>#</th><th>步驟</th><th>算式</th><th>輸入</th><th>結果</th><th>備註</th></tr></thead>
         <tbody>
         <tr><td>1</td><td>本地時間 -&gt; UTC</td><td>UTC = 本地時間 - 時區偏移</td><td>時區=Asia/Taipei；時區偏移(小時)=8；本地時間=1990-05-15 14:30:00.00</td><td>UTC時間=1990-05-15 06:30:00.000</td><td>—</td></tr>
-        <tr><td>2</td><td>UTC -&gt; 儒略日 (swe.utc_to_jd)</td><td>JD_UT, JD_ET = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)</td><td>UTC=1990-05-15 06:30:00.000</td><td>JD(ET/TT)=2448026.7714951853；JD(UT)=2448026.7708342457</td><td>—</td></tr>
+        <tr><td>2</td><td>UTC -&gt; 儒略日 (swe.utc_to_jd)</td><td>JD_ET, JD_UT = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)</td><td>UTC=1990-05-15 06:30:00.000</td><td>JD(ET/TT)=2448026.7714951853；JD(UT)=2448026.7708342457</td><td>—</td></tr>
         <tr><td>3</td><td>地球時與世界時之差 ΔT</td><td>ΔT(秒) = (JD_ET - JD_UT) * 86400</td><td>JD(ET)=2448026.7714951853；JD(UT)=2448026.7708342457</td><td>ΔT(秒)=57.1052</td><td>—</td></tr>
         <tr><td>4</td><td>黃赤交角與章動 (swe.calc_ut ECL_NUT)</td><td>ECL_NUT 回傳 [真黃赤交角, 平黃赤交角, 黃經章動, 交角章動]</td><td>JD(UT)=2448026.7708342457</td><td>交角章動(度)=0.0016304647231617782；平黃赤交角(度)=23.44053263706711；真黃赤交角ε(度)=23.44216310179027；黃經章動(度)=0.0032542394199027314</td><td>—</td></tr>
         <tr><td>5</td><td>平均／視恆星時 (Sidereal Time)</td><td>GAST = swe.sidtime(JD_UT)；GMST = swe.sidtime0(JD_UT, 平黃赤交角, 0)；LAST/LMST = GAST/GMST + 東經/15</td><td>JD(UT)=2448026.7708342457；地理經度(東正西負)=120.6736</td><td>GAST(小時)=22.01537571403499；GMST(小時)=22.015176671274734；LAST(小時)=6.060282380701658；LMST(小時)=6.0600833379414</td><td>舊欄位 gst_hours/lst_hours 為向後相容 alias，固定等同 GAST/LAST。</td></tr>
@@ -930,7 +937,7 @@
         <tr><td>16</td><td>海王星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=97.00082860979376；方位角Az(北=0,順時針)=277.00082860979376；真高度Alt=-76.3773693087986；視高度(含蒙氣差)=-76.3773693087986；赤經=285.4869625163796；赤緯=-21.801182847417373；距離(AU)=29.5500131413978；黃經=284.3562451627202；黃經速度(度/日)=-0.014619955497902404；黃緯=0.8723746548060747</td><td>—</td></tr>
         <tr><td>17</td><td>冥王星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=247.5639193431082；方位角Az(北=0,順時針)=67.56391934310818；真高度Alt=-42.875482642384824；視高度(含蒙氣差)=-42.875482642384824；赤經=228.2521991597292；赤緯=-1.3256243170471809；距離(AU)=28.694559031976286；黃經=226.17375306160372；黃經速度(度/日)=-0.02773873017595457；黃緯=15.99208993751722</td><td>—</td></tr>
         <tr><td>18</td><td>凱龍星 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=300.5064506627327；方位角Az(北=0,順時針)=120.50645066273268；真高度Alt=75.74945631836573；視高度(含蒙氣差)=75.7534701492797；赤經=103.67734329157852；赤緯=16.40803737282183；距離(AU)=11.690304737188894；黃經=103.19412469811223；黃經速度(度/日)=0.07973541669497944；黃緯=-6.409789868950592</td><td>—</td></tr>
-        <tr><td>19</td><td>月亮 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=33026；地平座標來源flags(tropical of-date)=33026；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=88.51514496840605；方位角Az(北=0,順時針)=268.51514496840605；真高度Alt=-66.84517034721222；視高度(含蒙氣差)=-66.84517034721222；赤經=296.11820114076653；赤緯=-22.670683463312763；距離(AU)=0.0026884653726112107；黃經=293.9743670045535；黃經速度(度/日)=16.92776680215502；黃緯=-1.3763463421207067</td><td>—</td></tr>
+        <tr><td>19</td><td>月亮 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=33026；地平座標來源flags(tropical of-date)=33026；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=88.51514496840605；方位角Az(北=0,順時針)=268.51514496840605；真高度Alt=-66.84517034721222；視高度(含蒙氣差)=-66.84517034721222；赤經=296.11820114076653；赤緯=-22.670683463312763；距離(AU)=0.0026884653726112107；黃經=293.9743670045535；黃經速度(度/日)=16.92776680215502；黃緯=-1.3763463421207067</td><td>站心speed_*是Swiss FLG_SPEED解析值；已知太陽／月亮部分欄位不等於同次站心position的有限差分導數，故不作導數精度宣稱。</td></tr>
         <tr><td>20</td><td>平均黑月莉莉絲 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=277.46658307157446；方位角Az(北=0,順時針)=97.46658307157446；真高度Alt=-50.44891108362696；視高度(含蒙氣差)=-50.44891108362696；赤經=227.5933084136632；赤緯=-23.012850136485504；距離(AU)=0.002710625131722546；黃經=231.45323505218212；黃經速度(度/日)=0.11204820534971094；黃緯=-5.0660466448136</td><td>—</td></tr>
         <tr><td>21</td><td>自然／插值月球遠地點（Lilith） 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=negative；方位角Az(Swiss原始,南=0,向西)=277.1558987549589；方位角Az(北=0,順時針)=97.15589875495891；真高度Alt=-49.81539497193646；視高度(含蒙氣差)=-49.81539497193646；赤經=226.95865265397936；赤緯=-22.698235855211735；距離(AU)=0.002716859526272097；黃經=230.80257281828486；黃經速度(度/日)=-0.08370634416379029；黃緯=-4.921651568946556</td><td>—</td></tr>
         <tr><td>22</td><td>自然／插值月球近地點（Priapus） 位置計算</td><td>黃道: swe.calc_ut(計算模式旗標)；赤道: 移除 sidereal 後加 FLG_EQUATORIAL；地平: swe.azalt(ECL2HOR)</td><td>JD(UT)=2448026.7708342457；flags=258；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>motion_sign=positive；方位角Az(Swiss原始,南=0,向西)=97.40344290586245；方位角Az(北=0,順時針)=277.40344290586245；真高度Alt=51.88241764754197；視高度(含蒙氣差)=51.8948129028655；赤經=49.13458019949183；赤緯=23.230379007596905；距離(AU)=0.002386886023430778；黃經=52.883013604555345；黃經速度(度/日)=0.5233507291244137；黃緯=4.899714444183776</td><td>—</td></tr>
@@ -1052,7 +1059,7 @@
         <tr><td>建置識別</td><td>—</td></tr>
         <tr><td>pyswisseph</td><td>2.10.3.2</td></tr>
         <tr><td>Swiss Ephemeris</td><td>2.10.03</td></tr>
-        <tr><td>時區資料庫</td><td>2026b（zoneinfo_file:+VERSION）</td></tr>
+        <tr><td>時區資料庫</td><td>2026c（zoneinfo_file:+VERSION）</td></tr>
         <tr><td>星曆來源</td><td>Swiss Ephemeris files</td></tr>
         <tr><td>星曆譜系</td><td>JPL DE441；Swiss Ephemeris compressed files；sepl_18.se1、semo_18.se1；狀態：declared_from_bundled_file_headers</td></tr>
         </tbody>
@@ -1070,6 +1077,8 @@
         <tr><td>UTC</td><td>1990-05-15 06:30:00.000</td></tr>
         <tr><td>儒略日 JD(UT)</td><td>2448026.770834</td></tr>
         <tr><td>ΔT（秒）</td><td>57.105</td></tr>
+        <tr><td>Swiss 時間輸入語義</td><td>utc</td></tr>
+        <tr><td>ΔT 模型狀態</td><td>model_value</td></tr>
         <tr><td>緯度</td><td>24.147700</td></tr>
         <tr><td>經度</td><td>120.673600</td></tr>
         <tr><td>海拔（公尺）</td><td>80.0</td></tr>
@@ -1111,7 +1120,7 @@
         <tbody>
         <tr><td>逐步軌跡步數</td><td>98</td></tr>
         <tr><td>後端回報步數</td><td>98</td></tr>
-        <tr><td>序列化雜湊 SHA-256</td><td>97fc1d6ec787001af0e6c6dce536a0a99915ff3e9dfb72c47c30ddab12faf74f</td></tr>
+        <tr><td>序列化雜湊 SHA-256</td><td>537297e226df46d56341fe5b34512fcddca80286cbfa60b821f96f9456e21f1b</td></tr>
         <tr><td>跨語言可攜</td><td>否（僅供完整性核對）</td></tr>
         </tbody>
       </table>
@@ -1121,7 +1130,7 @@
       <caption>隱私聲明</caption>
         <thead><tr><th>項目</th><th>數值</th></tr></thead>
         <tbody>
-        <tr><td>聲明版本</td><td>1.2.0</td></tr>
+        <tr><td>聲明版本</td><td>1.3.0</td></tr>
         <tr><td>聲明狀態（後端原值）</td><td>provisional_pending_external_review</td></tr>
         <tr><td>含敏感出生資料</td><td>是</td></tr>
         <tr><td>可匿名分享</td><td>否</td></tr>
@@ -1140,8 +1149,9 @@
     <p>說清楚比較好：</p>
     <ul>
       <li><strong>沒有</strong>第三方安全認證。</li>
-      <li><strong>沒有</strong>通過外部紅隊。</li>
+      <li><strong>已有</strong>獨立 AI 紅隊與外部模型審查；<strong>沒有</strong>專業滲透測試。</li>
       <li><strong>沒有</strong>全系統天文正確性認證——上面那次比對涵蓋指定的天體、年代、欄位與模式，不是全部。</li>
+      <li>Heliocentric、barycentric、true position、J2000、nutation-off、固定星、日月食shadow與完整升降／上下中天，仍在各自的具名validation boundary；沒有證據的欄位不因同頁其他項目通過而變成通過。</li>
       <li>repository 內的測試是設計期的迴歸證據，<strong>不會在你每次計算時重跑</strong>。</li>
     </ul>
     <p><strong>我們寧可列出這份清單，也不想用一個模糊的「已驗證」讓你以為我們有。</strong></p>
@@ -1161,6 +1171,7 @@
     </div>
     <div class="sitemap-col">
       <h2>可查證性</h2>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>

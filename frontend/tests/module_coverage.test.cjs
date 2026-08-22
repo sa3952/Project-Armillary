@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ViewModel = require("../zh-TW/view-model.js");
+const Exporters = require("../zh-TW/exporters.js");
 
 const ALL = JSON.parse(
   fs.readFileSync(path.join(__dirname, "fixtures", "chart-all-modules.json"), "utf8")
@@ -100,4 +101,23 @@ test("所有表格的每一列欄數都等於表頭欄數", () => {
       });
     });
   });
+});
+
+test("真實全模組 fixture 逐一通過四種 serializer consumer", () => {
+  const sections = ViewModel.buildSections(ALL);
+  const document = Exporters.createDocument(ALL, sections);
+  const artifacts = ["json", "csv", "md", "txt"].map((format) =>
+    Exporters.buildDownloadArtifact(document, format)
+  );
+  assert.equal(artifacts.length, 4);
+  artifacts.forEach((artifact) => {
+    assert.ok(artifact.content.length > 1000);
+    assert.match(artifact.filename, /^classical-astrology-export\./);
+  });
+  const json = JSON.parse(artifacts[0].content);
+  const sectionIds = new Set(json.display_sections.map((section) => section.id));
+  Object.values(ViewModel.MODULE_COVERAGE)
+    .map((entry) => entry.section)
+    .filter(Boolean)
+    .forEach((section) => assert.ok(sectionIds.has(section)));
 });

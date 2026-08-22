@@ -1,0 +1,235 @@
+{
+  "packages": [
+    {
+      "name": "annotated-doc",
+      "sha256": "c7e58ce09192557605d8bbd92836d7e1d520ac9580096042c0bfd197efacf1bb",
+      "version": "0.0.5"
+    },
+    {
+      "name": "annotated-types",
+      "sha256": "13b2beaad985e05e2d6407ee4c4f35590b11f8d693a258a561055cac8f64cab7",
+      "version": "0.8.0"
+    },
+    {
+      "name": "anyio",
+      "sha256": "cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f",
+      "version": "4.14.2"
+    },
+    {
+      "name": "ast-serialize",
+      "sha256": "aadd3ffcf4858c9726bf3515f7b199c7eadbe504f96028e4a87172c0da65a8fe",
+      "version": "0.6.0"
+    },
+    {
+      "name": "click",
+      "sha256": "9a6cea6e60b17ebe0a44c5cc636d94f09bd66142c1cd7d8b4cd731c4917a15f6",
+      "version": "8.4.2"
+    },
+    {
+      "name": "dunamai",
+      "sha256": "84ea45eddf9bb4b40df7610b1b22a03137365e6257dbf9d7b72128fdccca564c",
+      "version": "1.26.2"
+    },
+    {
+      "name": "fastapi",
+      "sha256": "e8822fc40db1e1858054d7a949a888695bc9bdce70139178e33bd2871a453ca1",
+      "version": "0.141.1"
+    },
+    {
+      "name": "flit-core",
+      "sha256": "18f63100d6f94385c6ed57a72073443e1a71a4acb4339491615d0f16d6ff01b2",
+      "version": "3.12.0"
+    },
+    {
+      "name": "h11",
+      "sha256": "4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1",
+      "version": "0.16.0"
+    },
+    {
+      "name": "hatch-fancy-pypi-readme",
+      "sha256": "9c58ed3dff90d51f43414ce37009ad1d5b0f08ffc9fc216998a06380f01c0045",
+      "version": "25.1.0"
+    },
+    {
+      "name": "hatchling",
+      "sha256": "6b48ad4068a482ed7239b3a8215bc55b47aad3345d58dfc94e553c5d2d46211b",
+      "version": "1.31.0"
+    },
+    {
+      "name": "httpcore2",
+      "sha256": "4d8acbf8b306f48c9d6046591fd5ba4037d1b1b1000d140fc2c3eab1e9a0c0e2",
+      "version": "2.9.1"
+    },
+    {
+      "name": "httpx2",
+      "sha256": "1932a768737e3666291582833da748cc4e563c337cf96706fccc04fa6e58764a",
+      "version": "2.9.1"
+    },
+    {
+      "name": "hypothesis",
+      "sha256": "b54e86cb1d7d049eb934e7843f179889252263b24290ebd38549466c9c9351d9",
+      "version": "6.165.0"
+    },
+    {
+      "name": "idna",
+      "sha256": "ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848",
+      "version": "3.18"
+    },
+    {
+      "name": "iniconfig",
+      "sha256": "c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730",
+      "version": "2.3.0"
+    },
+    {
+      "name": "jinja2",
+      "sha256": "0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
+      "version": "3.1.6"
+    },
+    {
+      "name": "librt",
+      "sha256": "1d2a610c14ac0d0750ee0a3ab8548e83155258387891caaca04def4bf7289781",
+      "version": "0.13.0"
+    },
+    {
+      "name": "markupsafe",
+      "sha256": "722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698",
+      "version": "3.0.3"
+    },
+    {
+      "name": "maturin",
+      "sha256": "9d6577a62cd08e0ceba7a0db06fb098e0c9b1b3429bad747a4f3a18215a1b3df",
+      "version": "1.14.1"
+    },
+    {
+      "name": "mypy",
+      "sha256": "465965d41cd9a2726694e983e8ce7113259327bec798115d1e1dfa2a52fb666e",
+      "version": "2.3.0"
+    },
+    {
+      "name": "mypy-extensions",
+      "sha256": "52e68efc3284861e772bbcd66823fde5ae21fd2fdb51c62a211403730b916558",
+      "version": "1.1.0"
+    },
+    {
+      "name": "packaging",
+      "sha256": "94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79",
+      "version": "26.3"
+    },
+    {
+      "name": "pathspec",
+      "sha256": "17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a",
+      "version": "1.1.1"
+    },
+    {
+      "name": "pdm-backend",
+      "sha256": "c41a852ccbf4b567b033db9b2ae78660d7a4ea49307719959ab88a01f0aabb2e",
+      "version": "2.4.9"
+    },
+    {
+      "name": "pluggy",
+      "sha256": "7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3",
+      "version": "1.6.0"
+    },
+    {
+      "name": "pydantic",
+      "sha256": "c40756b57adaa8b1efeeced5c196f3f3b7c435f90e84ea7f443901bec8099ef6",
+      "version": "2.13.4"
+    },
+    {
+      "name": "pydantic-core",
+      "sha256": "62f875393d7f270851f20523dd2e29f082bcc82292d66db2b64ea71f64b6e1c1",
+      "version": "2.46.4"
+    },
+    {
+      "name": "pygments",
+      "sha256": "6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f",
+      "version": "2.20.0"
+    },
+    {
+      "name": "pyswisseph",
+      "sha256": "c54c305e83dbd5d2b71e58d8a69d8ee41de24c4d3328ce09e2af860a3537624d",
+      "version": "2.10.3.2"
+    },
+    {
+      "name": "pytest",
+      "sha256": "1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313",
+      "version": "9.1.1"
+    },
+    {
+      "name": "setuptools",
+      "sha256": "025bccbbf0fa05b6192bc64ae1e7b16e001fd6d6d4d5de03c97b1c1ade523bef",
+      "version": "83.0.0"
+    },
+    {
+      "name": "setuptools-scm",
+      "sha256": "1c674ab4665686a0887d7e24c03ab25f24201c213e82ea689d2f3e169ef7ef57",
+      "version": "9.2.2"
+    },
+    {
+      "name": "sortedcontainers",
+      "sha256": "25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88",
+      "version": "2.4.0"
+    },
+    {
+      "name": "starlette",
+      "sha256": "05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0",
+      "version": "1.3.1"
+    },
+    {
+      "name": "tomli",
+      "sha256": "7c7e1a961a0b2f2472c1ac5b69affa0ae1132c39adcb67aba98568702b9cc23f",
+      "version": "2.4.1"
+    },
+    {
+      "name": "tomlkit",
+      "sha256": "e25bbf38843005246210a12982776f27f99cb9be67160e14434d0c0d21ee1e97",
+      "version": "0.15.1"
+    },
+    {
+      "name": "trove-classifiers",
+      "sha256": "c5132b4b61a829d11cfbd2d72e97f20a45ed6edb95e45c5efdeb5e00836b2745",
+      "version": "2026.6.1.19"
+    },
+    {
+      "name": "truststore",
+      "sha256": "9d91bd436463ad5e4ee4aba766628dd6cd7010cf3e2461756b3303710eebc301",
+      "version": "0.10.4"
+    },
+    {
+      "name": "types-psutil",
+      "sha256": "9f825f631463a5b4d26f19f63aebc9ec25f01140d655026f3ad8a67841f9b331",
+      "version": "7.2.2.20260518"
+    },
+    {
+      "name": "types-setuptools",
+      "sha256": "fe2801176b667f1e8209f8571b0839ca6c34318d743825aeacf3f29970c8d46f",
+      "version": "83.0.0.20260724"
+    },
+    {
+      "name": "typing-extensions",
+      "sha256": "dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5",
+      "version": "4.16.0"
+    },
+    {
+      "name": "typing-inspection",
+      "sha256": "ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464",
+      "version": "0.4.2"
+    },
+    {
+      "name": "uv-dynamic-versioning",
+      "sha256": "574fbc07e87ace45c01d55967ad3b864871257b98ff5b8ac87c261227ac8db5b",
+      "version": "0.14.0"
+    },
+    {
+      "name": "uvicorn",
+      "sha256": "112ec661814189acbccd3f7b86460147cc065fc92c0821afa78918780e4354dd",
+      "version": "0.52.1"
+    },
+    {
+      "name": "wheel",
+      "sha256": "cc72bd1009ba0cf63922e28f94d9d83b920aa2bb28f798a31d0691b02fa3c9b3",
+      "version": "0.47.0"
+    }
+  ],
+  "schema_version": 1
+}

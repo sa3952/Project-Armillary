@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from datetime import date
 from pathlib import Path, PurePosixPath
 import re
 import stat
@@ -19,6 +20,7 @@ from .frontend_assets import (
 
 CONTRACT_PATH = Path("deploy/frontend-contract.json")
 SOURCE_URL_PREFIX = "https://github.com/sa3952/Project-Armillary/tree/"
+SOURCE_ARCHIVE_URL_PREFIX = "https://github.com/sa3952/Project-Armillary/archive/"
 REQUIRE_ENV = "CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE"
 ROOT_ENV = "CLASSICAL_ASTROLOGY_FRONTEND_ROOT"
 DIGEST_ENV = "CLASSICAL_ASTROLOGY_FRONTEND_RELEASE_DIGEST"
@@ -27,6 +29,14 @@ BACKEND_IMAGE_ENV = "CLASSICAL_ASTROLOGY_BACKEND_IMAGE_ID"
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
+_RELEASE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+_FORMAL_LEGAL_FIELDS = {
+    "effective_date",
+    "release_version",
+    "public_revision",
+    "source_archive_url",
+    "source_archive_sha256",
+}
 
 
 def _load_object(path: Path) -> dict[str, Any]:
@@ -122,6 +132,8 @@ def verify_release(
         # the URL is provisional rather than letting the reader assume it
         # resolves (`PIA-2026-08-06-011`).
         "source_url_status",
+        "source_publication",
+        "formal_legal_release_fields",
         "required_contracts",
         "files",
         "artifact_digest",
@@ -133,9 +145,36 @@ def verify_release(
         "provisional_pending_publication",
     }:
         raise ValueError("frontend source URL status is invalid")
+    publication = manifest.get("source_publication")
+    legal_fields = manifest.get("formal_legal_release_fields")
+    if manifest.get("source_url_status") == "provisional_pending_publication":
+        if publication is not None or legal_fields is not None:
+            raise ValueError("provisional frontend source must not carry publication evidence")
+    elif (
+        not isinstance(publication, dict)
+        or set(publication)
+        != {
+            "schema_version",
+            "status",
+            "effective_date",
+            "release_version",
+            "public_source_revision",
+            "source_url",
+            "source_archive_url",
+            "source_archive_sha256",
+            "anonymous_checkout_sha256",
+            "evidence_sha256",
+        }
+        or publication.get("schema_version")
+        != "corresponding-source-publication-receipt-v1"
+        or publication.get("status") != "published_anonymously_reachable"
+        or not isinstance(legal_fields, dict)
+        or set(legal_fields) != _FORMAL_LEGAL_FIELDS
+    ):
+        raise ValueError("published frontend source evidence is invalid")
     revision = manifest.get("frontend_public_source_revision")
     digest = manifest.get("artifact_digest")
-    if manifest.get("schema_version") != 1 or manifest.get(
+    if manifest.get("schema_version") != 3 or manifest.get(
         "artifact_type"
     ) != "classical-astrology-frontend-release":
         raise ValueError("frontend release manifest type is invalid")
@@ -145,6 +184,39 @@ def verify_release(
         raise ValueError("frontend artifact digest is invalid")
     if manifest.get("source_url") != f"{SOURCE_URL_PREFIX}{revision}":
         raise ValueError("frontend source URL is not pinned to its revision")
+    if publication is not None and (
+        publication.get("public_source_revision") != revision
+        or publication.get("source_url") != manifest.get("source_url")
+        or publication.get("source_archive_url")
+        != f"{SOURCE_ARCHIVE_URL_PREFIX}{revision}.tar.gz"
+        or legal_fields
+        != {
+            "effective_date": publication.get("effective_date"),
+            "release_version": publication.get("release_version"),
+            "public_revision": revision,
+            "source_archive_url": publication.get("source_archive_url"),
+            "source_archive_sha256": publication.get("source_archive_sha256"),
+        }
+        or not _RELEASE_VERSION.fullmatch(str(publication.get("release_version", "")))
+        or any(
+            not _DIGEST.fullmatch(str(publication.get(key, "")))
+            for key in (
+                "source_archive_sha256",
+                "anonymous_checkout_sha256",
+                "evidence_sha256",
+            )
+        )
+    ):
+        raise ValueError("frontend source publication evidence identity is invalid")
+    if publication is not None:
+        try:
+            effective_date = date.fromisoformat(str(publication.get("effective_date", "")))
+        except ValueError:
+            effective_date = None
+        if effective_date is None or effective_date.isoformat() != publication.get(
+            "effective_date"
+        ):
+            raise ValueError("frontend source publication effective date is invalid")
     contract = exact_contract(authority_root)
     if manifest.get("required_contracts") != {
         "api_schema_version": contract["api_schema_version"],
@@ -192,6 +264,9 @@ def verify_release(
         "artifact_digest": digest,
         "frontend_public_source_revision": revision,
         "source_url": manifest["source_url"],
+        "source_url_status": manifest["source_url_status"],
+        "source_publication": publication,
+        "formal_legal_release_fields": legal_fields,
         "required_contracts": manifest["required_contracts"],
         "files": files,
     }

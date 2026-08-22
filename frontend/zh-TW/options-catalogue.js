@@ -157,6 +157,11 @@
     { key: "aspect_orb_profile", group: "aspects", type: "choice",
       label_zh: "容許度表", label_en: "Orb profile", default: null,
       depends_on: "include_aspects",
+      conflicts_when: {
+        any_non_null: true,
+        disables: ["aspect_fixed_orb_degrees"],
+        reason_zh: "已選容許度表，固定容許度不能同時指定。要用固定值，請先把容許度表改回「不套用」。",
+      },
       values: [
         { value: null, label_zh: "不套用容許度", label_en: "None applied" },
         { value: "abu_mashar_lineage_v1", label_zh: "Abu Ma'shar 傳承", label_en: "Abū Ma'shar lineage" },
@@ -262,11 +267,24 @@
     for (const source of OPTIONS) {
       const rule = source.conflicts_when;
       if (!rule) continue;
-      if (values[source.key] !== rule.value) continue;
+      if (!ruleMatches(rule, values[source.key])) continue;
       if (!rule.disables.includes(option.key)) continue;
       return { source, reason_zh: rule.reason_zh };
     }
     return null;
+  }
+
+  function ruleMatches(rule, current) {
+    const forms = ["value", "values", "any_non_null"]
+      .filter((key) => Object.prototype.hasOwnProperty.call(rule, key));
+    if (forms.length !== 1) {
+      throw new Error("conflicts_when 必須恰好宣告一種比對形式");
+    }
+    if (rule.any_non_null) {
+      return current !== null && current !== undefined && current !== "";
+    }
+    if (rule.values) return rule.values.includes(current);
+    return current === rule.value;
   }
 
   /** 相依鏈是否全部成立；任一祖先關閉即為 false。 */

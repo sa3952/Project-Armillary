@@ -53,7 +53,7 @@
   }
 
   /**
-   * 秒：唯一允許小數的時間欄位，API 契約是 `0 <= second < 60`。
+   * 秒：唯一允許小數的時間欄位；60只可能是後端另行驗證的UTC閏秒。
    * 小數必須保留——截斷會算出使用者沒有輸入的時刻。
    */
   function readSecond(raw) {
@@ -61,7 +61,7 @@
     if (text === "") return empty();
     const parsed = Number(text);
     if (!Number.isFinite(parsed)) return invalid("必須是數字");
-    if (parsed < 0 || parsed >= 60) return invalid("必須大於等於 0 且小於 60");
+    if (parsed < 0 || parsed > 60) return invalid("必須介於 0 與 60 之間");
     return value(parsed);
   }
 

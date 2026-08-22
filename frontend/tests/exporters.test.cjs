@@ -209,6 +209,8 @@ test("CSV neutralizes spreadsheet formulas without corrupting numeric literals",
         ["leading tab", "\t=1+1"],
         ["leading carriage return", "\r=1+1"],
         ["leading spaces", "   =1+1"],
+        ["leading no-break space", "\u00a0=1+1"],
+        ["leading ideographic space", "\u3000@SUM(A1:A2)"],
         ["negative number", "-2.5"],
         ["positive number", "+123"],
         ["scientific number", "1e-6"],
@@ -224,6 +226,8 @@ test("CSV neutralizes spreadsheet formulas without corrupting numeric literals",
   assert.match(csv, /,'\t=1\+1/);
   assert.match(csv, /"'\r=1\+1"/);
   assert.match(csv, /,'   =1\+1/);
+  assert.ok(csv.includes("'\u00a0=1+1"));
+  assert.ok(csv.includes("'\u3000@SUM(A1:A2)"));
   assert.match(csv, /,-2\.5/);
   assert.match(csv, /,\+123/);
   assert.match(csv, /,1e-6/);
@@ -604,4 +608,101 @@ test("E-023：CRLF 只產生一個 <br>（相鄰控制）", () => {
   assert.ok(markdown.includes("a<br>b"), "CRLF 應折成單一 <br>");
   assert.ok(markdown.includes("c<br>d"));
   assert.ok(!markdown.includes("<br><br>"), "CRLF 被算成兩次換行");
+});
+
+test("serializer boundaries contain control and Markdown structure injection on every prose field", () => {
+  const { response } = fixture();
+  const hostile = "first\n# forged\tcell\rend";
+  const document = Exporters.createDocument(response, [{
+    id: "hostile",
+    title: hostile,
+    layer_label: hostile,
+    notes: [hostile],
+    tables: [],
+    blocks: [],
+  }]);
+
+  const plain = Exporters.renderPlainText(document);
+  assert.ok(!plain.includes("\n# forged"), plain);
+  assert.ok(!plain.includes("\r"), plain);
+  const markdown = Exporters.renderMarkdown(document);
+  assert.ok(!markdown.includes("\n# forged"), markdown);
+  assert.ok(markdown.includes("\\# forged"), markdown);
+});
+
+test("chart-data-only export omits receipts and trace while detailed mode retains them", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    { id: "bodies", title: "天體", tables: [], notes: [], blocks: [] },
+    { id: "trace", title: "逐步計算軌跡", tables: [], notes: [], blocks: ["secret-trace"] },
+    { id: "receipt", title: "收據", tables: [], notes: [], blocks: ["secret-receipt"] },
+  ]);
+
+  const compact = Exporters.buildDownloadArtifact(document, "json", "chart_data_only");
+  const detailed = Exporters.buildDownloadArtifact(document, "json", "reproducibility_detail");
+  assert.ok(!compact.content.includes("secret-trace"));
+  assert.ok(!compact.content.includes("secret-receipt"));
+  assert.ok(!compact.content.includes("calculation_dossier"));
+  assert.ok(detailed.content.includes("secret-trace"));
+  assert.ok(detailed.content.includes("calculation_dossier"));
+});
+
+test("both detail modes preserve core chart data across copy and every download format", () => {
+  const { response } = fixture();
+  const document = Exporters.createDocument(response, [
+    {
+      id: "bodies",
+      title: "天體",
+      tables: [],
+      notes: ["core-chart-data"],
+      blocks: [],
+    },
+    {
+      id: "trace",
+      title: "逐步計算軌跡",
+      tables: [],
+      notes: [],
+      blocks: ["reproducibility-trace"],
+    },
+    {
+      id: "receipt",
+      title: "收據",
+      tables: [],
+      notes: [],
+      blocks: ["reproducibility-receipt"],
+    },
+  ]);
+
+  for (const format of ["json", "csv", "md", "txt"]) {
+    const dataOnly = Exporters.buildDownloadArtifact(
+      document,
+      format,
+      "chart_data_only",
+    ).content;
+    const detailed = Exporters.buildDownloadArtifact(
+      document,
+      format,
+      "reproducibility_detail",
+    ).content;
+
+    assert.ok(dataOnly.includes("core-chart-data"), `${format} dropped chart data`);
+    assert.ok(detailed.includes("core-chart-data"), `${format} dropped detailed chart data`);
+    assert.ok(!dataOnly.includes("reproducibility-trace"), `${format} leaked trace`);
+    assert.ok(!dataOnly.includes("reproducibility-receipt"), `${format} leaked receipt`);
+    assert.ok(detailed.includes("reproducibility-trace"), `${format} lost trace`);
+    assert.ok(detailed.includes("reproducibility-receipt"), `${format} lost receipt`);
+  }
+
+  const dataOnlyCopy = Exporters.renderPlainText(
+    Exporters.projectOutputDocument(document, "chart_data_only"),
+  );
+  const detailedCopy = Exporters.renderPlainText(
+    Exporters.projectOutputDocument(document, "reproducibility_detail"),
+  );
+  assert.ok(dataOnlyCopy.includes("core-chart-data"));
+  assert.ok(!dataOnlyCopy.includes("reproducibility-trace"));
+  assert.ok(!dataOnlyCopy.includes("reproducibility-receipt"));
+  assert.ok(detailedCopy.includes("core-chart-data"));
+  assert.ok(detailedCopy.includes("reproducibility-trace"));
+  assert.ok(detailedCopy.includes("reproducibility-receipt"));
 });

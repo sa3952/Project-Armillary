@@ -6,10 +6,12 @@
 <meta name="robots" content="noindex, nofollow">
 <title>路線｜渾儀 Armillary</title>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.6.2-locale">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.6.2-locale">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
 </head>
 <body>
+
+<a class="skip-link" href="#main-content">跳到主要內容</a>
 
 <header>
   <div class="wrap">
@@ -24,153 +26,212 @@
       <span>渾儀<small>ARMILLARY</small></span>
     </a>
     <nav class="site-nav" aria-label="主要導覽">
-      <a href="/zh-TW/calculate">計算</a>
       <a href="/zh-TW/features">功能</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>
       <a href="/zh-TW/about">關於</a>
+      <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
   </div>
 </header>
 
-<main>
-<div class="wrap page-body">
-  <div class="eyebrow">路線 · ROADMAP</div>
-  <h1>這不是功能清單，是一道階梯。</h1>
-  <p class="lede">功能清單會誘使你問「什麼時候會有 X」。階梯讓你問一個更有用的問題：<strong>「他們現在站在哪一階，憑什麼上下一階？」</strong></p>
-  <p>上半是<strong>現況</strong>——已經發生的事，可以查證。下半是<strong>意圖</strong>——我們打算做的事。<strong>那是意圖，不是承諾，而且沒有日期。</strong></p>
+<main id="main-content">
+<div class="wrap page-body ladder">
 
-  <section>
-    <h2>三階成熟度階梯</h2>
-    <table class="log">
-      <thead><tr><th>階</th><th>內容</th><th>狀態</th></tr></thead>
-      <tbody>
-        <tr><td>一</td><td>準確的天文資料</td><td>現行</td></tr>
-        <tr><td>二</td><td>準確的<strong>判定</strong>（日夜盤、宮位、尊貴、相位等）</td><td>進行中</td></tr>
-        <tr class="mark"><td>三</td><td>準確的<strong>解盤</strong></td><td>不開發</td></tr>
-      </tbody>
-    </table>
-    <p><strong>第三階不是「還沒排到」，是規則上不准開始。</strong></p>
-    <p>產品憲法規定：上一階未達標，不得開發下一階。這是<strong>開發層級</strong>的禁止，不只是發布層級——第二階達標之前，解盤功能連做都不做。</p>
-    <p>另有一條平行規則：市場明確期待、但方法考據未完成的功能，<strong>不得提供</strong>。兩條規則範圍不同，也不互相涵蓋。</p>
-    <p><strong>第二階的達標門檻不是「功能做完」，是「判定正確且來源可考」。</strong>這兩件事的距離比看起來遠。</p>
+  <section class="rm-hero">
+    <p class="eyebrow">路線 · ROADMAP</p>
+    <h1>這不是功能清單，<br>是一道階梯。</h1>
+    <p class="lede">功能清單會誘使你問「什麼時候會有 X」。階梯讓你問一個更有用的問題：<b>「他們現在站在哪一階，憑什麼上下一階？」</b></p>
+    <p class="rm-promise">下面每一列都附<b>「這個狀態是怎麼知道的」</b>——文件名、測試名，或一句可以自己重跑的話。<br>沒有依據的狀態，就是還沒查證的狀態。</p>
   </section>
 
-  <section>
-    <h2>現況：天文層</h2>
-    <table class="log">
-      <thead><tr><th>項目</th><th>狀態</th></tr></thead>
-      <tbody>
-        <tr><td>古典七政、外行星、Chiron、交點、Lilith／Priapus、34 顆恆星的位置</td><td>已完成</td></tr>
-        <tr><td>黃道／赤道／地平三套座標並列</td><td>已完成</td></tr>
-        <tr><td>逐步計算軌跡與 SHA-256 卷宗收據</td><td>已完成</td></tr>
-        <tr><td>對獨立星曆管線的逐小時比對（1990–2026、七個天體）</td><td>已完成</td></tr>
-        <tr><td>五大行星停滯點順逆行分類檢查（448 個零點、1,792 次）</td><td>已完成，零翻轉</td></tr>
-        <tr class="mark"><td>太陽速度異常的完整歸因</td><td>進行中，公開列為開放項目</td></tr>
-        <tr class="mark"><td>星座、界、相位、宮頭的邊界語料庫</td><td>進行中</td></tr>
-      </tbody>
-    </table>
+  <!-- ═══ 現況路徑：實線 ═══ -->
+  <div class="path">
+
+  <!-- ═══ 階梯 ═══ -->
+  <section class="rm-sec">
+    <p class="way-title" data-step="01">三階成熟度</p>
+
+    <ol class="rungs">
+      <li class="done">
+        <span class="rung-n">一</span>
+        <div><b>準確的天文資料</b><span>星曆位置、時間尺度、座標轉換、觀測幾何</span></div>
+        <span class="rung-s">現行</span>
+      </li>
+      <li class="here">
+        <span class="rung-n">二</span>
+        <div><b>準確的判定</b><span>日夜盤、宮位、尊貴、相位——需要選定流派、集合或門檻的結果</span></div>
+        <span class="rung-s">進行中 ← 我們在這裡</span>
+      </li>
+      <li class="blocked">
+        <span class="rung-n">三</span>
+        <div><b>準確的解盤</b><span>把判定轉成對這個人的意義</span></div>
+        <span class="rung-s">不開發</span>
+      </li>
+    </ol>
+
+    <p class="verdict">第三階不是「還沒排到」，<b>是規則上不准開始。</b></p>
+
+    <p>產品憲法規定：<b>上一階未達標，不得開發下一階。</b>這是開發層級的禁止，不只是發布層級——第二階達標之前，解盤功能連做都不做。</p>
+    <p><b>換句話說：我們不做解盤，不是因為認為解盤沒有價值，是因為我們還沒有能力把它做到跟前兩階同樣的嚴謹度。</b>那個門檻不是「功能做完」，是「判定正確且來源可考」。這兩件事的距離比看起來遠。</p>
+    <p>另有一條範圍不同的平行規則：<b>市場明確期待、但方法考據未完成的功能，不得提供。</b>兩條規則不互相涵蓋。</p>
   </section>
 
-  <section>
-    <h2>現況：方法層</h2>
-    <table class="log">
-      <thead><tr><th>項目</th><th>狀態</th></tr></thead>
-      <tbody>
-        <tr><td>黃道相位：整宮配置層 ＋ 逐度層</td><td>已完成</td></tr>
-        <tr><td>四套相位集合、兩套具名容許度表、三種精確相位慣例</td><td>已完成</td></tr>
-        <tr><td>界四套、面兩套、三分性三套，皆具名到來源</td><td>已完成</td></tr>
-        <tr><td>廟旺判定</td><td>已完成，<strong>有明確文獻依據</strong></td></tr>
-        <tr><td>月空亡（含兩段式求根）</td><td>已完成</td></tr>
-        <tr><td>日夜盤（含臨界標記與並列輸出）</td><td>已完成</td></tr>
-        <tr><td>阿拉伯點、行星落宮、反照點</td><td>已完成</td></tr>
-        <tr><td>不計算宮位的模式、只知道日期的模式</td><td>已完成</td></tr>
-        <tr class="mark"><td>日夜盤判定基準的文獻考據</td><td>進行中</td></tr>
-        <tr class="mark"><td>月空亡星座界線規則的歷史歸屬</td><td>未解，已公開標示</td></tr>
-        <tr class="mark"><td>守護星體系的整體採用</td><td>尚未裁決</td></tr>
-        <tr class="mark"><td>精確擢升度數、陷落、互容、almuten</td><td>尚未裁決</td></tr>
-      </tbody>
-    </table>
+  <!-- ═══ 現況：天文層 ═══ -->
+  <section class="rm-sec">
+    <p class="way-title" data-step="02">現況 · 天文層</p>
+    <div class="spec-scroll">
+      <table class="log rm-table">
+        <thead><tr><th>項目</th><th>狀態</th><th>依據</th></tr></thead>
+        <tbody>
+          <tr><td>古典七政、三王星、凱龍、平均／密切交點與南交點、Lilith 與 Priapus、34 顆恆星</td><td class="st ok">已完成</td><td>計算頁的天體選項；卷宗中逐項回顯</td></tr>
+          <tr><td>黃道／赤道／地平三套座標並列</td><td class="st ok">已完成</td><td>任一次計算的 <span class="mono">astronomical_data.bodies</span></td></tr>
+          <tr><td>逐步計算軌跡與 SHA-256 收據</td><td class="st ok">已完成</td><td>卷宗的 <span class="mono">trace_receipt</span> 與三個星曆檔的 <span class="mono">sha256</span></td></tr>
+          <tr><td>對獨立星曆管線的逐小時比對（1990–2026、七個天體）</td><td class="st ok">已完成</td><td>DE442 驗證報告 2026-07-28</td></tr>
+          <tr><td>五大行星停滯點順逆行分類檢查</td><td class="st ok">零翻轉</td><td>448 個停滯零點、1,792 個 ±1h／±6h probes；同上報告</td></tr>
+          <tr><td><b>太陽速度異常的歸因</b></td><td class="st ok">已解決</td><td><b>2026-08-17 定位到成因。</b>見下方說明</td></tr>
+          <tr><td>星座、界、相位、宮頭的邊界語料庫</td><td class="st wip">進行中</td><td>方法契約已定，語料庫尚未建立</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note-box">
+      <p class="nb-h">太陽速度異常：查到了，而且不在我們這一側</p>
+      <p>這一項在本頁掛了一段時間。2026-08-17 定位到成因：<b>參考管線與我們的引擎對「重力光線偏折」的實作取法不同</b>。參考端計算太陽時，兩個約一天文單位的向量幾乎互相抵消，只剩約 <b>8 公里</b>的殘量；方向由那個殘量決定，於是放大成可見的差異。</p>
+      <p><b>這是比對方法的差異，不是本產品的計算錯誤。</b>我們沒有因此改動任何輸出——但也沒有在查清楚之前把這一列標成「已完成」。</p>
+    </div>
   </section>
 
-  <section>
-    <h2>現況：產品與營運</h2>
-    <table class="log">
-      <thead><tr><th>項目</th><th>狀態</th></tr></thead>
-      <tbody>
-        <tr><td>十三個介面與其分層指派</td><td>已裁決</td></tr>
-        <tr><td>主機、憑證、隱私控制驗證</td><td>已完成</td></tr>
-        <tr><td>公開原始碼與 release 封存檔</td><td>已完成</td></tr>
-        <tr><td>原生列印／PDF 輸出</td><td>未開始</td></tr>
-        <tr><td>多語系框架、英文版</td><td>未開始</td></tr>
-        <tr><td>淺色主題</td><td>未開始</td></tr>
-        <tr><td>外部安全或隱私稽核</td><td>未進行</td></tr>
-      </tbody>
-    </table>
+  <!-- ═══ 現況：方法層 ═══ -->
+  <section class="rm-sec">
+    <p class="way-title" data-step="03">現況 · 方法層</p>
+    <div class="spec-scroll">
+      <table class="log rm-table">
+        <thead><tr><th>項目</th><th>狀態</th><th>依據</th></tr></thead>
+        <tbody>
+          <tr><td>黃道相位：整宮配置層 ＋ 逐度層</td><td class="st ok">已完成</td><td>計算頁相位組十項控制</td></tr>
+          <tr><td>四套相位集合、兩套具名容許度表、三種精確相位慣例</td><td class="st ok">已完成</td><td>同上；容許度表逐條列出書目</td></tr>
+          <tr><td>界四套、面兩套、三分性三套，皆具名到來源</td><td class="st ok">已完成</td><td>回應中每套帶書名與頁碼</td></tr>
+          <tr><td>廟旺判定</td><td class="st ok">已完成</td><td>來源：Ptolemy <i>Tetrabiblos</i> I.17／I.19，另有三家旁證</td></tr>
+          <tr><td>月空亡（含兩段式求根）</td><td class="st ok">已完成</td><td>求根器回傳括號端點與二分迭代次數</td></tr>
+          <tr><td>日夜盤（含臨界標記與並列輸出）</td><td class="st ok">已完成</td><td>太陽中心真高度 ±50 角分標記 <span class="mono">near_critical</span></td></tr>
+          <tr><td>阿拉伯點、行星落宮、反照點</td><td class="st ok">已完成</td><td>計算頁的點與幾何選項組</td></tr>
+          <tr><td>不計算宮位的模式、只知道日期的模式</td><td class="st ok">已完成</td><td>計算頁的出生時刻精度三選一</td></tr>
+          <tr><td>日夜盤判定基準的文獻考據</td><td class="st wip">進行中</td><td><b>古典來源只說太陽「在地上」，未規定邊界判準</b>；現行規則標為產品慣例，非古典來源</td></tr>
+          <tr><td>月空亡星座界線規則的歷史歸屬</td><td class="st open">未解</td><td>20 世紀 Morrison 系與中世紀阿拉伯傳承兩說並存，皆未查證；已寫入回應的 <span class="mono">source_verification</span></td></tr>
+          <tr><td>守護星體系的整體採用</td><td class="st pend">尚未裁決</td><td>古典或現代、三王星是否參與，未決</td></tr>
+          <tr><td>精確擢升度數、陷落、互容、almuten</td><td class="st pend">尚未裁決</td><td>每次輸出明示 <span class="mono">debility_evaluated=false</span> 與未評估項目</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="limit"><b>這張表最值得看的是下面四列，不是上面八列。</b>「已完成」只表示算得出來；「尚未裁決」表示我們知道有這個東西、也知道自己還沒有決定用誰的版本——<b>而在決定之前不會偷偷選一個給你。</b></p>
   </section>
 
-  <section>
-    <h2>我們公開列出的未決問題</h2>
-    <p>這些是我們自己列出來、還沒有答案的：</p>
-    <ul>
-      <li>太陽速度差異的底層歸因</li>
-      <li>星座、界、相位、宮頭的邊界語料庫</li>
-      <li>月空亡星座界線規則的歷史歸屬</li>
-      <li>日夜盤判定基準的文獻來源</li>
-      <li>守護星體系採古典或現代、三王星是否參與</li>
-      <li>服務營運地、目標市場與適用法律</li>
-      <li>未來是否提供付費項目，以及如何定價</li>
+  <!-- ═══ 現況：產品與營運 ═══ -->
+  <section class="rm-sec">
+    <p class="way-title" data-step="04">現況 · 產品與營運</p>
+    <div class="spec-scroll">
+      <table class="log rm-table">
+        <thead><tr><th>項目</th><th>狀態</th><th>依據</th></tr></thead>
+        <tbody>
+          <tr><td>十四個介面與其分層指派</td><td class="st ok">已裁決</td><td>SD-24與surface registry逐頁對應；每頁頁尾印出自己的分層</td></tr>
+          <tr><td>本輪重建的公開原始碼與 release 封存檔</td><td class="st wip">待S21</td><td>closed publication set、public revision、anonymous checkout與archive identity尚未完成</td></tr>
+          <tr><td>主機、憑證與隱私控制</td><td class="st wip">待live重驗</td><td>source與歷史執行證據已存在；current host／TLS／privacy canary留待具名external consumer</td></tr>
+          <tr><td>原生列印／PDF 輸出</td><td class="st ok">已完成</td><td>結果頁有列印版面：只留計算結果與收據</td></tr>
+          <tr><td>淺色主題</td><td class="st no">未開始</td><td>樣式表中沒有任何淺色配色路徑</td></tr>
+          <tr><td>多語系框架、英文版</td><td class="st no">未開始</td><td>目前只有繁體中文一個語系</td></tr>
+          <tr><td>外部安全或隱私稽核</td><td class="st no">未進行</td><td><b>沒有第三方認證、沒有專業滲透測試、沒有漏洞獎金</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ 未決問題 ═══ -->
+  <section class="rm-sec open-sec">
+    <p class="way-title" data-step="05">我們自己列出來的未決問題</p>
+    <h2>這一節不會被刪短，<br>來讓路線圖看起來更完整。</h2>
+    <p>下面是我們知道自己還沒有答案的事。<b>一個從不列出未決問題的路線圖，不是比較成熟，是比較不誠實。</b></p>
+
+    <ul class="opens">
+      <li><b>星座、界、相位、宮頭的邊界語料庫</b><span>這幾類分類會被幾角秒翻轉，而它們正是產品輸出的東西。要直接檢查分類會不會翻，不是拿平均誤差來安慰自己。</span></li>
+      <li><b>月空亡星座界線規則的歷史歸屬</b><span>兩說並存且皆未查證。已經寫進回應裡，不等考據完成才承認。</span></li>
+      <li><b>日夜盤判定基準的文獻來源</b><span>古典來源沒有規定邊界判準；現行規則是產品慣例。</span></li>
+      <li><b>守護星體系採古典或現代、三王星是否參與</b><span>這一題卡住了陷落、互容與 almuten 一整組。</span></li>
+      <li><b>服務營運地、目標市場與適用法律</b><span>尚未確定。</span></li>
+      <li><b>未來是否提供付費項目，以及如何定價</b><span>目前全部免費。有付費項目的話會事先公告。</span></li>
     </ul>
-    <p><strong>這一節不會被刪短來讓路線圖看起來更完整。</strong></p>
   </section>
 
-  <section class="intent">
-    <h2>▲ 以上為現況。以下為意圖，不是承諾。</h2>
-    <p>上面每一項都可以查證。下面每一項都<strong>沒有日期、沒有承諾、可能改變或取消</strong>。</p>
-    <p>我們把它們寫出來，是因為隱瞞方向對你沒有好處；<strong>但如果你正在決定要不要等某個功能，請把下面當成意向，不要當成計畫。</strong></p>
+  </div><!-- /path -->
 
-    <h2>讓來源追上功能</h2>
-    <p>功能落地的速度會超過文獻考據的速度，這是常態。我們打算持續把來源補上，讓更多項目有明確的裁決依據。</p>
-    <p><strong>在來源查證完成之前，狀態不會改</strong>——不會因為功能穩定就默默升格。</p>
+  <!-- ═══ 意圖路徑：虛線 ═══ -->
+  <div class="path intent">
 
-    <h2>把邊界檢查做起來</h2>
-    <p>界與相位是最容易被幾角秒翻轉的分類，而它們是產品實際輸出的東西。</p>
-    <p>我們有意把邊界警示做得更完整——靠近星座邊界、界的邊界、宮頭、站留時主動提示。前提是先建立語料庫，直接檢查分類會不會翻轉，<strong>而不是拿平均誤差來安慰自己。</strong></p>
+  <!-- ═══ 意圖 ═══ -->
+  <section class="rm-sec">
+    <p class="way-title" data-step="06">意圖</p>
+    <p class="intent-lead"><b>以下是意圖，不是承諾。</b>沒有日期、沒有排程、可能改變或取消。<br>我們把方向寫出來，是因為隱瞞它對你沒有好處；但<b>如果你正在決定要不要等某個功能，請把下面當成意向，不要當成計畫。</b></p>
+    <div class="intents">
+      <div>
+        <h3>讓來源追上功能</h3>
+        <p>功能落地的速度會超過文獻考據的速度，這是常態。我們打算持續把來源補上。<b>在來源查證完成之前，狀態不會改</b>——不會因為功能穩定就默默升格。</p>
+      </div>
+      <div>
+        <h3>把邊界檢查做起來</h3>
+        <p>靠近星座邊界、界的邊界、宮頭、站留時主動提示。前提是先建立語料庫，直接檢查分類會不會翻轉。</p>
+      </div>
+      <div>
+        <h3>做方法比較的內容</h3>
+        <p>整宮制與 Placidus、平均交點與密切交點、視位置與真位置、不同作者的界表——常青、對實務有用，而且不需要對競品做會過期的宣稱。<b>我們刻意不做競品比較頁。</b></p>
+      </div>
+      <div>
+        <h3>擴大語言與市場</h3>
+        <p>繁體中文是階段選擇，不是產品定位。英文版會做，但排在有一定成果之後。</p>
+      </div>
+      <div>
+        <h3>補上淺色主題與更好的列印</h3>
+        <p>深色先行是為了省成本而延後淺色，不是設計主張。</p>
+      </div>
+      <div>
+        <h3>關於收費</h3>
+        <p>目前全部免費。未來可能有付費項目。<b>我們不打算靠出售或分析你的出生資料獲利</b>——那會同時違反本產品的隱私原則與它被選擇的理由。任何收費方式的改變都會事先公告。</p>
+      </div>
+    </div>
+  </section>
 
-    <h2>做方法比較的內容</h2>
-    <p>整宮制與 Placidus、平均交點與密切交點、視位置與真位置、回歸與恆星黃道、不同作者的界表——這類內容常青、對實務有用，而且不需要對任何競品做會過期的宣稱。</p>
-    <p><strong>我們刻意不做競品比較頁。</strong></p>
-
-    <h2>擴大語言與市場</h2>
-    <p>繁體中文是階段選擇，不是產品定位。英文版會做，但排在有一定成果之後。</p>
-
-    <h2>補上淺色主題與列印輸出</h2>
-    <p>深色先行是為了省成本而延後淺色，不是設計主張。</p>
-
-    <h2>關於收費</h2>
-    <p>目前全部免費。未來可能有付費項目。</p>
-    <p><strong>我們不打算靠出售或分析你的出生資料獲利</strong>——那會同時違反本產品的隱私原則與它被選擇的理由。</p>
-    <p>這一段是意圖，不是承諾。<strong>任何收費方式的改變都會事先公告。</strong></p>
-
-    <h2>我們不打算做的事</h2>
-    <ul>
-      <li>不加追蹤器、不加廣告、不加第三方分析</li>
-      <li>不因為別的工具有某個功能就加進來</li>
-      <li>不把不同作者的尊貴表加總成一個分數</li>
+  <!-- ═══ 不做 ═══ -->
+  <section class="rm-sec">
+    <p class="way-title" data-step="07">不打算做的事</p>
+    <ul class="ticks">
+      <li>不加追蹤器、不加廣告、不加第三方分析。</li>
+      <li>不因為別的工具有某個功能就加進來。</li>
+      <li>不把不同作者的尊貴表加總成一個分數——那等於宣稱它們可以通約。</li>
     </ul>
-    <p>（「不解盤、不預測」不在這一節——那不是意圖，是憲法禁止的現況事實。）</p>
+    <p class="limit"><b>「不解盤、不預測」不在這一節。</b>那不是我們的意圖選擇，是第三階尚未開放的現況事實——見本頁最上方的階梯。</p>
   </section>
 
-  <section>
-    <h2>什麼會改變這一頁</h2>
-    <ul>
-      <li>任何一項完成 → 現況表更新</li>
-      <li>任何一項來源考據完成 → 方法狀態升格</li>
-      <li>某項意圖被放棄 → <strong>從本頁刪除，並在此註明曾經列過</strong></li>
+  <!-- ═══ 維護規則 ═══ -->
+  <section class="rm-sec">
+    <p class="way-title" data-step="08">什麼會改變這一頁</p>
+    <ul class="ticks">
+      <li>任何一項完成 → 現況表更新，<b>並補上「依據」欄</b>。</li>
+      <li>任何一項來源考據完成 → 方法狀態升格，本頁與<a href="/zh-TW/methods">方法</a>同步。</li>
+      <li>某項意圖被放棄 → <b>從本頁刪除，並在此註明曾經列過。</b></li>
     </ul>
-    <p>最後一條是刻意的。<strong>默默刪掉一項意圖，等於假裝從來沒說過。</strong></p>
+    <p class="limit">最後一條是刻意的。<b>默默刪掉一項意圖，等於假裝從來沒說過。</b>而第一條的「依據」欄同樣是刻意的——<b>一份沒有依據欄的路線圖，過期了也看不出來。</b></p>
   </section>
+
+  </div><!-- /path intent -->
+
+  <section class="feat-close">
+    <div>
+      <h2>與其看我們打算做什麼，<br>不如看我們現在算得出什麼。</h2>
+      <p>上面每一個「已完成」，你都可以自己去驗。</p>
+    </div>
+    <p><a class="btn" href="/zh-TW/calculate">排一張盤 →</a></p>
+  </section>
+
 </div>
 </main>
 
@@ -186,6 +247,7 @@
     </div>
     <div class="sitemap-col">
       <h2>可查證性</h2>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
       <a href="/zh-TW/security">安全</a>
