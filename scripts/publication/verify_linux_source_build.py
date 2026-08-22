@@ -13,7 +13,18 @@ import sys
 import zipfile
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+def _default_source_root() -> Path:
+    script = Path(__file__).resolve()
+    # Repository execution keeps the script under scripts/publication.  The
+    # Dockerfile deliberately copies the same consumer to /build, where only
+    # one parent exists before filesystem root.  The verifier must be portable
+    # across both maintained entrypoints.
+    if len(script.parents) > 2:
+        return script.parents[2]
+    return script.parent
+
+
+PROJECT_ROOT = _default_source_root()
 
 
 def _external_receipt_path(path: Path) -> Path:

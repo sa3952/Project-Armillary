@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 import re
 import shutil
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -198,6 +200,22 @@ def test_dockerfile_pins_python_builds_pyswisseph_from_source_and_is_non_root():
     assert 'org.classical-astrology.frontend.mode="external-release-v1"' in dockerfile
     assert "COPY deploy/frontend-contract.json" in dockerfile
     assert "frontend-runtime-assets.json" not in dockerfile
+
+
+def test_linux_source_build_verifier_can_run_from_docker_copy_location(tmp_path):
+    copied = tmp_path / "build" / "verify_linux_source_build.py"
+    copied.parent.mkdir()
+    shutil.copyfile(SOURCE_BUILD_VERIFIER, copied)
+
+    completed = subprocess.run(
+        [sys.executable, str(copied), "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "--source-dir" in completed.stdout
 
 
 def test_compose_enforces_read_only_tmpfs_and_no_direct_host_publication():

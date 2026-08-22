@@ -32,7 +32,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "dba02e779737572bcdbd0bd3dbdc7facfa45364c42e88d9766fee026030dfeea",
+      "sha256": "e3045ab70857b8beb3a64b89488ac24eb25c933536907b12b505673f2ce60b90",
       "size_bytes": 322
     },
     {
@@ -62,7 +62,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "cfd49f7963633699c77c02091e6d0ffa687d0558408bbeb1c14ed471cba31fe0",
+      "sha256": "7b345ea0efd715a5d4704783b4e3145eab6205af9e1f91341a772fe5b2140441",
       "size_bytes": 353
     },
     {
@@ -812,8 +812,8 @@
     },
     {
       "path": "scripts/publication/verify_linux_source_build.py",
-      "sha256": "9b5df12c6836c7b5c21113f78012bf006c5d47e2721b13a60d95a87134420ff9",
-      "size_bytes": 5228
+      "sha256": "9b8604052388cc08643497aa0dd6c4a8d415f24615db7ae8abb71c08fea446bf",
+      "size_bytes": 5655
     },
     {
       "path": "scripts/publication/verify_publication_candidate.py",
@@ -957,8 +957,8 @@
     },
     {
       "path": "tests/deployment/test_production_runtime_contract.py",
-      "sha256": "e93a1774be37cdef8857bad312f18bff98f37a848d4de70137738e815e9eae58",
-      "size_bytes": 60301
+      "sha256": "3efcbcab2b9ea36641b38c361561f77229ed307a6ba442a3db8b6a2e91c0f08f",
+      "size_bytes": 60815
     },
     {
       "path": "tests/deployment/test_release_build_transaction.py",
