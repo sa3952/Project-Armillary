@@ -2496,33 +2496,40 @@ def main() -> int:
             if args.container_only
             else _local_baselines(payloads)
         )
-        single_worker, container_baselines = _single_worker_parity(
-            args.image,
-            payloads,
-            baselines,
-            args.platform,
-        )
-        _assert_container_build_identity(
-            image["revision"],
-            container_baselines,
-        )
-        two_worker = _two_worker_isolation(
-            args.image,
-            payloads,
-            container_baselines,
-            args.platform,
-        )
-        resilience = (
-            _resilience_and_soak(
-                args.image,
-                args.platform,
-                payloads,
-                container_baselines,
-                args.soak_requests,
+        stage_discrepancies: list[dict[str, Any]] = []
+        container_baselines = baselines
+        try:
+            single_worker, container_baselines = _single_worker_parity(
+                args.image, payloads, baselines, args.platform,
             )
-            if args.worker_resilience
-            else None
-        )
+            _assert_container_build_identity(image["revision"], container_baselines)
+        except (GateFailure, OSError, subprocess.TimeoutExpired, ValueError) as exc:
+            single_worker = {"status": "failed", "error": str(exc)}
+            stage_discrepancies.append(
+                {"stage": "single_worker", "candidate_blocker": True, "error": str(exc)}
+            )
+        try:
+            two_worker = _two_worker_isolation(
+                args.image, payloads, container_baselines, args.platform,
+            )
+        except (GateFailure, OSError, subprocess.TimeoutExpired, ValueError) as exc:
+            two_worker = {"status": "failed", "error": str(exc)}
+            stage_discrepancies.append(
+                {"stage": "two_worker", "candidate_blocker": True, "error": str(exc)}
+            )
+        if args.worker_resilience:
+            try:
+                resilience = _resilience_and_soak(
+                    args.image, args.platform, payloads,
+                    container_baselines, args.soak_requests,
+                )
+            except (GateFailure, OSError, subprocess.TimeoutExpired, ValueError) as exc:
+                resilience = {"status": "failed", "error": str(exc)}
+                stage_discrepancies.append(
+                    {"stage": "worker_resilience", "candidate_blocker": True, "error": str(exc)}
+                )
+        else:
+            resilience = {"status": "not_requested"}
         receipt = {
             "schema_version": "private-alpha-container-gate-v2",
             "build": build,
@@ -2531,6 +2538,7 @@ def main() -> int:
             "single_worker": single_worker,
             "two_worker": two_worker,
             "worker_resilience": resilience,
+            "stage_discrepancies": stage_discrepancies,
             "verdict_scope": _container_verdict_scope(resilience),
             "elapsed_seconds": round(time.monotonic() - started, 3),
         }
@@ -2545,7 +2553,7 @@ def main() -> int:
                 json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
-        blockers = [
+        blockers = stage_discrepancies + [
             item
             for item in inventory.get("discrepancies", [])
             if item.get("candidate_blocker") is True
