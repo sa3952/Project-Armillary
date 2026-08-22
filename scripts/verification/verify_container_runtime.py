@@ -462,6 +462,11 @@ def _is_compiled_artifact(path: str) -> bool:
 
 
 CONTENT_IDENTITY_SCHEMA = "content-identity-v2"
+CROSS_PLATFORM_ADDITIVE_KEYS = {
+    "$.astronomical_data.bodies[]": frozenset(
+        {"speed_position_derivative_status", "speed_source"}
+    ),
+}
 
 
 def _content_identity_row(
@@ -1397,11 +1402,15 @@ def _assert_parity(
         return
     if isinstance(expected, dict) and isinstance(actual, dict):
         if expected.keys() != actual.keys():
-            raise GateFailure(
-                f"object-key parity mismatch at {path}: "
-                f"expected_only={sorted(set(expected) - set(actual))}, "
-                f"actual_only={sorted(set(actual) - set(expected))}"
-            )
+            expected_only = sorted(set(expected) - set(actual))
+            actual_only = set(actual) - set(expected)
+            additive_path = re.sub(r"\[\d+\]", "[]", normalized_path)
+            allowed = CROSS_PLATFORM_ADDITIVE_KEYS.get(additive_path, frozenset())
+            if expected_only or parity_scope != "cross_platform" or not actual_only <= allowed:
+                raise GateFailure(
+                    f"object-key parity mismatch at {path}: "
+                    f"expected_only={expected_only}, actual_only={sorted(actual_only)}"
+                )
         for key in expected:
             _assert_parity(
                 expected[key],
