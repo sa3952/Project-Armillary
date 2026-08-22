@@ -84,6 +84,7 @@ LABEL org.opencontainers.image.title="Classical Astrology Private Alpha" \
 ENV CLASSICAL_ASTROLOGY_PROFILE="private_alpha" \
     CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE="1" \
     CLASSICAL_ASTROLOGY_SOURCE_REVISION="${VCS_REF}" \
+    LANG="C.UTF-8" \
     PATH="/opt/venv/bin:${PATH}" \
     PYTHONFAULTHANDLER="1" \
     PYTHONUNBUFFERED="1" \

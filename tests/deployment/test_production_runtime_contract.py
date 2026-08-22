@@ -186,6 +186,7 @@ def test_dockerfile_pins_python_builds_pyswisseph_from_source_and_is_non_root():
     assert "pip uninstall --yes pip" in dockerfile
     assert "USER 10001:10001" in dockerfile
     assert 'CLASSICAL_ASTROLOGY_PROFILE="private_alpha"' in dockerfile
+    assert 'LANG="C.UTF-8"' in dockerfile
     assert "--no-access-log" in dockerfile
     assert '"--workers", "2"' in dockerfile
     assert '"--loop", "asyncio"' in dockerfile
