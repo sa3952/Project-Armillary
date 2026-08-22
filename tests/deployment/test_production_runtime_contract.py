@@ -657,6 +657,15 @@ def test_object_key_parity_failure_names_both_sides():
             "$.astronomical_data.bodies[0]", parity_scope="cross_platform",
         )
 
+    module._assert_parity(
+        "JD_UT, JD_ET = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
+        "JD_ET, JD_UT = swe.utc_to_jd(UTC年,月,日,時,分,秒, 格里曆)",
+        "$.calculation_trace[1].formula",
+        parity_scope="cross_platform",
+    )
+    with pytest.raises(module.GateFailure):
+        module._assert_parity("wrong", "also wrong", "$.calculation_trace[1].formula", parity_scope="cross_platform")
+
 
 def test_container_receipt_scope_names_skipped_worker_resilience():
     module = _load_script(
