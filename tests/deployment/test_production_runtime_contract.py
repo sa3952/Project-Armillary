@@ -636,6 +636,14 @@ def test_image_architecture_inspect_does_not_use_run_only_platform_flag(monkeypa
     assert commands == [["docker", "image", "inspect", "example:local"]]
 
 
+def test_object_key_parity_failure_names_both_sides():
+    module = _load_script("verify_container_key_delta", CONTAINER_GATE)
+    with pytest.raises(module.GateFailure) as failure:
+        module._assert_parity({"shared": 1, "expected": 2}, {"shared": 1, "actual": 3})
+    assert "expected_only=['expected']" in str(failure.value)
+    assert "actual_only=['actual']" in str(failure.value)
+
+
 def test_container_receipt_scope_names_skipped_worker_resilience():
     module = _load_script(
         "verify_container_runtime_scope",

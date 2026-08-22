@@ -1397,7 +1397,11 @@ def _assert_parity(
         return
     if isinstance(expected, dict) and isinstance(actual, dict):
         if expected.keys() != actual.keys():
-            raise GateFailure(f"object-key parity mismatch at {path}")
+            raise GateFailure(
+                f"object-key parity mismatch at {path}: "
+                f"expected_only={sorted(set(expected) - set(actual))}, "
+                f"actual_only={sorted(set(actual) - set(expected))}"
+            )
         for key in expected:
             _assert_parity(
                 expected[key],
