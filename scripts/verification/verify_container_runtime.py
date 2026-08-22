@@ -614,9 +614,7 @@ def _dockerfile_base_reference() -> str | None:
 
 def _image_architecture(image: str, platform: str | None) -> str:
     inspected = json.loads(
-        _run(
-            ["docker", "image", "inspect", *_platform_args(platform), image]
-        ).stdout
+        _run(["docker", "image", "inspect", image]).stdout
     )
     return str(inspected[0]["Architecture"])
 

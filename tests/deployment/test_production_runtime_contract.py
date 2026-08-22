@@ -623,6 +623,19 @@ def test_container_gate_covers_native_amd64_and_worker_resilience():
     assert "SAME_RUNTIME_NUMERIC_ABSOLUTE_TOLERANCE = 1e-8" in gate
 
 
+def test_image_architecture_inspect_does_not_use_run_only_platform_flag(monkeypatch):
+    module = _load_script("verify_container_architecture_cli", CONTAINER_GATE)
+    commands = []
+
+    def fake_run(command, **_kwargs):
+        commands.append(command)
+        return SimpleNamespace(stdout='[{"Architecture":"amd64"}]')
+
+    monkeypatch.setattr(module, "_run", fake_run)
+    assert module._image_architecture("example:local", "linux/amd64") == "amd64"
+    assert commands == [["docker", "image", "inspect", "example:local"]]
+
+
 def test_container_receipt_scope_names_skipped_worker_resilience():
     module = _load_script(
         "verify_container_runtime_scope",
