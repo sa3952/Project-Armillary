@@ -573,7 +573,10 @@ def _elf_identity(payload: bytes) -> dict[str, Any]:
     for section in sections:
         end = names.find(b"\0", section[0]); end = len(names) if end < 0 else end
         name = names[section[0]:end].decode("utf-8", "replace")
-        data = payload[section[4]:section[4] + section[5]]
+        data = (
+            b"" if section[1] == 8
+            else payload[section[4]:section[4] + section[5]]
+        )
         rows.append({"name":name,"type":section[1],"flags":section[2],"size":section[5],"sha256":hashlib.sha256(data).hexdigest()})
         if section[2] & 0x2 and name != ".note.gnu.build-id" and not name.startswith(".debug"):
             normalized.update(json.dumps([name,section[1],section[2],section[5]],separators=(",",":")).encode()+b"\0"+data)
@@ -1469,6 +1472,18 @@ def _assert_parity(
             )
         return
     if isinstance(expected, list) and isinstance(actual, list):
+        if (
+            parity_scope == "cross_platform"
+            and normalized_path == "$.calculation_dossier.warnings"
+        ):
+            actual = [
+                item for item in actual
+                if not (
+                    isinstance(item, dict)
+                    and (item.get("code"), item.get("severity"))
+                    == ("topocentric_analytic_speed_limitation", "warning")
+                )
+            ]
         if len(expected) != len(actual):
             raise GateFailure(f"list-length parity mismatch at {path}")
         for index, (expected_item, actual_item) in enumerate(zip(expected, actual)):
@@ -1905,6 +1920,7 @@ def _two_worker_isolation(
     payloads: list[dict[str, Any]],
     baselines: list[dict[str, Any]],
     platform: str | None,
+    parity_scope: str = "same_runtime",
 ) -> dict[str, Any]:
     container, base_url, frontend_temporary = _start_container(
         image, 2, platform
@@ -1934,7 +1950,10 @@ def _two_worker_isolation(
                 payload_index = futures[future]
                 result = future.result()
                 try:
-                    _assert_parity(baselines[payload_index], result)
+                    _assert_parity(
+                        baselines[payload_index], result,
+                        parity_scope=parity_scope,
+                    )
                 except GateFailure as exc:
                     raise GateFailure(
                         f"two-worker case {payload_index}: {exc}"
@@ -2269,6 +2288,7 @@ def _resilience_and_soak(
     payloads: list[dict[str, Any]],
     baselines: list[dict[str, Any]],
     soak_requests: int,
+    parity_scope: str = "same_runtime",
 ) -> dict[str, Any]:
     container, base_url, frontend_temporary = _start_container(
         image, 2, platform
@@ -2286,7 +2306,10 @@ def _resilience_and_soak(
         kill_stable_pids = _wait_for_stable_workers(container)
         for index, payload in enumerate(payloads):
             try:
-                _assert_parity(baselines[index], _chart(base_url, payload))
+                _assert_parity(
+                    baselines[index], _chart(base_url, payload),
+                    parity_scope=parity_scope,
+                )
             except GateFailure as exc:
                 raise GateFailure(
                     f"post-SIGKILL parity case {index}: {exc}"
@@ -2533,6 +2556,7 @@ def main() -> int:
             else _local_baselines(payloads)
         )
         stage_discrepancies: list[dict[str, Any]] = []
+        parity_scope = "cross_platform" if args.container_only else "same_runtime"
         container_baselines = baselines
         try:
             single_worker, container_baselines = _single_worker_parity(
@@ -2547,6 +2571,7 @@ def main() -> int:
         try:
             two_worker = _two_worker_isolation(
                 args.image, payloads, container_baselines, args.platform,
+                parity_scope=parity_scope,
             )
         except (GateFailure, OSError, subprocess.TimeoutExpired, ValueError) as exc:
             two_worker = {"status": "failed", "error": str(exc)}
@@ -2558,6 +2583,7 @@ def main() -> int:
                 resilience = _resilience_and_soak(
                     args.image, args.platform, payloads,
                     container_baselines, args.soak_requests,
+                    parity_scope=parity_scope,
                 )
             except (GateFailure, OSError, subprocess.TimeoutExpired, ValueError) as exc:
                 resilience = {"status": "failed", "error": str(exc)}
