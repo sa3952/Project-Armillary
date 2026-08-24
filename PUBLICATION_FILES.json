@@ -32,7 +32,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "b20507ac026cdd96b722685ce36b68ac84b217a8d4216fb5bd107fceb216d12d",
+      "sha256": "641242d710c77e7e11be862218faf9a2d34532d77b17fb7b51e43c3e9acadc84",
       "size_bytes": 322
     },
     {
@@ -62,7 +62,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "f4816a1f40a242def098f58208834fed1a3ecbb1530ac6269287603a5ba5f2ca",
+      "sha256": "c256dec56f0c5d627cf60af88fd2ee6d994f19d45488d125ecee0436d7301a76",
       "size_bytes": 353
     },
     {
@@ -376,6 +376,46 @@
       "size_bytes": 87056
     },
     {
+      "path": "deploy/staging/compose.staging.yaml",
+      "sha256": "36cb8b0c7603c4775b931d164cc54b07886b7463f7838408a7a958178b1550fc",
+      "size_bytes": 1006
+    },
+    {
+      "path": "deploy/staging/host/private-alpha-nginx-outcomes.service",
+      "sha256": "9622f0c86cae50bffb498201e343da6011b2a7ce5b4991245c0e6da252f2c9e6",
+      "size_bytes": 490
+    },
+    {
+      "path": "deploy/staging/host/private-alpha-nginx-outcomes.timer",
+      "sha256": "9120adeb7d268e34fe1644a12c19c1acae765122718d60f063f96f0a340350de",
+      "size_bytes": 188
+    },
+    {
+      "path": "deploy/staging/host/private-alpha-watchdog.service",
+      "sha256": "3bc4444a9c61271ada145d4dd9b7ccc669678f12b8e18dc1a38abbc6cc1f79c4",
+      "size_bytes": 933
+    },
+    {
+      "path": "deploy/staging/host/private-alpha-watchdog.timer",
+      "sha256": "9fc05ca77ea276af9aad2bf5f3cf455db27240deaaf02e176c037e5f1584e0cc",
+      "size_bytes": 174
+    },
+    {
+      "path": "deploy/staging/nginx-site.conf.template",
+      "sha256": "b8e6d541bf7059a9ab7e75d9ca95505bd6804f1574928804d4d01e4551186fe7",
+      "size_bytes": 10284
+    },
+    {
+      "path": "deploy/staging/nginx.conf",
+      "sha256": "248f072b071d4b37daae0da1a982a7ae362ed0a1fc6da4a851efd63148bbad8f",
+      "size_bytes": 1087
+    },
+    {
+      "path": "deploy/staging/synthetic-availability-chart.json",
+      "sha256": "8dabfb37421465f212516efd5844bb733a247e391ad1fa6b88cca6b2698d8ba4",
+      "size_bytes": 486
+    },
+    {
       "path": "docs/DEPENDENCY_LICENSES.md",
       "sha256": "be436f35cf09ad0b66d6741f8cdbeb2670a2a2089bc5e030e28c8e4fb4fdb507",
       "size_bytes": 7599
@@ -681,9 +721,19 @@
       "size_bytes": 67
     },
     {
+      "path": "scripts/deployment/aggregate_nginx_outcomes.py",
+      "sha256": "44dd8dd17f9bc7b151ea0f6d371b6997be6a1572e86d10f008d7d37d8692fc44",
+      "size_bytes": 5662
+    },
+    {
       "path": "scripts/deployment/frontend_release.py",
       "sha256": "95c6d1693577e8e16491d87b2def3b9ab14230a07a3e802c71e8ff0277b81f62",
       "size_bytes": 14960
+    },
+    {
+      "path": "scripts/deployment/private_alpha_watchdog.py",
+      "sha256": "18d2becbd17c2bda1f541b1d7083b48a893a4a2a2522ffda8ba4ad0f3207e514",
+      "size_bytes": 14595
     },
     {
       "path": "scripts/frontend/__init__.py",

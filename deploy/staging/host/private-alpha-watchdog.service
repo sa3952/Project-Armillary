@@ -1,0 +1,20 @@
+[Unit]
+Description=Project Armillary Private Alpha availability watchdog
+After=docker.service nginx.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/var/lib/private-alpha/watchdog-source
+Environment=PYTHONPATH=/var/lib/private-alpha/watchdog-source
+EnvironmentFile=/etc/project-armillary-watchdog.conf
+ExecStart=/usr/bin/python3 -m scripts.deployment.private_alpha_watchdog --supervise --external-base-url ${WATCHDOG_EXTERNAL_URL} --local-base-url ${WATCHDOG_LOCAL_URL} --credential-file ${WATCHDOG_CREDENTIAL_FILE} --notification-url-file ${WATCHDOG_NOTIFICATION_URL_FILE} --state-file ${WATCHDOG_STATE_FILE} --source-root /var/lib/private-alpha/watchdog-source --revision ${WATCHDOG_REVISION}
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/private-alpha/watchdog-state /run/docker.sock
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=Aggregate privacy-safe Project Armillary NGINX outcomes
+After=nginx.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/var/lib/private-alpha/watchdog-source
+Environment=PYTHONPATH=/var/lib/private-alpha/watchdog-source
+ExecStart=/usr/bin/python3 -m scripts.deployment.aggregate_nginx_outcomes --apply
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/nginx/private-alpha-outcomes.log /var/lib/private-alpha/operational

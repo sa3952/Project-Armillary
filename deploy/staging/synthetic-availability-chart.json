@@ -1,0 +1,25 @@
+{
+  "birth_time_precision": "exact",
+  "datetime": {
+    "year": 2000,
+    "month": 1,
+    "day": 1,
+    "hour": 12,
+    "minute": 0,
+    "second": 0
+  },
+  "timezone": {
+    "mode": "iana",
+    "iana_name": "UTC"
+  },
+  "location": {
+    "latitude": 0,
+    "longitude": 0,
+    "altitude_m": 0,
+    "place_label": "synthetic-availability-probe",
+    "location_source": "manual",
+    "source_record_id": null,
+    "location_precision": "user_supplied_coordinates"
+  },
+  "options": {}
+}
