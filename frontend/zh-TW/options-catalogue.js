@@ -70,7 +70,7 @@
       label_zh: "凱龍", label_en: "Chiron", default: false },
     { key: "include_lilith_priapus", group: "bodies", type: "boolean",
       label_zh: "Lilith 與 Priapus（目前一起計算）", label_en: "Lilith and Priapus", default: false,
-      help_zh: "後端目前以單一欄位同時計算兩者，尚無法只取其一；已提出拆分請求。三個點皆非物理天體。回應內的 naming_note 會說明它與第三方軟體行銷為 True Lilith 的擺動點不同（實測相差 9.16°）。" },
+      help_zh: "後端目前以單一欄位同時計算三個非物理天體點，尚無法只取其一：平均黑月 Lilith（平均月球遠地點）、自然／插值遠地點與其對蹠近地點 Priapus。本產品不提供第三方軟體常稱 True Lilith 的密切／擺動遠地點（實測可相差 9.16°）。" },
     { key: "include_south_nodes", group: "bodies", type: "boolean",
       label_zh: "南交點", label_en: "South nodes", default: false },
     { key: "moon_position_profile", group: "bodies", type: "choice",
@@ -114,7 +114,8 @@
 
     // ── 月相與食 ─────────────────────────────────────────
     { key: "include_lunar_phases", group: "lunar", type: "boolean",
-      label_zh: "朔望", label_en: "Lunar phases", default: false },
+      label_zh: "朔望", label_en: "Lunar phases", default: false,
+      help_zh: "朔望會搜尋出生時刻前後的事件。接近 2399 範圍尾端時，若星曆無法支撐完整搜尋窗，核心星盤仍會完成，本模組會標為不可用並說明原因。" },
     { key: "include_eclipses", group: "lunar", type: "boolean",
       label_zh: "日月食", label_en: "Eclipses", default: false },
     { key: "include_void_of_course", group: "lunar", type: "boolean",

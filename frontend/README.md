@@ -9,6 +9,9 @@ The browser user interface, client context, privacy lifecycle, and export serial
 Frontend engineering. Sebastian owns product wording and UX decisions. Paths named by an active
 Claude handoff remain protected until exact revisions are delivered.
 
+Current state：there is no active frontend freeze or Claude path lock。`docs/frontend-frozen/` is
+historical evidence；future protection requires a new explicit Sebastian handoff naming exact paths。
+
 ## Allowed
 
 HTML, CSS, JavaScript, icons, bounded frontend tests, accessible interaction, and serializers
@@ -24,6 +27,10 @@ privacy review, or edits to protected assets outside an exact handoff.
 
 The current API/output/export contracts define semantics. Files in this directory define browser
 presentation and interaction; they do not override backend contracts or Sebastian decisions.
+
+`zh-TW/tokens.css` is the runtime source of truth for current token **values**；
+`docs/design/DESIGN_TOKENS.md` is a superseded proposal and must not overwrite it。Sebastian decisions
+remain the authority for changing the aesthetic direction。
 
 ## Naming
 

@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 import swisseph as swe
 
+from ..schemas import DateTimeInput, TimezoneInput
 from .trace import Trace
 
 
@@ -31,11 +32,11 @@ def _required_utc_offset_hours(value: dtmod.datetime) -> float:
 
 
 def _to_utc_datetime(
-    dt_input,
-    tz_input,
+    dt_input: DateTimeInput,
+    tz_input: TimezoneInput,
     *,
     require_explicit_fold: bool = False,
-):
+) -> tuple[dtmod.datetime, float, str, str | None]:
     # 用 timedelta 疊加秒數（而非手動 round 微秒），讓 59.9999999 這類合法邊界值
     # 正確進位到下一分鐘，不會產生 microsecond=1000000 這種非法值。
     naive = dtmod.datetime(
@@ -46,12 +47,15 @@ def _to_utc_datetime(
     dst_warning = None
 
     if tz_input.mode == "iana":
-        tz = ZoneInfo(tz_input.iana_name)
+        zone_name = tz_input.iana_name
+        if zone_name is None:
+            raise ValueError("IANA timezone name is required")
+        tz = ZoneInfo(zone_name)
         fold = tz_input.fold
         local_dt = naive.replace(tzinfo=tz, fold=fold)
         utc_dt = local_dt.astimezone(dtmod.timezone.utc)
         offset_hours = _required_utc_offset_hours(local_dt)
-        tz_label = tz_input.iana_name
+        tz_label = zone_name
 
         # PEP 495：同一本地時間在兩個 fold 下若解出不同 UTC 偏移，代表這個本地時間
         # 落在 DST 轉換附近（模糊或不存在），需要進一步分辨是哪一種、並讓使用者知道。
@@ -92,7 +96,10 @@ def _to_utc_datetime(
                     f"請在請求中指定 timezone.fold={1 - fold} 以取得另一種結果。"
                 )
     else:
-        offset_hours = tz_input.utc_offset_hours
+        fixed_offset_hours = tz_input.utc_offset_hours
+        if fixed_offset_hours is None:
+            raise ValueError("fixed UTC offset is required")
+        offset_hours = fixed_offset_hours
         local_dt = naive.replace(tzinfo=dtmod.timezone(dtmod.timedelta(hours=offset_hours)))
         utc_dt = local_dt.astimezone(dtmod.timezone.utc)
         tz_label = f"UTC{offset_hours:+.2f}"

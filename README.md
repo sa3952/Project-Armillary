@@ -7,9 +7,9 @@ rebuild a clean candidate; do not edit generated candidates. The private lifecyc
 not part of this public tree, but the release gate requires its shared-claim mappings to pass.
 
 This tree is the maintained publication candidate for the Corresponding Source
-of the Classical Astrology Data Service. It becomes the source for a hosted
-release only when an exact public revision is bound to the deployed image and
-is anonymously reachable. The intended service is an invited Private Alpha and is not
+of the Classical Astrology Data Service. It becomes source for a hosted component only when its
+exact public revision is anonymously reachable and bound to that component；the combined release
+receipt separately binds backend-image and frontend revisions。The intended service is an invited Private Alpha and is not
 professional medical, legal, financial, psychological, or other professional
 advice.
 
@@ -56,8 +56,9 @@ would create an ungoverned second build path.
 
 The production image intentionally contains application runtime files, not
 tests, documentation, Git metadata, third-party source archives, or frontend
-assets. Build the immutable frontend release separately from this same clean
-exact revision:
+assets。For an initial paired build, build the immutable frontend release from this same clean exact
+revision；later frontend-only releases may use a newer exact public revision while retaining the
+accepted backend image：
 
 ```bash
 public_revision="$(git rev-parse HEAD)"
@@ -123,8 +124,10 @@ Before a hosted release is eligible, release engineering must publish and bind:
   source revision;
 - a combined runtime receipt binding the backend image and frontend release.
 
-For an eligible release, the public source revision must be the source used to
-build the deployed image. This candidate text is not evidence that publication
+For an eligible release, the **backend** public source revision must be the source used to build the
+deployed image，and the frontend public source revision must be the source used to build the mounted
+frontend artifact。They may differ after a frontend-only update；the combined receipt must preserve both，and both must
+remain anonymously reachable。This candidate text is not evidence that publication
 or deployment has already occurred.
 Development conversations, private operational records, credentials, logs,
 user data, and unrelated local-app packaging are not part of this hosted

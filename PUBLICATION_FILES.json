@@ -32,7 +32,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "e7263f3bbf5b16359a6dde1565dda78b27f7bd0c6fd1d3548eddd2fd35827d4a",
+      "sha256": "b20507ac026cdd96b722685ce36b68ac84b217a8d4216fb5bd107fceb216d12d",
       "size_bytes": 322
     },
     {
@@ -52,17 +52,17 @@
     },
     {
       "path": "README.md",
-      "sha256": "d1d098a3773156c8453acce1f3654e1853af69dfc5e0447a0e3b7cf4389e96c5",
-      "size_bytes": 5851
+      "sha256": "260fbbbd5404377799bcc1d774a95e25b59ff4781e1ad9dc57b725a4d09cb23e",
+      "size_bytes": 6314
     },
     {
       "path": "SECURITY.md",
-      "sha256": "d6f60d58a95422d54b419e2e6a04bf77cee29905116a3c98d74ffde06efa999f",
-      "size_bytes": 2329
+      "sha256": "c59e162fc9b16a92d88f02de78035d5613d4b2fb5a855b8484fcabb4bb93435a",
+      "size_bytes": 2428
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "b0f1df58b4d9b2290d289c76550e0fb085d5c5252c307dcd2e310354c377bacf",
+      "sha256": "f4816a1f40a242def098f58208834fed1a3ecbb1530ac6269287603a5ba5f2ca",
       "size_bytes": 353
     },
     {
@@ -102,8 +102,8 @@
     },
     {
       "path": "backend/app/core/birth_time_sensitivity.py",
-      "sha256": "7ee6e009280d980301a8b83022df0a40fa0d49921df8e2d9fa76abff7a3eef7c",
-      "size_bytes": 32262
+      "sha256": "93459bfeb1b515cfb960764de1ee84ec9629b77ca1721e9ca86bcf46a46ca745",
+      "size_bytes": 32568
     },
     {
       "path": "backend/app/core/bodies.py",
@@ -182,8 +182,8 @@
     },
     {
       "path": "backend/app/core/time_utils.py",
-      "sha256": "010e6c4f45a004c2e15851a757cd79467c08ab678311b4819e5fc9487fdab150",
-      "size_bytes": 12126
+      "sha256": "5bea507eceead891005e6c4d31e61f6f3f915e4d96e5fc37554abe83b578060e",
+      "size_bytes": 12518
     },
     {
       "path": "backend/app/core/trace.py",
@@ -322,8 +322,8 @@
     },
     {
       "path": "deploy/compose.yaml",
-      "sha256": "ce0cac8038b5fffb5289198147a82190328ea2798b276382d22c412992d57560",
-      "size_bytes": 3604
+      "sha256": "0ec6da7a627d7ffa30fd20de550901862349b9557e64413f20c70553d63a3d40",
+      "size_bytes": 3448
     },
     {
       "path": "deploy/container_healthcheck.py",
@@ -427,8 +427,8 @@
     },
     {
       "path": "frontend/README.md",
-      "sha256": "ea2c5a85b7ecbe42a160bdca89dc2d9f2df388528bb9a1a739c44b95e64d37a5",
-      "size_bytes": 2094
+      "sha256": "a8e915ddbebbfa6ee848b3bee6aa94e47bc98ff47de059f44a33579ed4cdfe50",
+      "size_bytes": 2547
     },
     {
       "path": "frontend/eslint.config.mjs",
@@ -477,7 +477,7 @@
     },
     {
       "path": "frontend/tests/fixtures/chart-fixture-manifest.json",
-      "sha256": "57667908dd4860d188ac9e71334c5078aad0b27f48c3d2cd1616d0466526378b",
+      "sha256": "632fe78f2384e0a2703d29abcdf5a4dac073b66e84bf6e6843eb103ff48ce11a",
       "size_bytes": 1622
     },
     {
@@ -542,13 +542,13 @@
     },
     {
       "path": "frontend/zh-TW/calculate.html",
-      "sha256": "bf5f36b3a00d7e8479433381006c95817c0ced67122db8cc92e0cea61e8ade79",
-      "size_bytes": 15264
+      "sha256": "9669cb0c9fffb177d0eefb649bd7d096a31e9eeb968e059f02dcd85e01ae1ee6",
+      "size_bytes": 15616
     },
     {
       "path": "frontend/zh-TW/calculate.js",
-      "sha256": "546b7be0ee10df370c067e195d2df66083fbeba4170890dd2c1d47b71229e227",
-      "size_bytes": 52518
+      "sha256": "b8e7f787e245260b2d1616887567508583f52805c4b8cf8ba10dada731d1eb84",
+      "size_bytes": 52714
     },
     {
       "path": "frontend/zh-TW/client-context.js",
@@ -607,8 +607,8 @@
     },
     {
       "path": "frontend/zh-TW/options-catalogue.js",
-      "sha256": "457ece2782387550be74e482676c0cb7bd664dfa5a0687a772c49247de45662a",
-      "size_bytes": 23167
+      "sha256": "ea53b614a7dae2e2c3e142165a839566f611103c8ec689e13c86da8f958eb677",
+      "size_bytes": 23428
     },
     {
       "path": "frontend/zh-TW/page.css",
@@ -982,8 +982,8 @@
     },
     {
       "path": "tests/integration/test_frontend_contract.py",
-      "sha256": "b0d39705827f94a19e046e17647f3fd438a5f95dc11c2688d9d72b56ebf59f16",
-      "size_bytes": 12725
+      "sha256": "ba2cf33ef2bb9dabf45456ca8cd4f78bed2b3fbe90f0c59afde07b6c695bddaa",
+      "size_bytes": 14327
     },
     {
       "path": "tests/integration/test_hosted_live_server.py",

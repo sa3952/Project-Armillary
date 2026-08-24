@@ -23,6 +23,7 @@
   const versionsHost = el("versions");
   const submitButton = el("submit-button");
   const cancelButton = el("cancel-button");
+  const bootstrapStatus = el("bootstrap-status");
 
   // 讀值、範圍檢查與模糊時刻判定都在 RequestInput，理由見該模組開頭：舊版把
   // 「沒填」與「填了但不合法」壓成同一個回傳值，於是 12.5 靜默變 12
@@ -784,16 +785,6 @@
     profileReady.then(() => submitPayload(built.payload));
   });
 
-  // 守衛裝好之後才解除送出鈕。
-  //
-  // 表單沒有 action 也沒有 method，所以原生送出是「GET 回同一個網址」——
-  // 出生日期、時刻與精確座標會變成 query string，違反契約 §4「不得把出生資料
-  // 放入 URL、query string」。腳本還沒載入完就按下去正是那條路徑。
-  // 因此 HTML 端讓它 disabled 起手，這裡是唯一解除它的地方，且必須排在
-  // addEventListener 之後——先解除再裝守衛會留下一個同樣的時間窗。
-  submitButton.disabled = false;
-  submitButton.removeAttribute("title");
-
   /**
    * 送出後的等待有上限（PIA-2026-08-06-007）。
    *
@@ -1258,5 +1249,15 @@
   buildOptionUi();
   applyPrecisionConsequences();
   applyZodiacConsequences();
+  // HTML 先以不依賴 JavaScript 的方式顯示「介面正在載入」。只有全部必要
+  // dependencies、選項 UI、表單守衛與事件接線都完成，才在最後把它隱藏。
+  // 任一前置 script 失敗或本檔初始化中途丟錯時，訊息會自然留下，而不是
+  // 端出一個看似正常、選項為空且永遠不能送出的表單。
+  bootstrapStatus.hidden = true;
+  // 表單沒有 action 也沒有 method，原生送出會把出生資料放進query string。
+  // HTML先disabled，且必須等submit守衛、選項UI及兩個結果約束全部成功後才
+  // 解除；任何半初始化狀態都同時保留警告與disabled submit。
+  submitButton.disabled = false;
+  submitButton.removeAttribute("title");
 
 })();

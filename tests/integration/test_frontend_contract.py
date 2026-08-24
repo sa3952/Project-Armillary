@@ -37,6 +37,48 @@ def test_calculation_page_does_not_export_a_sensitive_debug_accessor():
     assert "__calculatePageInspect" not in script
 
 
+def test_calculate_page_exposes_bootstrap_failure_until_controller_is_ready():
+    """A missing required script must not leave a silent disabled shell."""
+
+    html = CALCULATE_HTML.read_text(encoding="utf-8")
+    script = CALCULATE_JS.read_text(encoding="utf-8")
+
+    match = re.search(
+        r'<p[^>]*id="bootstrap-status"[^>]*>(.*?)</p>',
+        html,
+        re.DOTALL,
+    )
+    assert match is not None
+    opening_tag = match.group(0).split(">", 1)[0]
+    visible_text = re.sub(r"<[^>]+>", "", match.group(1))
+    assert "hidden" not in opening_tag
+    assert "頁面未完整載入" in visible_text
+    assert "重新整理" in visible_text
+    assert 'el("bootstrap-status")' in script
+    assert "bootstrapStatus.hidden = true" in script
+    assert script.index("buildOptionUi();") < script.index(
+        "bootstrapStatus.hidden = true"
+    )
+
+
+def test_calculate_page_enables_submit_only_after_complete_initialization():
+    """A half-built options UI must remain visibly unusable, not submittable."""
+
+    script = CALCULATE_JS.read_text(encoding="utf-8")
+    initialization = script.split("// ══ 起始狀態", 1)[1]
+    order = [
+        initialization.index("buildOptionUi();"),
+        initialization.index("applyPrecisionConsequences();"),
+        initialization.index("applyZodiacConsequences();"),
+        initialization.index("bootstrapStatus.hidden = true"),
+        initialization.index("submitButton.disabled = false"),
+    ]
+    assert order == sorted(order), (
+        "bootstrap may hide and submit may enable only after every required "
+        "initialization guard succeeds"
+    )
+
+
 def test_result_notes_wrap_long_evidence_identifiers_on_mobile():
     """Hashes and policy identifiers must not widen the whole mobile page."""
 
@@ -284,7 +326,7 @@ def test_rapid_submit_is_coalesced_before_profile_promise_resolves():
     script = CALCULATE_JS.read_text(encoding="utf-8")
     submit_handler = script[
         script.index('form.addEventListener("submit", (event) =>') :
-        script.index("// 守衛裝好之後才解除送出鈕。")
+        script.index("const REQUEST_TIMEOUT_MS")
     ]
 
     assert "submissionQueued" in submit_handler

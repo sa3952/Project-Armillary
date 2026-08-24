@@ -1,5 +1,5 @@
 {
- "backend_source_sha256": "8b8fbddf945b31383981375c570c91a524fb52646e8c6214128175aee860f2d9",
+ "backend_source_sha256": "3140af92130a64bf40bc6ab7f1fb961fffcdc9785386ab31ed670fda55563b8d",
  "fixtures": {
   "chart-all-modules.json": {
    "dossier_version": "0.6.0",
@@ -32,5 +32,5 @@
  },
  "producer": "scripts.frontend.regenerate_chart_fixtures",
  "schema_version": "frontend-chart-fixture-manifest-v1",
- "source_revision_at_generation": "23744d2185645b15494cab7edbf62f63d2849083"
+ "source_revision_at_generation": "acbd43c775b9f964b5756fcc9ec727255aa0b5a7"
 }

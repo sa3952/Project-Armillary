@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dtmod
+from typing import TypedDict
 
 import swisseph as swe
 
@@ -23,6 +24,13 @@ from .trace import Trace
 
 PROBE_OFFSETS_SECONDS = (0, 900, 1800, 2700, 3599)
 TRANSITION_RESOLUTION_SECONDS = 15
+
+
+class _ResolvedLocalInstant(TypedDict):
+    local_time: str
+    fold: int
+    utc_datetime: dtmod.datetime
+    utc_time: str
 
 # 敏感度探針要重複算數十次盤，故只在此保留一份 Swiss 天體 id 對照表，
 # 與 main.py 的同名對照表由測試看守其一致性。
@@ -623,10 +631,13 @@ def build_approximate_hour_sensitivity(
     }
 
 
-def _date_only_local_instants(request, local_value: dtmod.datetime) -> list[dict]:
+def _date_only_local_instants(
+    request,
+    local_value: dtmod.datetime,
+) -> list[_ResolvedLocalInstant]:
     """Resolve all real instants for one wall-clock value, including both folds."""
 
-    resolved: dict[int, dict] = {}
+    resolved: dict[str, _ResolvedLocalInstant] = {}
     for fold in (0, 1):
         datetime_value = request.datetime.model_copy(
             update={
@@ -661,7 +672,13 @@ def _date_only_local_instants(request, local_value: dtmod.datetime) -> list[dict
     return sorted(resolved.values(), key=lambda item: item["utc_datetime"])
 
 
-def _date_only_sample_instants(request) -> tuple[list[dict], dict, dict]:
+def _date_only_sample_instants(
+    request,
+) -> tuple[
+    list[_ResolvedLocalInstant],
+    _ResolvedLocalInstant,
+    _ResolvedLocalInstant,
+]:
     start = dtmod.datetime(
         request.datetime.year,
         request.datetime.month,
@@ -687,7 +704,9 @@ def _date_only_sample_instants(request) -> tuple[list[dict], dict, dict]:
         key=lambda item: item["utc_datetime"],
     )
 
-    def first_real_instant(boundary: dtmod.datetime) -> dict | None:
+    def first_real_instant(
+        boundary: dtmod.datetime,
+    ) -> _ResolvedLocalInstant | None:
         # Some IANA zones historically advanced the clock at local midnight.
         # The civil-day boundary is then the first real wall-clock minute of
         # that date, not a fabricated fold-normalized midnight.

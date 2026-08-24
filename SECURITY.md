@@ -2,8 +2,9 @@
 
 ## Supported versions
 
-Only the revision identified by the currently deployed Private Alpha and its
-immediate rollback revision receive security fixes. No long-term support
+When a Private Alpha deployment is active, only the revisions identified by its current and immediate
+rollback receipts receive security fixes。Before a live receipt exists，this text does not claim any
+revision is deployed。No long-term support
 period is promised during the alpha.
 
 ## Reporting a vulnerability

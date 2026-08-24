@@ -46,21 +46,18 @@ services:
       options:
         max-size: "5m"
         max-file: "2"
-    # 2026-08-07: raised from 1024 as a MITIGATION for IMG-2026-08-08-E-001,
-    # not a fix. Swiss Ephemeris opens three files per worker thread and does
-    # not return them when the thread exits, so the count tracks how many
-    # threads have ever been created, which has no ceiling. Measured on the
-    # candidate image: descriptors moved in lockstep with distinct thread ids,
-    # three per thread, and did not fall when threads expired
-    # (receipts/IMG_E_001_FD_SATURATION_18391DE_AMD64.json).
+    # Historical leaking image 18391de opened three ephemeris files per new
+    # worker thread and retained them after the thread expired. Current source
+    # closes the per-thread Swiss state in the serialized request finally path.
+    # The current exact-image 0a9f4f2c S23 warm/measured soaks observed zero
+    # file/socket/total-FD growth, and the separate 4200-request control kept
+    # ephemeris FDs flat while distinct thread IDs increased. IMG-2026-08-08-E-001
+    # therefore remains REMEDIATED_FOCUSED pending an independent exact-image
+    # replay; historical evidence must not be narrated as current behavior.
     #
-    # Exhaustion does not self-heal. Per the note above, a worker out of
-    # resources keeps serving 500s while staying alive, the healthcheck fails,
-    # and `restart: unless-stopped` does not restart an unhealthy container.
-    #
-    # 65536 buys 64x the headroom and nothing else. The leak is unchanged, so
-    # this value must not be read as the finding having been handled — the fix
-    # is blocking at the next image build (DEFERRED_OPPORTUNITIES D-FIX-07).
+    # Keep the 65536 ceiling as conservative headroom, not as evidence of a
+    # current leak or a substitute for the S24 synthetic-chart watchdog and
+    # unhealthy-container recovery policy.
     ulimits:
       nofile:
         soft: 65536
