@@ -32,7 +32,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "c3ab19163809c208694833f1dafa41b4fb585c5cce53bb5c1f04ef7ca7dc3d66",
+      "sha256": "f14bded18f76709309128ff597018658d858c86aa9d4e26597042fc0d273f26f",
       "size_bytes": 322
     },
     {
@@ -62,7 +62,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "c08b045c5c1164c63a325e28ac993e9219f480a502918be6949984f5ec774d33",
+      "sha256": "df96492c7f42b556def94184aa203fab13ddf93e17fe98cc8798ee4fb0c93a67",
       "size_bytes": 353
     },
     {
@@ -392,8 +392,8 @@
     },
     {
       "path": "deploy/staging/host/private-alpha-watchdog.service",
-      "sha256": "3bc4444a9c61271ada145d4dd9b7ccc669678f12b8e18dc1a38abbc6cc1f79c4",
-      "size_bytes": 933
+      "sha256": "65c48a9b1690d751a9ab2662cc6be87d4707329bc6005a92a69d57882f68a94f",
+      "size_bytes": 969
     },
     {
       "path": "deploy/staging/host/private-alpha-watchdog.timer",
