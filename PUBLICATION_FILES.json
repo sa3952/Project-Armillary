@@ -32,7 +32,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "f14bded18f76709309128ff597018658d858c86aa9d4e26597042fc0d273f26f",
+      "sha256": "5de433a9fd596a45233d31c455e1a4317c8f6010d6033b934f75aab07cb001a8",
       "size_bytes": 322
     },
     {
@@ -62,7 +62,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "df96492c7f42b556def94184aa203fab13ddf93e17fe98cc8798ee4fb0c93a67",
+      "sha256": "f480f73e9f4718db9a52142698d500067760a341370d3f4a74e1abdebddb23cd",
       "size_bytes": 353
     },
     {
@@ -732,8 +732,8 @@
     },
     {
       "path": "scripts/deployment/private_alpha_watchdog.py",
-      "sha256": "18d2becbd17c2bda1f541b1d7083b48a893a4a2a2522ffda8ba4ad0f3207e514",
-      "size_bytes": 14595
+      "sha256": "04c181e58f8eb01790435f94c1811781c97506818e948c8f5197bae7721b72e8",
+      "size_bytes": 15057
     },
     {
       "path": "scripts/deployment/staging_release.py",

@@ -259,7 +259,11 @@ def run_once(*, external_probe, local_probe, restart, notify, state, now):
         if action.startswith("notify:"):
             emit(action.split(":", 1)[1], failure_class, restart_status)
         else:
-            restart(); restart_status = "recovered" if local_probe() else "failed"
+            try:
+                restart()
+                restart_status = "recovered" if local_probe() else "failed"
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                restart_status = "failed"
             emit("restart_" + restart_status, "application_path", restart_status)
     return updated, {
         "schema_version": "private-alpha-watchdog-run-v1",
@@ -309,6 +313,19 @@ def _send(url: str, payload: bytes) -> None:
         raise RuntimeError("notification endpoint is unavailable") from error
 
 
+def restart_and_wait(source_root: Path, ready, *, sleep=time.sleep) -> None:
+    subprocess.run([
+        "docker", "compose", "--file", str(source_root / "deploy/compose.yaml"),
+        "--file", str(source_root / "deploy/staging/compose.staging.yaml"),
+        "restart", "private-alpha-app",
+    ], check=True, stdout=subprocess.DEVNULL)
+    for _ in range(30):
+        if ready():
+            return
+        sleep(2)
+    raise RuntimeError("bounded restart readiness failed")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", required=True)
@@ -343,11 +360,10 @@ def main() -> int:
         updated, result = run_once(
             external_probe=lambda: checked(args.external_base_url, credential, False),
             local_probe=lambda: checked(args.local_base_url, None, True),
-            restart=lambda: subprocess.run([
-                "docker", "compose", "--file", str(args.source_root / "deploy/compose.yaml"),
-                "--file", str(args.source_root / "deploy/staging/compose.staging.yaml"),
-                "restart", "private-alpha-app",
-            ], check=True, stdout=subprocess.DEVNULL),
+            restart=lambda: restart_and_wait(
+                args.source_root,
+                lambda: checked(args.local_base_url, None, True),
+            ),
             notify=notify, state=state, now=int(time.time()),
         )
         _save_state(args.state_file, updated)
