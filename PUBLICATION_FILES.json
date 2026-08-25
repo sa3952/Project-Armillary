@@ -32,7 +32,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "5de433a9fd596a45233d31c455e1a4317c8f6010d6033b934f75aab07cb001a8",
+      "sha256": "342f548b9756af70253ab1f2e78edd0bc2376193281b1eef18a7068018a0eab6",
       "size_bytes": 322
     },
     {
@@ -62,7 +62,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "f480f73e9f4718db9a52142698d500067760a341370d3f4a74e1abdebddb23cd",
+      "sha256": "4a9fee5955ce7e73290f0bea587ed0d7dbe0abf809428a81d81e69804afef8a6",
       "size_bytes": 353
     },
     {
@@ -402,8 +402,8 @@
     },
     {
       "path": "deploy/staging/nginx-site.conf.template",
-      "sha256": "b8e6d541bf7059a9ab7e75d9ca95505bd6804f1574928804d4d01e4551186fe7",
-      "size_bytes": 10284
+      "sha256": "8be79df655f13c87ba9f8c0f582ab69478716d2b3e9e3f4b2876470edba6598e",
+      "size_bytes": 10832
     },
     {
       "path": "deploy/staging/nginx.conf",

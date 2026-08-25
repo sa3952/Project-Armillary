@@ -135,6 +135,18 @@ server {
     error_page 502 /private-alpha-error-502.html;
     error_page 503 /private-alpha-error-503.html;
 
+    # Public vulnerability-reporting metadata is the only unauthenticated
+    # application-domain file.  Keep an exact file alias rather than opening a
+    # generic dot-path or the immutable frontend mount.
+    location = /.well-known/security.txt {
+        auth_basic off;
+        set $private_alpha_route_class static;
+        limit_req zone=private_alpha_static_client burst=40 nodelay;
+        limit_conn private_alpha_connections 32;
+        alias /var/www/project-armillary/.well-known/security.txt;
+        default_type text/plain;
+    }
+
     location = /private-alpha-error-413.html {
         internal;
         auth_basic off;
