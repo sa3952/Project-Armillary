@@ -616,10 +616,15 @@ def _deactivate(_identity: dict) -> None:
 
 
 def _privacy_probe(identity: dict) -> bool:
+    expected_host = os.environ.get("STAGING_SERVER_NAME", "").strip()
+    if not expected_host:
+        return False
+
     def local_get(path: str) -> tuple[int, bytes, dict[str, str]] | None:
         try:
             status, body, headers = _request(
                 f"http://{APP_PROBE_HOST}:{APP_PROBE_PORT}{path}",
+                extra_headers={"Host": expected_host},
                 timeout=5,
                 maximum_bytes=4096,
             )

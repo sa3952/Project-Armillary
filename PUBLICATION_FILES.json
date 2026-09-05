@@ -22,7 +22,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "a3c3daec65a4668987a0b1cafc23cb4e7bc7776bc1a09e855d63faf7449a6754",
+      "sha256": "c040032a2d436eac432b3a94679c9b9042adc36b7066e74c57b0ed1cbdc42c4a",
       "size_bytes": 322
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "eafe57fc8e944ea9d7037549418e9212d1b88680fc19bb1656f71297ccb38821",
+      "sha256": "652f163dbc7929d2f6845ca760d9ae34b2922f12a25af5394ca101f52df94304",
       "size_bytes": 353
     },
     {
@@ -672,8 +672,8 @@
     },
     {
       "path": "scripts/deployment/staging_release.py",
-      "sha256": "53ff158111f9c19ef44bdfbd8926a700db3de5769fc348a1a0f11374dbf19b6a",
-      "size_bytes": 36646
+      "sha256": "73792c303e7c66515f1e6d4bb34ef98e88aa9b22bc4d8c24c956d590f393f9f4",
+      "size_bytes": 36819
     },
     {
       "path": "scripts/deployment/verify_staging_http.py",
