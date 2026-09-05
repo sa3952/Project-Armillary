@@ -12,11 +12,11 @@
   // 分組只是視覺分隔，摺疊只有一層（進階選項開／關）。
   //
   // 兩條約束寫在資料裡而不是寫在畫面程式裡，否則會漂：
-  //   1. 具名 profile 一律「平等提供」，不得標示建議值（methods.md §3 第 005 題、
-  //      §4「不排序、不推薦」；§13.2 第 20、21 項）。因此每個 profile 選項的
-  //      `values` 沒有 recommended 旗標，只有 `label_zh` / `label_en`。
-  //   2. 中文術語不得隱藏英文技術詞（PRODUCT_CHARTER 競爭楔子第 6 條），
-  //      所以每一項都有 label_zh 與 label_en 兩個欄位，畫面必須同時呈現。
+  //   1. 具名 profile 一律平等提供，不排序、不推薦、不標示建議值。因此每個
+  //      profile 選項的 `values` 沒有 recommended 旗標，只有
+  //      `label_zh` / `label_en`。
+  //   2. 中文術語不得隱藏英文技術詞，所以每一項都有 label_zh 與 label_en
+  //      兩個欄位，畫面必須同時呈現。
   //
   // `depends_on` 讓相依選項可以做第二層摺疊：父項關閉時子項不該佔版面，
   // 但也不得因此消失得無影無蹤——畫面要說「這些跟著誰」。
@@ -120,7 +120,7 @@
       label_zh: "日月食", label_en: "Eclipses", default: false },
     { key: "include_void_of_course", group: "lunar", type: "boolean",
       label_zh: "月空亡", label_en: "Void of course", default: false,
-      help_zh: "目前以線性外插求相位完成時刻，那是已知的正確性缺陷，方向已定為兩段式求根但尚未實作。詳見方法頁。" },
+      help_zh: "完成時刻的求解方式與其限制隨每次回應交代在結果的月空亡區塊裡。詳見方法頁。" },
 
     // ── 地平事件 ─────────────────────────────────────────
     { key: "include_rise_set_transits", group: "horizon", type: "boolean",
@@ -138,9 +138,9 @@
       help_zh: "近現代技法，非古典傳統，預設關閉。" },
     { key: "declination_aspect_orb_degrees", group: "geometry", type: "number",
       label_zh: "赤緯容許度（度）", label_en: "Declination orb (degrees)", default: 1.0,
-      // 範圍照抄 backend/app/schemas.py 的 `gt=0.0, le=3.0`。原本宣告 0–30，
-      // 於是 UI 提供了十倍寬的合法-looking 區間，送出後才由伺服器回 422
-      // （PIA-2026-08-06-004）。下界取 step 對齊的最小正值，因為契約是 gt 0。
+      // 範圍照抄 backend/app/schemas.py 的 `gt=0.0, le=3.0`：UI 宣告的區間
+      // 必須是契約的子集，否則使用者會在送出後才被伺服器回 422。
+      // 下界取 step 對齊的最小正值，因為契約是 gt 0。
       depends_on: "include_declination_aspects", min: 0.1, max: 3, step: 0.1 },
 
     // ── 相位 ─────────────────────────────────────────────
@@ -168,14 +168,14 @@
         { value: "abu_mashar_lineage_v1", label_zh: "Abu Ma'shar 傳承", label_en: "Abū Ma'shar lineage" },
         { value: "lilly_1647_experience_v1", label_zh: "Lilly 1647 經驗值", label_en: "Lilly 1647 experience" },
       ],
-      help_zh: "目前沒有預設容許度表。不選時，相位只有幾何角距離，沒有「是否在容許度內」的判定——回應中該欄位會是 null，而不是「否」。" },
+      help_zh: "目前沒有預設容許度表。不選時，相位只有幾何角距離，沒有「是否在容許度內」的判定，回應中該欄位會是 null，而不是「否」。" },
     { key: "aspect_orb_scale_percent", group: "aspects", type: "number",
       label_zh: "容許度縮放（%）", label_en: "Orb scale (percent)", default: null,
-      // `gt=0.0, le=300.0`；原本上界寫 400。
+      // `gt=0.0, le=300.0`。
       depends_on: "aspect_orb_profile", min: 1, max: 300, step: 1 },
     { key: "aspect_fixed_orb_degrees", group: "aspects", type: "number",
       label_zh: "固定容許度（度）", label_en: "Fixed orb (degrees)", default: null,
-      // `gt=0.0, le=30.0`；上界原本就對，下界 0 會被拒絕。
+      // `gt=0.0, le=30.0`；下界 0 會被拒絕。
       depends_on: "include_aspects", min: 0.1, max: 30, step: 0.1,
       help_zh: "指定後會取代容許度表的逐星體數值。" },
     { key: "partile_profile", group: "aspects", type: "choice",
@@ -201,9 +201,7 @@
       depends_on: "aspect_include_angles", min: 0.1, max: 30, step: 0.1 },
 
     // ── 必然尊貴 ─────────────────────────────────────────
-    // 產品預設關閉（Sebastian 2026-08-05）。後端 schema 的預設仍是 true，
-    // 因此使用者不勾時必須明示送出 false，否則後端會自行帶入。
-    // 兩個預設值不同是刻意記錄下來的暫時狀態，已一併提出後端修正請求。
+    // 產品與後端預設皆依 Sebastian 2026-08-05 裁決關閉。
     { key: "include_domicile_exaltation", group: "dignities", type: "boolean",
       // 以下拉呈現，與界／面旬／三分性一致：那三個本來就是「不計算 ＋ 具名 profile」。
       render: "select",
@@ -212,8 +210,8 @@
         { value: true,  label_zh: "計算",   label_en: "Calculated" },
       ],
       label_zh: "廟與旺", label_en: "Domicile and exaltation",
-      default: false, backend_default: true,
-      help_zh: "只評估廟與旺；陷、落、外來與互容尚未評估——那是「未評估」，不是「沒有」。恆星黃道下產品會明確拒絕輸出並附原因代碼。" },
+      default: false,
+      help_zh: "只評估廟與旺；陷、落、外來與互容尚未評估，那是「未評估」，不是「沒有」。恆星黃道下產品會明確拒絕輸出並附原因代碼。" },
     { key: "bounds_profile", group: "dignities", type: "choice",
       label_zh: "界", label_en: "Bounds", default: null,
       values: [
@@ -337,19 +335,7 @@
       if (conflictFor(option, values)) return;
       const value = values[option.key];
       if (value === undefined) return;
-      // 省略的條件是**兩個預設都符合**，缺一不可：
-      //
-      //   與後端預設相同 —— 否則省略會讓後端自行帶入我們不要的值；
-      //   與產品預設相同 —— 否則使用者「主動選了」會被省略成「沒表示意見」，
-      //                     收據就會把它報成 defaulted，而那是不實的。
-      //
-      // 兩者只在 include_domicile_exaltation 上不同（產品關、後端開）：
-      //   使用者不勾 → 送 false（覆寫後端）
-      //   使用者勾了 → 送 true （偏離產品預設，requested_explicitly 才會是真）
-      const backendDefault = Object.prototype.hasOwnProperty.call(option, "backend_default")
-        ? option.backend_default
-        : option.default;
-      if (value === backendDefault && value === option.default) return;
+      if (value === option.default) return;
       payload[option.key] = value;
     });
     return payload;

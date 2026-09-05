@@ -203,7 +203,7 @@
       <table class="log spec-table">
         <thead><tr><th>標頭</th><th>設定值</th><th>擋掉什麼</th></tr></thead>
         <tbody>
-          <tr><td>Content-Security-Policy</td><td class="num">script-src 'self'</td><td>只執行本站腳本。<b>沒有 unsafe-inline，也沒有 unsafe-eval</b>——注入的腳本無處可跑</td></tr>
+          <tr><td>Content-Security-Policy</td><td class="num">script-src 'self'</td><td>腳本只能由本站載入，並拒絕 inline 與 eval 型執行，<b>降低常見注入的可利用面</b>——這不是「不存在 XSS」的證明</td></tr>
           <tr><td></td><td class="num">frame-ancestors 'none'</td><td>不准任何網站把本站嵌進 iframe（點擊劫持）</td></tr>
           <tr><td></td><td class="num">object-src 'none'</td><td>不載入外掛物件</td></tr>
           <tr><td></td><td class="num">base-uri 'none'</td><td>不准竄改相對路徑的基準位址</td></tr>
@@ -226,7 +226,7 @@
       <li><b>供應鏈：</b>沒有前端建置鏈、沒有 npm 執行期相依、沒有外部字型。你看到的每一個檔案都在公開原始碼裡，可以逐字比對。</li>
     </ul>
 
-    <p class="limit"><b>邊界（這一段很重要）：</b>我們<b>沒有第三方安全認證，沒有專業滲透測試，也沒有漏洞獎金計畫</b>。有的是寫進程式並由失敗優先測試守著的限制、多輪獨立 AI 紅隊與外部模型審查，以及一份誠實的「我們控制不了什麼」清單。<b>這些都不等於專業滲透測試。</b>完整的邊界、資料流與已知限制列在〈<a href="/zh-TW/security">安全</a>〉，那一頁是專門寫這件事的。</p>
+    <p class="limit"><b>邊界（這一段很重要）：</b>我們<b>沒有第三方安全認證，沒有專業滲透測試，也沒有漏洞獎金計畫</b>。有的是寫進程式並由失敗優先測試守著的限制、多輪具名外部技術審查與多工具對抗測試，以及一份誠實的「我們控制不了什麼」清單。<b>這些都不等於專業滲透測試。</b>完整的邊界、資料流與已知限制列在〈<a href="/zh-TW/security">安全</a>〉，那一頁是專門寫這件事的。</p>
   </section>
 
   <!-- ═══ 08 讀者 ═══ -->

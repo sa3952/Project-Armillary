@@ -19,13 +19,18 @@ import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_APP = PROJECT_ROOT / "backend" / "app"
-REQUIREMENTS = (
-    PROJECT_ROOT / "backend" / "requirements.txt",
-    PROJECT_ROOT / "backend" / "requirements-dev.txt",
-    PROJECT_ROOT / "deploy/requirements.in",
-    PROJECT_ROOT / "deploy/requirements.lock",
-    PROJECT_ROOT / "deploy/build-requirements.lock",
+# The scanned set is discovered from the tree under review rather than typed
+# here, so a requirement file added to that tree is scanned without anyone
+# remembering to list it, and one that leaves the published tree is simply not
+# discovered instead of aborting the guard.
+REQUIREMENT_ROOTS = (
+    PROJECT_ROOT / "backend",
+    PROJECT_ROOT / "deploy",
 )
+REQUIREMENT_FILE_NAME = re.compile(
+    r"^[a-z0-9_.-]*requirements[a-z0-9_.-]*\.(?:txt|in|lock)$"
+)
+PRUNED_DIRECTORY_NAMES = frozenset({"__pycache__", "node_modules"})
 MAX_REQUIREMENT_INCLUDE_DEPTH = 8
 MAX_REQUIREMENT_FILES = 64
 
@@ -78,6 +83,42 @@ REVIEWED_EXACT_IMPORTS = {
 
 class PrivacyDependencyFailure(RuntimeError):
     pass
+
+
+def discover_requirement_files(
+    roots: tuple[Path, ...] = REQUIREMENT_ROOTS,
+) -> tuple[Path, ...]:
+    """Return every requirement file the given roots actually declare.
+
+    A root that is absent is a refusal rather than an empty result: the guard
+    must never report coverage it did not have.
+    """
+
+    discovered: list[Path] = []
+    for root in roots:
+        if not root.is_dir():
+            raise PrivacyDependencyFailure(
+                f"requirement root is absent, so its dependencies cannot be "
+                f"checked: {root}"
+            )
+        pending = [root]
+        while pending:
+            directory = pending.pop()
+            for entry in sorted(directory.iterdir()):
+                if entry.is_dir():
+                    if entry.name.startswith(".") or (
+                        entry.name in PRUNED_DIRECTORY_NAMES
+                    ):
+                        continue
+                    pending.append(entry)
+                elif REQUIREMENT_FILE_NAME.match(entry.name.lower()):
+                    discovered.append(entry)
+    if not discovered:
+        raise PrivacyDependencyFailure(
+            "no requirement file was discovered under "
+            + ", ".join(str(root) for root in roots)
+        )
+    return tuple(sorted(discovered))
 
 
 def _root_module(value: str) -> str:
@@ -233,10 +274,13 @@ def check_requirements(
             f"requirement include escapes its reviewed root: {path}"
         ) from error
     seen.add(resolved)
-    for line_number, line in enumerate(
-        resolved.read_text(encoding="utf-8").splitlines(),
-        start=1,
-    ):
+    try:
+        content = resolved.read_text(encoding="utf-8")
+    except OSError as error:
+        raise PrivacyDependencyFailure(
+            f"cannot read requirement file {path}: {error}"
+        ) from error
+    for line_number, line in enumerate(content.splitlines(), start=1):
         include = _include_target(line)
         if include is not None:
             if not include or include.startswith(("http:", "https:", "file:")):
@@ -268,7 +312,7 @@ def check_requirements(
 def check_repository() -> None:
     for path in sorted(BACKEND_APP.rglob("*.py")):
         check_python_source(path)
-    for path in REQUIREMENTS:
+    for path in discover_requirement_files():
         check_requirements(path)
 
 

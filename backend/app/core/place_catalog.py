@@ -36,6 +36,30 @@ BM25_COLUMN_WEIGHTS = (8.0, 2.0, 1.0, 1.0)
 # 排序法的具名版本。排序規則的變更會直接改變使用者選到哪一個地點、
 # 進而改變整張星盤，因此必須是可具名、可比對、可回報的。
 RANKING_METHOD_NAME = "exact_name_then_population_then_weighted_bm25_v2"
+_BM25_SQL = ", ".join(str(value) for value in BM25_COLUMN_WEIGHTS)
+RANKING_STEPS = (
+    (
+        "CASE WHEN match_tier = 'exact_name' THEN 0 ELSE 1 END ASC",
+        "1. is_exact_name (exact_name → 0, otherwise → 1) ASC",
+    ),
+    ("population DESC", "2. population DESC"),
+    (
+        "CASE match_tier WHEN 'exact_name' THEN 0 "
+        "WHEN 'name_prefix' THEN 1 ELSE 2 END ASC",
+        "3. match_tier (exact_name → 0, name_prefix → 1, other_field → 2) ASC",
+    ),
+    (
+        "bm25_rank ASC",
+        f"4. bm25(name×{BM25_COLUMN_WEIGHTS[0]}, "
+        f"aliases×{BM25_COLUMN_WEIGHTS[1]}, admin1×{BM25_COLUMN_WEIGHTS[2]}, "
+        f"admin2×{BM25_COLUMN_WEIGHTS[3]}) ASC",
+    ),
+    ("source_priority ASC", "5. source_priority ASC"),
+    ("display_name ASC", "6. display_name ASC"),
+)
+_ORDER_BY_SQL = ",\n                    ".join(
+    sql for sql, _description in RANKING_STEPS
+)
 # Backstop for a query shape the token bounds do not anticipate.  SQLite
 # has no statement timeout; the connection `timeout` argument bounds lock
 # acquisition only.  A progress handler is the one mechanism that can
@@ -104,8 +128,8 @@ def _fts_query(value: str) -> tuple[str, dict]:
     The token bound used to be applied silently.  For a place picker that is a
     correctness problem, not merely a UX one: a query whose distinguishing word
     sits past the limit is answered as though that word had never been typed,
-    and the user may accept a coordinate for somewhere else entirely
-    (RT-BACKEND-9-E-007).  The bound is therefore kept - it is a real cost
+    and the user may accept a coordinate for somewhere else entirely.
+    The bound is therefore kept - it is a real cost
     control - but the caller now receives the dropped tokens so the response
     can say so.
     """
@@ -213,42 +237,47 @@ class PlaceCatalog:
         )
         try:
             metadata = self.metadata(connection)
+            # The match key was computed in the projection twice and in the
+            # ordering twice more: four Python calls for every FTS hit, and a
+            # common prefix matches tens of thousands of rows.  Under the GIL
+            # that made concurrent searches exceed the statement budget and
+            # refuse.  The key is computed once per row here; the ranking steps
+            # and their declared descriptions are unchanged.
             rows = connection.execute(
-                """
+                f"""
+                WITH matched AS MATERIALIZED (
+                    SELECT
+                        p.source,
+                        p.source_record_id,
+                        p.name,
+                        p.display_name,
+                        p.country_code,
+                        p.admin1,
+                        p.admin2,
+                        p.latitude,
+                        p.longitude,
+                        p.timezone,
+                        p.location_precision,
+                        p.population,
+                        p.source_priority,
+                        place_name_match_key(p.name) AS name_key,
+                        bm25(place_search, {_BM25_SQL}) AS bm25_rank
+                    FROM place_search
+                    JOIN places AS p ON p.rowid = place_search.rowid
+                    WHERE place_search MATCH :match
+                      AND (:country IS NULL OR p.country_code = :country)
+                )
                 SELECT
-                    p.source,
-                    p.source_record_id,
-                    p.name,
-                    p.display_name,
-                    p.country_code,
-                    p.admin1,
-                    p.admin2,
-                    p.latitude,
-                    p.longitude,
-                    p.timezone,
-                    p.location_precision,
-                    p.population,
+                    *,
                     CASE
-                        WHEN place_name_match_key(p.name) = :query THEN 'exact_name'
-                        WHEN substr(place_name_match_key(p.name), 1, :query_length)
+                        WHEN name_key = :query THEN 'exact_name'
+                        WHEN substr(name_key, 1, :query_length)
                              = :query THEN 'name_prefix'
                         ELSE 'other_field'
                     END AS match_tier
-                FROM place_search
-                JOIN places AS p ON p.rowid = place_search.rowid
-                WHERE place_search MATCH :match
-                  AND (:country IS NULL OR p.country_code = :country)
+                FROM matched
                 ORDER BY
-                    CASE WHEN match_tier = 'exact_name' THEN 0 ELSE 1 END ASC,
-                    p.population DESC,
-                    CASE match_tier
-                        WHEN 'exact_name' THEN 0
-                        WHEN 'name_prefix' THEN 1
-                        ELSE 2
-                    END ASC,
-                    bm25(place_search, 8.0, 2.0, 1.0, 1.0) ASC,
-                    p.source_priority ASC,
-                    p.display_name ASC
+                    {_ORDER_BY_SQL}
                 LIMIT :limit
                 """,
                 {
@@ -285,7 +314,7 @@ class PlaceCatalog:
                     "timezone": row["timezone"],
                     "location_precision": row["location_precision"],
                     "population": row["population"],
-                    # 排序層級一併回傳，讓使用者（與紅隊）能看出某一筆是「地名
+                    # 排序層級一併回傳，讓呼叫端能看出某一筆是「地名
                     # 本身相符」還是「只有別名或行政區欄位相符」，不必反推。
                     "match_tier": row["match_tier"],
                     "coordinate_semantics": (
@@ -298,22 +327,12 @@ class PlaceCatalog:
             "query": query_receipt,
             "ranking": {
                 "method": RANKING_METHOD_NAME,
-                # 這份清單必須與 ORDER BY 逐項對應。初版把三層的 match_tier
-                # 寫成單一個第一順位，但實際 SQL 是先只分「是否 exact_name」，
-                # 人口排在其後，完整的三層細分再排在人口**之後**
-                # （RT-BACKEND-9-E-008）。排序結果本身是確定的，錯的是這份
+                # 這份清單必須與 ORDER BY 逐項對應。把三層的 match_tier 寫成
+                # 單一個第一順位是錯的：實際 SQL 是先只分「是否 exact_name」，
+                # 人口排在其後，完整的三層細分再排在人口**之後**。
+                # 排序結果本身是確定的，可能出錯的是這份
                 # 自述——而自述錯誤等於可追溯性宣稱不實。
-                "order": [
-                    "1. is_exact_name (exact_name → 0, otherwise → 1) ASC",
-                    "2. population DESC",
-                    "3. match_tier (exact_name → 0, name_prefix → 1, other_field → 2) ASC",
-                    f"4. bm25(name×{BM25_COLUMN_WEIGHTS[0]}, "
-                    f"aliases×{BM25_COLUMN_WEIGHTS[1]}, "
-                    f"admin1×{BM25_COLUMN_WEIGHTS[2]}, "
-                    f"admin2×{BM25_COLUMN_WEIGHTS[3]}) ASC",
-                    "5. source_priority ASC",
-                    "6. display_name ASC",
-                ],
+                "order": [description for _sql, description in RANKING_STEPS],
                 "why_population_precedes_the_detailed_tier": (
                     "中文查詢命中的是別名欄而非地名欄，故臺北市落在 other_field；"
                     "若三層細分排在人口之前，人口 0 的『臺北小別墅』（name_prefix）"

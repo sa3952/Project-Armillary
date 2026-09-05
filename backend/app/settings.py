@@ -1,4 +1,4 @@
-"""Closed-vocabulary application profiles for local and hosted execution."""
+"""Closed-vocabulary capabilities for the supported web profiles."""
 
 from __future__ import annotations
 
@@ -7,9 +7,22 @@ from enum import Enum
 import os
 import re
 from collections.abc import Mapping
+from typing import Literal
 
 
 PROFILE_ENVIRONMENT_VARIABLE = "CLASSICAL_ASTROLOGY_PROFILE"
+# The host this deployment answers for.  Admission lives in the proxy, which
+# strips Authorization before forwarding, so the application cannot see the
+# credential and has no authorization of its own.  That is a deliberate
+# topology; this is an accident catcher for the one-line mistake that would
+# undo it — publishing a container port — not an authorization boundary, since
+# a caller who can reach the socket can also set this header.
+#
+# Unset means no check: the same module runs in development and in tests, and
+# refusing to start there would put the obligation on module import rather than
+# on the deployment.  The deployment is where it belongs, and the staging
+# configuration verifier requires it there.
+EXPECTED_HOST_ENVIRONMENT_VARIABLE = "CLASSICAL_ASTROLOGY_EXPECTED_HOST"
 SOURCE_REVISION_ENVIRONMENT_VARIABLE = (
     "CLASSICAL_ASTROLOGY_SOURCE_REVISION"
 )
@@ -20,8 +33,26 @@ _SOURCE_REVISION_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
 class AppProfile(str, Enum):
-    LOCAL = "local"
     PRIVATE_ALPHA = "private_alpha"
+    PUBLIC = "public"
+
+
+@dataclass(frozen=True)
+class ProfileCapabilities:
+    emit_noindex: bool
+    cache_policy: Literal["no_store", "public_split"]
+
+
+_PROFILE_CAPABILITIES = {
+    AppProfile.PRIVATE_ALPHA: ProfileCapabilities(
+        emit_noindex=True,
+        cache_policy="no_store",
+    ),
+    AppProfile.PUBLIC: ProfileCapabilities(
+        emit_noindex=False,
+        cache_policy="public_split",
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -29,12 +60,13 @@ class AppSettings:
     profile: AppProfile
     source_revision: str | None = None
     revision_source: str | None = None
-    # CG-11 evidence-retain: test-owned dependency-injection seam.  Tests
+    # Test-owned dependency-injection seam.  Tests
     # produce a missing/corrupt catalog path; create_app is the consumer and
     # the hosted unavailable-response regression is the verification entry.
     # Production intentionally leaves this unset so PlaceCatalog selects its
     # bundled immutable default.
     place_catalog_path: str | None = None
+    expected_host: str | None = None
 
     def __post_init__(self) -> None:
         if self.source_revision is None:
@@ -54,16 +86,8 @@ class AppSettings:
             )
 
     @property
-    def is_private_alpha(self) -> bool:
-        return self.profile is AppProfile.PRIVATE_ALPHA
-
-    @property
-    def live_openapi_url(self) -> str | None:
-        return None if self.is_private_alpha else "/openapi.json"
-
-    @property
-    def expose_runtime_health(self) -> bool:
-        return not self.is_private_alpha
+    def capabilities(self) -> ProfileCapabilities:
+        return _PROFILE_CAPABILITIES[self.profile]
 
     @property
     def build_identity(self) -> dict:
@@ -80,7 +104,10 @@ class AppSettings:
 
 def load_settings(environment: Mapping[str, str] | None = None) -> AppSettings:
     source = os.environ if environment is None else environment
-    raw_profile = source.get(PROFILE_ENVIRONMENT_VARIABLE, AppProfile.LOCAL.value)
+    expected_host = (source.get(EXPECTED_HOST_ENVIRONMENT_VARIABLE) or "").strip()
+    raw_profile = source.get(
+        PROFILE_ENVIRONMENT_VARIABLE, AppProfile.PRIVATE_ALPHA.value
+    )
     try:
         profile = AppProfile(raw_profile)
     except ValueError as error:
@@ -102,6 +129,7 @@ def load_settings(environment: Mapping[str, str] | None = None) -> AppSettings:
         )
 
     return AppSettings(
+        expected_host=expected_host or None,
         profile=profile,
         source_revision=source_revision,
         revision_source=revision_source,

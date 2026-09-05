@@ -25,10 +25,8 @@
   const cancelButton = el("cancel-button");
   const bootstrapStatus = el("bootstrap-status");
 
-  // 讀值、範圍檢查與模糊時刻判定都在 RequestInput，理由見該模組開頭：舊版把
-  // 「沒填」與「填了但不合法」壓成同一個回傳值，於是 12.5 靜默變 12
-  // （Math.trunc），而 `|| 0` 讓 NaN 靜默變 0——兩者都會算出使用者沒有輸入
-  // 的時刻。宣告放在這裡而不是 buildPayload 附近，因為 refreshFoldChoice
+  // 讀值、範圍檢查與模糊時刻判定都在 RequestInput，理由見該模組開頭。
+  // 宣告放在這裡而不是 buildPayload 附近，因為 refreshFoldChoice
   // 也用它，而那個函式定義得更早（const 有 TDZ，宣告必須先於任何呼叫）。
   const RI = window.RequestInput;
 
@@ -37,21 +35,27 @@
   let selectedPlace = null;            // 目錄選定的地點，含收據欄位
   const sectionSnapshots = new Map();  // section id -> canonical section
 
+  const PROFILE_TIMEOUT_MS = 5000;
   const profileReady = resolveProfile();
 
+  /**
+   * client-config 只決定錯誤訊息的措辭，因此它必須 bounded settle，且不得
+   * 成為送出的前置條件。5 秒：這是一個小 JSON，本機是毫秒等級。逾時就走
+   * 既有的 catch 設 profile = null，那條路徑本來就存在且已處理好。
+   */
   function resolveProfile() {
-    return fetch("/api/client-config", { headers: { Accept: "application/json" } })
-      .then((response) => {
+    const controller = new AbortController();
+    return window.ClientContext.resolveProfileBounded(
+      () => fetch("/api/client-config", {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      }).then((response) => {
         if (!response.ok) throw new Error(`client-config HTTP ${response.status}`);
         return response.json();
-      })
-      .then((payload) => {
-        profile = window.ClientContext.validateClientConfiguration(payload).profile;
-      })
-      .catch(() => {
-        // 解析失敗不顯示在畫面上；它只影響錯誤訊息要說「本機後端沒開」還是「網路不通」。
-        profile = null;
-      });
+      }),
+      () => controller.abort(),
+      PROFILE_TIMEOUT_MS
+    ).then((resolved) => { profile = resolved; });
   }
 
   // ══ 選項介面：由目錄產生，不手寫 ══════════════════════
@@ -177,9 +181,9 @@
 
   // 每個動態產生的控制項都必須關閉瀏覽器的表單還原。
   //
-  // 實測（2026-08-05，Chromium）：不關閉時，重新載入會讓瀏覽器把 checkbox 復原成
-  // 上一次的狀態並觸發 change，於是送出的模組組合與畫面初始狀態不符——
-  // 那正是 PRODUCT_CHARTER 禁止的「隱藏預設值影響結果」。
+  // 不關閉時，重新載入會讓瀏覽器把 checkbox 復原成上一次的狀態並觸發
+  // change，於是送出的模組組合與畫面初始狀態不符——一個看不見的預設值
+  // 因此影響了結果。
   function markNoRestore(control) {
     control.setAttribute("autocomplete", "off");
     return control;
@@ -298,6 +302,36 @@
       ? `進階選項：已調整 ${total} 項`
       : "進階選項：全部為產品預設";
     el("advanced-summary").dataset.state = total ? "changed" : "default";
+    refreshModeSummary();
+  }
+
+  // 計算口徑收合後，摘要必須把目前實際生效的值講出來。
+  // 「不設推薦值」與「不要求使用者在第一屏就決定」是兩件事：預設仍然存在，
+  // 誠實的做法是把它印出來，不是逼人先選一次。
+  function refreshModeSummary() {
+    const summary = document.getElementById("mode-summary");
+    if (!summary) return;
+    const zodiac = document.getElementById("zodiac");
+    const parts = [];
+    if (zodiac) {
+      parts.push(zodiac.value === "sidereal" ? "恆星黃道" : "回歸黃道");
+      if (zodiac.value === "sidereal") {
+        const ayanamsa = document.getElementById("ayanamsa");
+        if (ayanamsa && ayanamsa.selectedIndex >= 0) {
+          parts.push(ayanamsa.options[ayanamsa.selectedIndex].textContent);
+        }
+      }
+    }
+    if (optionValues.include_houses === false) {
+      parts.push("不計算宮位");
+    } else {
+      const option = Catalogue.BY_KEY.house_system;
+      const chosen = option.values.filter(
+        (value) => String(value.value) === String(optionValues.house_system),
+      )[0];
+      if (chosen) parts.push(`${chosen.label_zh}制`);
+    }
+    summary.textContent = parts.join(" · ");
   }
 
   el("reset-options").addEventListener("click", () => {
@@ -361,7 +395,7 @@
         }
         const found = (body && body.results) || [];
         // 後端會回一份 query 收據，說明有沒有詞被丟掉。不讀它，等於把一個
-        // 被改寫過的查詢報成使用者自己的查詢（PIA-2026-08-06-009）。
+        // 被改寫過的查詢報成使用者自己的查詢。
         const truncation = window.ClientContext.placeQueryNotice(body && body.query);
         if (!found.length) {
           placeStatus.textContent = truncation
@@ -449,7 +483,7 @@
     });
 
     el("place-caveat").textContent =
-      "這組座標是目錄對該地點的代表點，不是你的出生地址。上升點對經緯度敏感——"
+      "這組座標是目錄對該地點的代表點，不是你的出生地址。上升點對經緯度敏感，"
       + "若你知道更精確的座標，請在下方手動輸入取代它。時區已依目錄帶入，仍請確認出生當時實際適用的時區。";
     el("place-receipt").hidden = false;
     placeResults.hidden = true;
@@ -493,6 +527,15 @@
     minuteInput.disabled = precision !== "exact";
     secondInput.disabled = precision !== "exact";
     hourInput.disabled = precision === "date_only";
+    // 停用之外還要收起來。一個灰掉的「秒」欄位不帶任何資訊，只是佔位子，
+    // 而且「灰掉」還得先看懂才知道自己不必填。收起來則不必解讀。
+    // 實測：整份表單並不會因此變矮（exact 1053px、approximate_hour 1112px、
+    // date_only 1137px），因為讓路給了那段 .consequence 說明。這是划算的：
+    // 換掉的是兩個無資訊的輸入格，換來的是一句說明後端會怎麼處理。
+    // disabled 保留不動：hidden 只管版面，送出路徑仍照 precision 讀值。
+    el("field-minute").hidden = precision !== "exact";
+    el("field-second").hidden = precision !== "exact";
+    el("field-hour").hidden = precision === "date_only";
     if (precision !== "exact") { minuteInput.value = ""; secondInput.value = ""; }
     if (precision === "date_only") hourInput.value = "";
     const messages = {
@@ -508,16 +551,20 @@
   }
 
   function applyZodiacConsequences() {
+    refreshModeSummary();
     const sidereal = zodiacSelect.value === "sidereal";
     ayanamsaSelect.disabled = !sidereal;
+    // 歲差校正只對恆星黃道有意義；`depends_on` 這件事本來就寫在資料裡，
+    // 但畫面一直無條件呈現它，只是灰掉。回歸黃道下它是純粹的噪音。
+    el("field-ayanamsa").hidden = !sidereal;
     zodiacConsequence.hidden = !sidereal;
     zodiacConsequence.textContent = sidereal
-      ? "恆星黃道下，必然尊貴會被產品明確拒絕而不是算錯——尊貴的判準建立在回歸黃道上，"
+      ? "恆星黃道下，必然尊貴會被產品明確拒絕而不是算錯，尊貴的判準建立在回歸黃道上，"
         + "尚未有授權的恆星黃道版本。結果中會顯示拒絕的原因代碼。"
       : "";
   }
 
-  // ── 重複的民用小時（SD-32 / PIA-2026-08-06-005）──────────
+  // ── 重複的民用小時（SD-32）─────────────────────────────
   //
   // 秋季調慢當天，同一個時鐘時間出現兩次。後端支援 fold 指明是哪一次，
   // 但介面送不出去，於是永遠採用第一次——盤可能整個差一小時，而畫面不說。
@@ -530,13 +577,20 @@
     if (!dateValue || !timezone) return null;
     const [year, month, day] = dateValue.split("-").map(Number);
     const precision = currentPrecision();
-    // date_only 由後端對整個民用日取樣，approximate_hour 則會自己 fail closed
-    // 並要求 fold；只有 exact 需要在這裡把選擇呈現出來。
-    if (precision !== "exact") return null;
+    // date_only 由後端對整個民用日取樣，不需要這個選擇。exact 與
+    // approximate_hour 都需要：後端對兩者都要求指明是重複小時的哪一次，
+    // 而它拒絕的那件事，這裡就得提供得出來——否則使用者被擋在一個他無法
+    // 回答的問題前面。
+    if (precision === "date_only") return null;
     const hour = RI.readInteger(String(hourInput.value));
-    const minute = RI.readInteger(String(minuteInput.value));
-    if (hour.state !== RI.STATES.VALUE || minute.state !== RI.STATES.VALUE) return null;
-    const second = RI.readSecond(String(secondInput.value));
+    if (hour.state !== RI.STATES.VALUE) return null;
+    const minute = precision === "exact"
+      ? RI.readInteger(String(minuteInput.value))
+      : { state: RI.STATES.VALUE, value: 0 };
+    if (minute.state !== RI.STATES.VALUE) return null;
+    const second = precision === "exact"
+      ? RI.readSecond(String(secondInput.value))
+      : { state: RI.STATES.VALUE, value: 0 };
     const result = RI.civilTimeOccurrences(
       {
         year, month, day,
@@ -593,13 +647,14 @@
     el("fold-choice-note").textContent =
       "日光節約時間結束當天，時鐘會往回撥，於是同一個鐘面時間重複一次。"
       + "兩者相差一小時，算出來的上升點可能落在不同星座，所以這裡不替你猜。"
-      + "若真的無法確定，任選一個，並把這件事記在結果之外——收據會記下採用了哪一次。";
+      + "若真的無法確定，任選一個，並把這件事記在結果之外，收據會記下採用了哪一次。";
     host.hidden = false;
   }
 
   form.addEventListener("change", (event) => {
     if (event.target.name === "precision") applyPrecisionConsequences();
     if (event.target.id === "zodiac") applyZodiacConsequences();
+    if (event.target.id === "ayanamsa") refreshModeSummary();
     if (event.target.name !== "fold") refreshFoldChoice();
   });
   form.addEventListener("input", (event) => {
@@ -711,7 +766,7 @@
     statusLine.dataset.tone = tone || "info";
   }
 
-  // FPI-2026-08-06-E-010。匯出的成功／失敗訊息全都寫進 #status-line，而那個元素
+  // 匯出的成功／失敗訊息全都寫進 #status-line，而那個元素
   // 在表單的 action 區；匯出工具列在結果區，「複製本區」更散布在其下二十多個區塊
   // 之中。使用者捲到結果深處按下按鈕時，訊息更新在視窗外——`aria-live` 對螢幕
   // 報讀有效，明眼使用者看到的是「按了沒反應」。
@@ -776,22 +831,42 @@
       if (built.missing.length) actions.push("補齊上列欄位後再送出。");
       if (built.invalid.length) actions.push("修正上列數值後再送出。");
       actions.push("若只知道大約時辰或只知道日期，改選對應的把握程度。");
+      // 上一次的結果必須先消失，這條「連送都沒送出去」的分支也一樣：留著舊
+      // 卷宗等於在錯誤訊息底下展示一份描述舊輸入的結果，而且它的複製／下載
+      // 鈕仍然可用，可以匯出一份與表單不符的卷宗。
+      // 先清再報，順序不可調換：dropResultsForNewAttempt() 會 hideError()。
+      dropResultsForNewAttempt();
       showError(parts.join(" "), actions);
       setStatus("尚未送出。", "error");
       return;
     }
     submissionQueued = true;
     submitButton.disabled = true;
-    profileReady.then(() => submitPayload(built.payload));
+    // 狀態與中止入口在守衛通過的當下就出現，不等任何網路往返：兩者都不得
+    // 落在任何網路往返之後，否則送出鈕已 disabled 而畫面上沒有訊息、也沒有
+    // 可按的中止。
+    setStatus("計算中…", "info");
+    cancelButton.hidden = false;
+    // profile 只影響錯誤訊息的措辭，不參與 payload、驗證或計算，所以它
+    // 不該是送出的前提。這裡與逾時競速：profileReady 現在自己會在 5 秒內
+    // settle，這一層是第二道保險，確保就算它將來又變成不會 settle 的東西，
+    // 送出仍然會進行、/api/chart 的 30 秒上限仍然會啟動。
+    const profileOrTimeout = Promise.race([
+      profileReady,
+      new Promise((resolve) => window.setTimeout(resolve, PROFILE_TIMEOUT_MS)),
+    ]);
+    profileOrTimeout.then(() => {
+      // 中止鈕現在在 submitPayload() 之前就可按，所以這一段等待本身也是可
+      // 取消的。沒有這個檢查，使用者在等待視窗內按「中止」之後，請求仍會
+      // 在稍後送出——按了停卻還是算了。
+      if (!submissionQueued) return;
+      submitPayload(built.payload);
+    });
   });
 
   /**
-   * 送出後的等待有上限（PIA-2026-08-06-007）。
-   *
-   * 原本只建了 AbortController 卻沒有任何計時器，而送出鈕立刻 disabled，
-   * 兩個會 abort 的清除鈕又躲在 hidden 的 #results 裡。半開連線或伺服器
-   * 停住時，畫面會永遠停在「計算中…」，使用者只能重新載入整頁——而重新
-   * 載入會清掉他剛輸入的出生資料。
+   * 每一次送出都有上限，且中止入口在送出當下即可達；逾時只清掉這一次的
+   * 請求狀態，不清掉使用者已經輸入的出生資料。
    *
    * 30 秒：目前最重的組合（全恆星＋成相推算）在本機是數百毫秒等級，30 秒
    * 已遠超正常範圍；再長只是延長使用者對著沒有反應的畫面枯等。
@@ -891,6 +966,20 @@
       response.headers.get("Retry-After"),
       profile
     );
+    // 出路由頁面自己的狀態導出，不由一句寫死的文案宣稱。若選擇區真的在畫面上，
+    // 就指向它；若不在（例如瀏覽器與伺服器的時區資料版本不同，前端沒判定為模糊），
+    // 就說出那個落差，而不是叫使用者去用一個看不到的控制項。
+    const code = detail && typeof detail === "object" && !Array.isArray(detail)
+      ? detail.code
+      : null;
+    if (code === "ambiguous_local_time_choice_required") {
+      actions.unshift(
+        el("fold-choice").hidden
+          ? "本頁未偵測到這個時刻有兩種解讀，可能是瀏覽器與服務的時區資料版本不同；"
+            + "請改用精確到分鐘，或改動一分鐘後再送出。"
+          : "在上方「這個時間出現了兩次」的選擇區指定是第一次還是第二次。"
+      );
+    }
     showError(message, actions);
     setStatus("服務拒絕了這次計算。", "error");
   }
@@ -1013,10 +1102,31 @@
 
     // 長區塊改為摺疊：一頁四百多列，全部攤開等於沒有結構。
     // 門檻式而非點名式——新的長區塊會自動適用，不必記得回來加。
-    const rowCount = section.children
-      .filter((child) => child.type === "table")
-      .reduce((total, table) => total + table.rows.length, 0);
-    const collapsible = rowCount > LONG_SECTION_ROWS;
+    //
+    // 門檻看字數，不看列數。列數是很差的高度代理，而且兩個方向都會錯：
+    //   ·〈逐步計算軌跡〉在預設選項下正好 20 列，於是 rowCount > 20 為假、
+    //     不摺疊；但它一列平均上千字，375px 下整區量到 67,984px，佔整份結果
+    //     頁 80,776px 的 84%。使用者要看〈輸出契約〉或〈計算收據〉得先捲過
+    //     84 個螢幕。
+    //   ·〈三分性 Triplicity〉有 21 列但全部合計只有 159 字，卻因為 21 > 20
+    //     被收進摺疊，等於為了幾行字要使用者多點一下。
+    // 字數同時反映列數與每一列的長度，是「這一區要鋪多少版面」的直接量。
+    const tables = section.children.filter((child) => child.type === "table");
+    const rowCount = tables.reduce((total, table) => total + table.rows.length, 0);
+    const charCount = tables.reduce(
+      (total, table) => total + table.rows.reduce(
+        (rowTotal, row) => rowTotal + row.reduce(
+          (cellTotal, cell) => cellTotal + String(cell == null ? "" : cell).length,
+          0,
+        ),
+        0,
+      ),
+      0,
+    );
+    // 列數門檻留著當保險：極端的「很多列但每列極短」不會被字數抓到。
+    // 現有 fixture 都由字數先觸發，這一條沒有實際生效過。
+    const collapsible =
+      charCount > LONG_SECTION_CHARS || rowCount > LONG_SECTION_ROWS;
     let body = host;
     if (collapsible) {
       const details = document.createElement("details");
@@ -1048,7 +1158,12 @@
     return host;
   }
 
-  const LONG_SECTION_ROWS = 20;
+  // 900 字：以現有 fixture 校準。chart-exact 下最大的非軌跡區塊是
+  // 〈計算收據〉1,364 字，而〈本次生效的選項〉946 字——兩者都該摺疊；
+  // 〈天體位置〉569 字、〈相位〉481 字則該留在外面。chart-all-modules 下
+  // 〈軌跡〉32,747 字、〈相位〉2,973 字、〈恆星〉1,817 字都會摺疊。
+  const LONG_SECTION_CHARS = 900;
+  const LONG_SECTION_ROWS = 30;
 
   function materializeTable(model, sectionId) {
     const wrap = document.createElement("div");
@@ -1097,11 +1212,9 @@
     }
     clipboard.writeText(text).then(
       () => reportAt(anchor, okMessage, "info"),
-      // 2026-08-06：原本把 error.message 直接放進畫面。實測到的其中一種是
-      // "Failed to execute 'writeText' on 'Clipboard': Document is not focused"
-      // ——一段英文的平台內部訊息，出現在一個中文介面裡，而且沒有告訴使用者
-      // 該怎麼辦。這裡的失敗原因對使用者只有一種意義：這條路走不通，改用下載。
-      // 原始訊息不丟掉，但留在 console 給回報用，不佔畫面。
+      // 平台丟出的 error.message 是英文的內部訊息，對中文介面的使用者沒有
+      // 可行動內容。這裡的失敗原因對使用者只有一種意義：這條路走不通，改用
+      // 下載。原始訊息不丟掉，但留在 console 給回報用，不佔畫面。
       (error) => {
         if (error) console.warn("clipboard.writeText 失敗", error);
         reportAt(anchor, "瀏覽器這次沒有允許寫入剪貼簿；請改用下載。", "error");
@@ -1208,9 +1321,18 @@
   // 那是「清除」的語意，不是「中止」的。
   cancelButton.addEventListener("click", () => {
     const aborted = lifecycle.abortActiveRequest();
+    // 兩種可中止的狀態：已在飛行中的 /api/chart，以及送出前那段等待。
+    // 後者沒有 request 可 abort，靠 submissionQueued 讓排隊中的送出自己放棄。
+    const queued = submissionQueued;
+    submissionQueued = false;
     cancelButton.hidden = true;
     submitButton.disabled = false;
-    setStatus(aborted ? "已中止這次計算。表單內容保留。" : "目前沒有進行中的計算。", "info");
+    setStatus(
+      aborted || queued
+        ? "已中止這次計算。表單內容保留。"
+        : "目前沒有進行中的計算。",
+      "info",
+    );
   });
 
   el("clear-results").addEventListener("click", () => {

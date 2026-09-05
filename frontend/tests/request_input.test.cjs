@@ -4,8 +4,7 @@ const assert = require("node:assert/strict");
 const RequestInput = require("../zh-TW/request-input.js");
 const Catalogue = require("../zh-TW/options-catalogue.js");
 
-// PIA-2026-08-06-006：時間欄位靜默改值。
-// PIA-2026-08-06-004：UI 數字範圍與 API 契約不一致。
+// 這一檔守兩件事：時間欄位不得靜默改值，UI 數字範圍不得與 API 契約不一致。
 //
 // 兩者的失敗形狀相同——介面接受了一個它算不出來的值，而且不說。所以下面
 // 每一組都同時要求「不合法的值必須被指名」與「合法的值必須原樣通過」；
@@ -55,8 +54,8 @@ test("緯經高接受有限小數，拒絕非數字", () => {
   }
 });
 
-// ── PIA-2026-08-06-004 ───────────────────────────────────────
-// 這一組是本 finding 的核心：catalogue 宣告的範圍必須是 API 契約的子集。
+// ── catalogue 範圍與 API 契約 ─────────────────────────────────
+// catalogue 宣告的範圍必須是 API 契約的子集。
 // 數字直接照抄 backend/app/schemas.py，因為那份才是權威。
 
 const CONTRACT = {
@@ -128,7 +127,7 @@ test("預設值本身必須全部通過檢查", () => {
   assert.deepEqual(RequestInput.numericOptionProblems(Catalogue, enabled), []);
 });
 
-// ── SD-32 / PIA-2026-08-06-005：模糊民用時刻 ──────────────
+// ── SD-32：模糊民用時刻 ──────────────────────────────────────
 // 這一組的 oracle 是 IANA 時區資料本身，不是本模組的另一條路徑。
 
 test("秋季調慢那一小時被判為模糊，並給出兩個相差一小時的解讀", () => {

@@ -1,8 +1,13 @@
-# Frontend release overlay. The source is one already-verified immutable
-# release directory, never a live source checkout or rsync target.
+# Bind one verified immutable frontend release; never mount a live checkout.
 services:
   private-alpha-app:
     environment:
+      # The host this deployment answers for.  Admission is the proxy's, which
+      # strips Authorization before forwarding, so the application has no
+      # authorization of its own; this only lets it notice that it was reached
+      # by a route the deployment never declared — the shape a published
+      # container port produces.  It is an accident catcher, not a boundary.
+      CLASSICAL_ASTROLOGY_EXPECTED_HOST: "${STAGING_SERVER_NAME:?set STAGING_SERVER_NAME}"
       CLASSICAL_ASTROLOGY_REQUIRE_FRONTEND_RELEASE: "1"
       CLASSICAL_ASTROLOGY_FRONTEND_ROOT: "/app/frontend"
       CLASSICAL_ASTROLOGY_FRONTEND_RELEASE_DIGEST: "${FRONTEND_RELEASE_DIGEST:?set FRONTEND_RELEASE_DIGEST}"

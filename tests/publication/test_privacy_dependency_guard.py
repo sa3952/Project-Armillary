@@ -192,3 +192,60 @@ def test_privacy_dependency_guard_rejects_include_escape(tmp_path):
 
     with pytest.raises(guard.PrivacyDependencyFailure, match="escapes"):
         guard.check_requirements(root)
+
+
+def test_privacy_dependency_guard_checks_the_real_tree_with_its_own_discovered_set():
+    """The real set against the real tree.
+
+    Every other test in this file builds its own requirement files under
+    ``tmp_path``, so the set the guard actually scans was never exercised.  A
+    requirement file added to this tree is scanned by this test without anyone
+    editing it.
+    """
+
+    guard = _load_guard()
+
+    guard.check_repository()
+
+
+def test_privacy_dependency_guard_discovers_a_requirement_file_nobody_listed(tmp_path):
+    """A fixed list cannot satisfy this: the name is chosen at call time."""
+
+    guard = _load_guard()
+    root = tmp_path / "root"
+    root.mkdir()
+    (root / "unlisted-requirements.lock").write_text(
+        "sentry-sdk==2.0.0\n",
+        encoding="utf-8",
+    )
+
+    discovered = guard.discover_requirement_files((root,))
+
+    assert discovered == (root / "unlisted-requirements.lock",)
+    with pytest.raises(guard.PrivacyDependencyFailure, match="privacy-sensitive"):
+        guard.check_requirements(discovered[0])
+
+
+def test_privacy_dependency_guard_refuses_an_absent_requirement_root(tmp_path):
+    guard = _load_guard()
+
+    with pytest.raises(guard.PrivacyDependencyFailure, match="root is absent"):
+        guard.discover_requirement_files((tmp_path / "absent",))
+
+
+def test_privacy_dependency_guard_refuses_a_root_that_declares_nothing(tmp_path):
+    guard = _load_guard()
+
+    with pytest.raises(guard.PrivacyDependencyFailure, match="no requirement file"):
+        guard.discover_requirement_files((tmp_path,))
+
+
+def test_privacy_dependency_guard_refuses_an_include_that_is_not_there(tmp_path):
+    """The published-tree abort was a `FileNotFoundError`, not a refusal."""
+
+    guard = _load_guard()
+    root = tmp_path / "requirements.txt"
+    root.write_text("-r absent.txt\n", encoding="utf-8")
+
+    with pytest.raises(guard.PrivacyDependencyFailure, match="cannot read"):
+        guard.check_requirements(root)

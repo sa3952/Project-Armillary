@@ -1,66 +1,48 @@
-# Build Correspondence and Reproducibility
+# Build correspondence and reproducibility
 
-The immediate release requirement is a repeatable, source-corresponding
-container build:
+The release contract is source-corresponding, not bit-for-bit reproducible across independent builders.
+It binds exact public revision、digest-pinnedlinux/amd64Python base、hashed dependencies、source-built
+pyswisseph、ephemeris hashes、ELF architecture、inventory、SBOM、scanner evidence and image digest.
+Timestamps、package repositories、toolchains and platforms may change whole-file bytes.
 
-- exact public Git revision;
-- pinned Python 3.13.14 base image digest;
-- hashed Python build and runtime dependencies;
-- source-built `pyswisseph 2.10.3.2`;
-- ephemeris file hashes;
-- recorded architecture and ELF machine type;
-- container inventory, SBOM, scanner evidence, and image digest.
+## Reconstruction
 
-This project does not yet claim bit-for-bit reproducible container images
-across independent builders. Timestamps, package repository state, and build
-platform differences remain possible sources of byte-level variance.
+Both supported modes create a fresh environment and use the digest-pinned builder recorded in
+`deploy/Dockerfile`：
 
-## Supported dependency reconstruction modes
+- `online-clean`installs the exact hashed development lock fromHTTPS.
+- `offline-source-only`uses only candidate sdists and lock-authorized wheel indexes；pyswisseph is still
+  built from retained source. Some upstream Rust sdists are not self-contained, so an all-sdist build is
+  not claimed.
 
-The publication candidate supports two fresh-environment modes. Neither mode
-copies an existing virtual environment.
-
-Both modes are defined for `linux/amd64` and use this digest-pinned builder,
-which contains the C compiler required to build `pyswisseph` from its retained
-source distribution:
-
-```text
-python:3.13.14-trixie@sha256:153e964bee18ef816ff55c8b026a345c62d4ccf05ad119ce5d7c10dee79574d7
-```
-
-- `online-clean`: a new CPython 3.13 virtual environment installs the exact
-  hash-pinned development lock from an HTTPS package index.
-- `offline candidate-only`: the consumer has no network. It installs PEP 517
-  bootstrap and dependency wheels only when their hashes occur in the same
-  committed locks, while building `pyswisseph` from the retained sdist.
-
-All exact production, build, and development sdists remain in
-`third_party/sources/` for inspection. Some upstream Rust-backed sdists are
-not self-contained and attempt to fetch crates or Git dependencies during a
-literal all-sdist build; the verified wheel index is the supported offline
-path for those packages. `third_party/SOURCE_MANIFEST.json` records the exact
-roles, archive hashes, index target, and which package is source-built.
-
-The generated `docs/DEPENDENCY_LICENSES.md` is a human view of that manifest.
-Manual edits are rejected by candidate verification.
-
-From the candidate root, replay either supported mode without copying an
-existing virtual environment:
+**third_party/SOURCE_MANIFEST.json** binds roles、archive／wheel hashes and source-built status；generated
+**docs/DEPENDENCY_LICENSES.md** must match it.
 
 ```bash
-bash scripts/publication/verify_candidate_clean.sh \
-  --root . \
+bash scripts/publication/verify_candidate_clean.sh --root . \
   --reconstruction-mode offline-source-only
-
-bash scripts/publication/verify_candidate_clean.sh \
-  --root . \
+bash scripts/publication/verify_candidate_clean.sh --root . \
   --reconstruction-mode online-clean
 ```
 
-The verifier passes `--platform linux/amd64` to Docker explicitly. A different
-`--builder-image` is an investigative override, not evidence for the documented
-reconstruction contract.
+The verifier fixes`linux/amd64`; another builder is diagnostic only. RuntimeCompose does not build. The
+sole candidate context is the closed materialized output of
+`scripts.verification.verify_docker_context`；a raw-checkout／Compose build is unsupported.
 
-The runtime Compose files do not build images. The only candidate build context is the closed
-materialized output of `scripts.verification.verify_docker_context`; a raw-checkout Compose build
-is outside the supported and governed path.
+## What this tree does not carry, and why
+
+Two kinds of thing are deliberately absent, so that their absence reads as a decision rather than an
+omission.
+
+**Operator state.** The edge configuration and the site template are here; the renderer that fills in
+a domain, the TLS preparation, the credential tooling and the host hardening for one particular
+machine are not. Those configure sshd, ufw, sysctl, journald and certbot — generally available
+programs used unmodified — and what they hold is one operator's identity, not knowledge needed to
+build or modify this work. Bring your own.
+
+**Our own quality apparatus.** The tests published here are the ones that verify a claim this
+project makes in public: privacy logging, the runtime contract, resource bounds, the release
+transaction, the hosted profile, and the browser-side privacy lifecycle and export serializers.
+Ordinary functional and coverage tests, their fixtures, and lint configuration are not published.
+They are not needed to generate, install, run or modify the work, and publishing them would say
+nothing a reader could check.

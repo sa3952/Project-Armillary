@@ -15,10 +15,12 @@ import asyncio
 import json
 import logging
 import math
+from pathlib import PurePosixPath
 import re
 import sys
 import time
 import uuid
+from urllib.parse import parse_qs
 
 if sys.version_info < (3, 11):
     # Directly declared for the supported Python 3.10 floor. Import failure is
@@ -32,11 +34,12 @@ from starlette.datastructures import MutableHeaders
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from .request_limits import BOUNDARY_REASON_STATE_KEY
+from .request_limits import BOUNDARY_REASON_CODES, BOUNDARY_REASON_STATE_KEY
 
 
-EVENT_SCHEMA_VERSION: Final = "privacy-request-event-v1"
+EVENT_SCHEMA_VERSION: Final = "privacy-request-event-v2"
 EVENT_NAME: Final = "http_request_completed"
+DOMAIN_ERROR_STATE_KEY: Final = "project_armillary_domain_error_code"
 
 ALLOWED_EVENT_FIELDS: Final = (
     "event_schema_version",
@@ -49,6 +52,7 @@ ALLOWED_EVENT_FIELDS: Final = (
     "request_size_bucket",
     "outcome",
     "error_code",
+    "failure_class",
 )
 
 _ALLOWED_METHODS: Final = frozenset({"GET", "POST", "HEAD", "OPTIONS"})
@@ -58,30 +62,73 @@ _ALLOWED_ROUTES: Final = frozenset(
         "/api/client-config",
         "/api/health",
         "/api/places/search",
-        "/api/runtime-health",
-        "/openapi.json",
     }
 )
 _ALLOWED_ERROR_CODES: Final = frozenset(
     {
-        "compute_capacity_exhausted",
-        "conflicting_request_framing",
-        "empty_request_body",
-        "invalid_content_length",
-        "request_body_too_large",
-        "request_capacity_exhausted",
-        "request_headers_too_large",
+        "ambiguous_local_time_choice_required",
         "request_rejected",
         "server_error",
         "internal_server_error",
-        "unsupported_media_type",
-        "unsupported_method",
+        "full_ephemeris_required",
+        "house_system_unavailable",
+        "nonexistent_local_time",
+        "place_catalog_unavailable",
+        "swiss_ephemeris_error",
         "unclassified",
     }
+) | BOUNDARY_REASON_CODES
+# Unexpected failures may expose only a closed exception-class vocabulary.
+# Anything else becomes `unclassified`; messages, tracebacks and request-derived
+# values never reach this field.
+_ALLOWED_FAILURE_CLASSES: Final = frozenset(
+    {
+        "AssertionError",
+        "AttributeError",
+        "Error",
+        "IndexError",
+        "KeyError",
+        "OSError",
+        "OverflowError",
+        "RecursionError",
+        "RuntimeError",
+        "TypeError",
+        "UnicodeDecodeError",
+        "ValueError",
+        "ZeroDivisionError",
+    }
 )
-_BOUNDARY_REJECTION_CODES: Final = _ALLOWED_ERROR_CODES - {
-    "server_error", "internal_server_error", "unclassified"
-}
+_UNCLASSIFIED_FAILURE_CLASS: Final = "unclassified"
+
+
+def public_event_contract() -> dict[str, tuple[str, ...]]:
+    """Project the executable event vocabulary for public page generation."""
+
+    return {
+        "fields": tuple(sorted(ALLOWED_EVENT_FIELDS)),
+        "error_codes": tuple(sorted(_ALLOWED_ERROR_CODES)),
+        "failure_classes": tuple(sorted({
+            *_ALLOWED_FAILURE_CLASSES,
+            _UNCLASSIFIED_FAILURE_CLASS,
+        })),
+    }
+
+
+def failure_class(error: BaseException | None) -> str | None:
+    """Name the exception type, or say it was not one this service declares."""
+
+    if error is None:
+        return None
+    name = type(error).__name__
+    return name if name in _ALLOWED_FAILURE_CLASSES else _UNCLASSIFIED_FAILURE_CLASS
+
+
+_DOMAIN_FAILURE_CODES: Final = frozenset({
+    "full_ephemeris_required",
+    "place_catalog_unavailable",
+    "swiss_ephemeris_error",
+})
+_BOUNDARY_REJECTION_CODES: Final = BOUNDARY_REASON_CODES
 _ALLOWED_DURATION_BUCKETS: Final = frozenset(
     {
         "invalid",
@@ -124,8 +171,11 @@ _SECURITY_HEADERS: Final = {
     "Cross-Origin-Opener-Policy": "same-origin",
     "Cross-Origin-Embedder-Policy": "require-corp",
     "Cross-Origin-Resource-Policy": "same-origin",
-    "Cache-Control": "no-store",
 }
+_IMMUTABLE_STATIC_SUFFIXES: Final = frozenset({
+    ".avif", ".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".mjs",
+    ".otf", ".png", ".svg", ".ttf", ".webp", ".woff", ".woff2",
+})
 
 _SECURITY_LOGGER = logging.getLogger("classical_astrology.privacy")
 _SECURITY_LOGGER.setLevel(logging.INFO)
@@ -206,7 +256,7 @@ def _outcome(status_code: int, error_code: str | None) -> str:
     # A response can fail after its HTTP status has already been sent.  Keep the
     # wire status truthful while allowing telemetry to record the completed
     # operation as an error.
-    if error_code in {"internal_server_error", "server_error"}:
+    if error_code in {"internal_server_error", "server_error"} | _DOMAIN_FAILURE_CODES:
         return "error"
     if error_code in _BOUNDARY_REJECTION_CODES:
         return "rejected"
@@ -235,6 +285,14 @@ def _boundary_reason(scope: Scope) -> str | None:
     if isinstance(value, str) and value in _BOUNDARY_REJECTION_CODES:
         return value
     return None
+
+
+def _domain_error_reason(scope: Scope) -> str | None:
+    state = scope.get("state")
+    if not isinstance(state, Mapping):
+        return None
+    value = state.get(DOMAIN_ERROR_STATE_KEY)
+    return value if isinstance(value, str) and value in _ALLOWED_ERROR_CODES else None
 
 
 def _safe_request_id(value: object) -> str:
@@ -273,14 +331,8 @@ def build_request_event(
     duration_ms: object,
     content_length: object,
     error_code: object,
+    failure: BaseException | None = None,
 ) -> dict:
-    """Build one event using only server-generated or reduced values.
-
-    ``request_id`` is retained only when it matches the server-generated UUID
-    hex format.  External request IDs are deliberately ignored at the HTTP
-    middleware call site, and this reducer fails closed if that invariant later
-    regresses.
-    """
 
     safe_status = _safe_status_code(status_code)
     safe_error = _safe_error_code(error_code)
@@ -295,6 +347,7 @@ def build_request_event(
         "request_size_bucket": _request_size_bucket(content_length),
         "outcome": _outcome(safe_status, safe_error),
         "error_code": safe_error,
+        "failure_class": failure_class(failure),
     }
     return event
 
@@ -321,6 +374,11 @@ def _event_is_safe(event: object) -> bool:
         and (
             event["error_code"] is None
             or event["error_code"] in _ALLOWED_ERROR_CODES
+        )
+        and (
+            event["failure_class"] is None
+            or event["failure_class"] in
+            _ALLOWED_FAILURE_CLASSES | {_UNCLASSIFIED_FAILURE_CLASS}
         )
     )
 
@@ -362,13 +420,34 @@ def _apply_security_headers(
     message: Message,
     request_id: str,
     additional_response_headers: Mapping[str, str],
+    cache_control: str,
 ) -> None:
     headers = MutableHeaders(scope=message)
     for name, value in _SECURITY_HEADERS.items():
         headers[name] = value
     for name, value in additional_response_headers.items():
         headers[name] = value
+    headers["Cache-Control"] = cache_control
     headers["X-Request-ID"] = request_id
+
+
+def _cache_control(scope: Scope, status_code: int, policy: str) -> str:
+    if policy == "no_store" or status_code >= 400:
+        return "no-store"
+    path = scope.get("path")
+    if not isinstance(path, str) or path == "/api" or path.startswith("/api/"):
+        return "no-store"
+    suffix = PurePosixPath(path).suffix.casefold()
+    query = scope.get("query_string", b"")
+    try:
+        versioned = bool(parse_qs(query.decode("ascii")).get("v"))
+    except (UnicodeDecodeError, ValueError):
+        versioned = False
+    if suffix in _IMMUTABLE_STATIC_SUFFIXES and versioned:
+        return "public, max-age=31536000, immutable"
+    if suffix in _IMMUTABLE_STATIC_SUFFIXES:
+        return "public, max-age=300"
+    return "no-cache"
 
 
 def _error_response(error_code: str) -> JSONResponse:
@@ -399,15 +478,6 @@ def _is_excluded_event_path(
 
 
 class PrivacyBoundaryMiddleware:
-    """ASGI-level privacy, error-containment, and response-header boundary.
-
-    The low-level ASGI shape is intentional.  Function-style FastAPI middleware
-    receives a response as soon as ``http.response.start`` is available, so it
-    cannot contain exceptions later raised by a streaming iterator or response
-    background task.  This wrapper awaits the whole downstream ASGI call, emits
-    exactly one event after it finishes, and never sends raw exception text to a
-    fallback logger.
-    """
 
     def __init__(
         self,
@@ -416,13 +486,17 @@ class PrivacyBoundaryMiddleware:
         event_emitter: Callable[[dict], bool] = emit_security_event,
         excluded_event_routes: frozenset[str] = frozenset(),
         additional_response_headers: Mapping[str, str] | None = None,
+        cache_policy: str = "no_store",
     ) -> None:
+        if cache_policy not in {"no_store", "public_split"}:
+            raise ValueError("unsupported response cache policy")
         self.app = app
         self.event_emitter = event_emitter
         self.excluded_event_routes = excluded_event_routes
         self.additional_response_headers = dict(
             additional_response_headers or {}
         )
+        self.cache_policy = cache_policy
 
     async def __call__(
         self,
@@ -451,11 +525,13 @@ class PrivacyBoundaryMiddleware:
                     message,
                     request_id,
                     self.additional_response_headers,
+                    _cache_control(scope, status_code, self.cache_policy),
                 )
             elif message["type"] == "http.response.body":
                 response_complete = not message.get("more_body", False)
             await send(message)
 
+        unexpected_failure: BaseException | None = None
         try:
             await self.app(scope, receive, send_with_boundary)
             if not response_started:
@@ -475,6 +551,10 @@ class PrivacyBoundaryMiddleware:
             if _is_process_control_exception(error):
                 process_control_exception = True
                 _raise_if_process_control(error)
+            # The class name and nothing else: the traceback and the message can
+            # carry a birth time or a coordinate, the type cannot, and the
+            # allowlist below reduces anything unfamiliar to `unclassified`.
+            unexpected_failure = error
             # Do not re-raise into ServerErrorMiddleware/Uvicorn: their default
             # error logger includes exception text and tracebacks.  Before
             # response start we can still replace the response with a stable
@@ -505,8 +585,11 @@ class PrivacyBoundaryMiddleware:
                 )
             ):
                 if error_code is None:
+                    domain_reason = _domain_error_reason(scope)
                     boundary_reason = _boundary_reason(scope)
-                    if boundary_reason is not None:
+                    if domain_reason is not None:
+                        error_code = domain_reason
+                    elif boundary_reason is not None:
                         error_code = boundary_reason
                     elif 400 <= status_code <= 499:
                         error_code = "request_rejected"
@@ -524,6 +607,7 @@ class PrivacyBoundaryMiddleware:
                         duration_ms=(time.perf_counter() - started) * 1_000,
                         content_length=_content_length_from_scope(scope),
                         error_code=error_code,
+                        failure=unexpected_failure,
                     )
                     self.event_emitter(event)
                 except BaseException as event_error:

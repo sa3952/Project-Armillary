@@ -3,11 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title>功能｜渾儀 Armillary</title>
+<meta name="robots" content="index, follow">
+<title>可驗證的星盤計算與輸出功能｜渾儀 Armillary</title>
+<meta name="description" content="查看渾儀提供的天文座標、古典方法、出生時間敏感度、計算卷宗與多格式匯出功能。">
+<link rel="canonical" href="https://projectarmillary.com/zh-TW/features">
+<meta property="og:type" content="website">
+<meta property="og:title" content="可驗證的星盤計算與輸出功能｜渾儀 Armillary">
+<meta property="og:description" content="查看渾儀提供的天文座標、古典方法、出生時間敏感度、計算卷宗與多格式匯出功能。">
+<meta property="og:url" content="https://projectarmillary.com/zh-TW/features">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@id":"https://projectarmillary.com/#website","@type":"WebSite","inLanguage":"zh-TW","name":"渾儀 Armillary","url":"https://projectarmillary.com/"},{"@id":"https://projectarmillary.com/zh-TW/features#webpage","@type":"WebPage","description":"查看渾儀提供的天文座標、古典方法、出生時間敏感度、計算卷宗與多格式匯出功能。","inLanguage":"zh-TW","isPartOf":{"@id":"https://projectarmillary.com/#website"},"name":"可驗證的星盤計算與輸出功能｜渾儀 Armillary","url":"https://projectarmillary.com/zh-TW/features"}]}</script>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.15.0-final-polish">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.15.0-final-polish">
 </head>
 <body>
 
@@ -27,9 +35,10 @@
     </a>
     <nav class="site-nav" aria-label="主要導覽">
       <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
-      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/blog">文章</a>
       <a href="/zh-TW/about">關於</a>
       <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
@@ -242,7 +251,7 @@
       <table class="log spec-table">
         <thead><tr><th>標頭</th><th>設定值</th><th>擋掉什麼</th></tr></thead>
         <tbody>
-          <tr><td>Content-Security-Policy</td><td class="num">script-src 'self'</td><td>只執行本站腳本。<b>沒有 unsafe-inline，也沒有 unsafe-eval</b>——注入的腳本無處可跑</td></tr>
+          <tr><td>Content-Security-Policy</td><td class="num">script-src 'self'</td><td>腳本只能由本站載入，並拒絕 inline 與 eval 型執行，<b>降低常見注入的可利用面</b>——這不是「不存在 XSS」的證明</td></tr>
           <tr><td></td><td class="num">frame-ancestors 'none'</td><td>不准任何網站把本站嵌進 iframe（點擊劫持）</td></tr>
           <tr><td></td><td class="num">object-src 'none'</td><td>不載入外掛物件</td></tr>
           <tr><td></td><td class="num">base-uri 'none'</td><td>不准竄改相對路徑的基準位址</td></tr>
@@ -265,7 +274,7 @@
       <li><b>供應鏈：</b>沒有前端建置鏈、沒有 npm 執行期相依、沒有外部字型。你看到的每一個檔案都在公開原始碼裡，可以逐字比對。</li>
     </ul>
 
-    <p class="limit"><b>邊界（這一段很重要）：</b>我們<b>沒有第三方安全認證，沒有專業滲透測試，也沒有漏洞獎金計畫</b>。有的是寫進程式並由失敗優先測試守著的限制、多輪獨立 AI 紅隊與外部模型審查，以及一份誠實的「我們控制不了什麼」清單。<b>這些都不等於專業滲透測試。</b>完整的邊界、資料流與已知限制列在〈<a href="/zh-TW/security">安全</a>〉，那一頁是專門寫這件事的。</p>
+    <p class="limit"><b>邊界（這一段很重要）：</b>我們<b>沒有第三方安全認證，沒有專業滲透測試，也沒有漏洞獎金計畫</b>。有的是寫進程式並由失敗優先測試守著的限制、多輪具名外部技術審查與多工具對抗測試，以及一份誠實的「我們控制不了什麼」清單。<b>這些都不等於專業滲透測試。</b>完整的邊界、資料流與已知限制列在〈<a href="/zh-TW/security">安全</a>〉，那一頁是專門寫這件事的。</p>
   </section>
 
   <!-- ═══ 08 讀者 ═══ -->
@@ -360,7 +369,6 @@
   <div class="wrap">
     <span>渾儀 ARMILLARY</span>
     <span>只計算，不解盤，不預測</span>
-    <span>/zh-TW/features · L2 ＋ L3</span>
   </div>
 </footer>
 

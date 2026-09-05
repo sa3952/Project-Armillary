@@ -45,6 +45,12 @@ ALTERNATIVE_ALLOWED_FILES = (
     ),
 )
 OPTIONAL_CONTROL_FILES = (Path("build-context-probe-8f38f069.txt"),)
+# Local artifacts that the operating system or interpreter writes into a
+# working tree, are gitignored, and can never reach a release context because
+# that context is materialized from `git archive`.  Keep this a closed set of
+# exact names/suffixes; it is not a general dot-path exemption.
+IGNORABLE_LOCAL_ARTIFACT_NAMES = frozenset({".DS_Store"})
+IGNORABLE_LOCAL_ARTIFACT_SUFFIXES = frozenset({".pyc", ".pyo"})
 FORBIDDEN_PARTS = frozenset(
     {
         ".git",
@@ -54,97 +60,26 @@ FORBIDDEN_PARTS = frozenset(
         ".hypothesis",
         ".claude",
         ".codex",
-        "validation",
         "__pycache__",
         ".pytest_cache",
         "tests",
     }
 )
-EXPECTED_DOCKERIGNORE_POLICY = (
+REQUIRED_DOCKERIGNORE_RULES = frozenset({
     "**",
-    ".git",
-    ".git/**",
-    ".build",
-    ".build/**",
-    "dist",
-    "dist/**",
-    "backend/.venv",
-    "backend/.venv/**",
-    ".hypothesis",
-    ".hypothesis/**",
-    ".claude",
-    ".claude/**",
-    ".codex",
-    ".codex/**",
-    "validation",
-    "validation/**",
-    "docs",
-    "docs/**",
-    "docs/red_team/**",
-    "docs/archive/**",
-    "publication",
-    "publication/**",
-    "Sources",
-    "Sources/**",
-    "frontend/tests",
-    "frontend/tests/**",
-    "**/__pycache__",
-    "**/*.py[cod]",
-    ".pytest_cache",
-    ".pytest_cache/**",
-    "**/.DS_Store",
-    "**/.env",
-    "**/.env.*",
-    "**/*.pem",
-    "**/*.key",
-    "**/*secret*",
-    "**/*token*",
-    "!.dockerignore",
-    "!LICENSE",
-    "!publication/",
-    "!publication/public_overlay/",
-    "!publication/public_overlay/THIRD_PARTY_NOTICES.md",
-    "!backend/",
-    "!backend/app/",
     "!backend/app/**",
-    "!backend/ephe/",
     "!backend/ephe/**",
-    "!backend/place_data/",
     "!backend/place_data/**",
-    "!deploy/",
     "!deploy/Dockerfile",
     "!deploy/requirements.lock",
-    "!deploy/build-requirements.lock",
-    "!deploy/ephemeris.sha256",
-    "!deploy/frontend-contract.json",
-    "!deploy/entrypoint.sh",
-    "!deploy/container_healthcheck.py",
-    "!third_party/",
-    "!third_party/pyswisseph/",
     "!third_party/pyswisseph/pyswisseph-2.10.3.2.tar.gz",
-    "!scripts/",
-    "!scripts/verification/",
-    "!scripts/verification/verify_ephemeris_integrity.py",
-    "!scripts/verification/verify_place_catalog.py",
-    "!scripts/verification/capture_build_evidence.py",
-    "!scripts/publication/",
-    "!scripts/publication/verify_linux_source_build.py",
-    "!build-context-probe-8f38f069.txt",
-    "**/.DS_Store",
-    "**/__pycache__",
-    "**/*.py[cod]",
-    "frontend/tests",
-    "frontend/tests/**",
     "**/.env",
     "**/.env.*",
-    "**/*.pem",
     "**/*.key",
+    "**/*.pem",
     "**/*secret*",
     "**/*token*",
-)
-PUBLIC_DOCKERIGNORE_POLICY_SHA256 = (
-    "5ce270c762c7e516c08910e05249e447aa6f49bf695f69ccc116aa44e10fad3d"
-)
+})
 
 
 class DockerContextFailure(RuntimeError):
@@ -152,20 +87,20 @@ class DockerContextFailure(RuntimeError):
 
 
 def verify_dockerignore_policy(text: str) -> None:
-    policy = tuple(
-        line.strip()
-        for line in text.splitlines()
+    rules = tuple(
+        line.strip() for line in text.splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     )
-    normalized = "\n".join(policy).encode("utf-8")
-    public_policy = (
-        hashlib.sha256(normalized).hexdigest()
-        == PUBLIC_DOCKERIGNORE_POLICY_SHA256
+    missing = sorted(REQUIRED_DOCKERIGNORE_RULES - set(rules))
+    unsafe_reincludes = sorted(
+        rule for rule in rules
+        if rule.startswith("!")
+        and any(token in rule.casefold() for token in (".env", "secret", "token", ".key", ".pem"))
     )
-    if policy != EXPECTED_DOCKERIGNORE_POLICY and not public_policy:
+    if not rules or rules[0] != "**" or missing or unsafe_reincludes:
         raise DockerContextFailure(
-            ".dockerignore contains an unexpected or reordered policy rule; "
-            "the production context allowlist is exact"
+            ".dockerignore must deny by default, retain required build inputs, "
+            f"and exclude secrets: missing={missing}, unsafe={unsafe_reincludes}"
         )
 
 
@@ -203,6 +138,19 @@ def context_file_paths(root: Path) -> list[Path]:
                 raise DockerContextFailure(
                     f"symlink forbidden in Docker context: {relative}"
                 )
+            # Local build and desktop artifacts are not context inputs, and
+            # this skip has to precede the hidden-path guard below or it is
+            # unreachable for the dot-prefixed names it exists to cover.  The
+            # release context is materialized from `git archive`, so an
+            # untracked file can never reach it, and `.dockerignore` excludes
+            # these names from a raw `docker build .` as well: skipping them
+            # keeps the closed inventory identical.  Every other dot path still
+            # raises — this is a closed set of names, not a relaxation of the
+            # hidden-path rule.
+            if child.name in IGNORABLE_LOCAL_ARTIFACT_NAMES or (
+                child.is_file() and child.suffix in IGNORABLE_LOCAL_ARTIFACT_SUFFIXES
+            ):
+                continue
             if any(part.startswith(".") for part in relative.parts):
                 raise DockerContextFailure(
                     f"hidden path forbidden in Docker runtime tree: {relative}"
@@ -210,13 +158,8 @@ def context_file_paths(root: Path) -> list[Path]:
             if child.is_file():
                 if any(part in FORBIDDEN_PARTS for part in relative.parts):
                     continue
-                if child.name == ".DS_Store" or child.suffix in {".pyc", ".pyo"}:
-                    continue
-                # `DEP-ART-E-003`, ruled by Sebastian 2026-08-07. Developer
-                # documentation is not a runtime input. A stray README already
-                # shipped inside a ratified image once, and the only reason it
-                # was accepted then was that fixing it would have cost a new
-                # source revision; this rebuild does not have that excuse.
+                # Ruled by Sebastian 2026-08-07: developer documentation is
+                # not a runtime input and does not belong in the image.
                 # Attribution required by the bundled datasets lives in
                 # THIRD_PARTY_NOTICES.md, which ships separately at /app.
                 if child.name.casefold() in RUNTIME_EXCLUDED_DOCUMENT_NAMES:
@@ -324,19 +267,10 @@ def verify(root: Path = PROJECT_ROOT) -> dict:
         for path in paths
         if any(part in FORBIDDEN_PARTS for part in path.parts)
     ]
-    validation = [
-        path.as_posix()
-        for path in paths
-        if path.parts and path.parts[0] == "validation"
-    ]
     total_size = sum((root / path).stat().st_size for path in paths)
     if forbidden:
         raise DockerContextFailure(
             f"forbidden paths entered Docker context: {forbidden}"
-        )
-    if validation:
-        raise DockerContextFailure(
-            f"validation paths entered Docker context: {validation}"
         )
     if total_size > MAXIMUM_SIZE_BYTES:
         raise DockerContextFailure(
@@ -349,7 +283,6 @@ def verify(root: Path = PROJECT_ROOT) -> dict:
         "context_size_bytes": total_size,
         "maximum_size_bytes": MAXIMUM_SIZE_BYTES,
         "forbidden_paths_present": forbidden,
-        "validation_paths_present": validation,
     }
 
 

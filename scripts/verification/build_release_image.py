@@ -12,7 +12,6 @@ import secrets
 import stat
 import subprocess
 import sys
-import tarfile
 import tempfile
 import threading
 import time
@@ -23,8 +22,16 @@ from scripts.deployment.frontend_release import validate_publication_receipt
 from scripts.tools.output_confinement import external_output_path
 from scripts.tools.source_tree_identity import (
     SourceTreeIdentity,
+    materialize_git_snapshot,
     maintained_source_paths,
     observe_source_tree,
+    sha256_file as _sha256,
+)
+from scripts.verification.capture_build_evidence import (
+    # One owner for the context receipt; its mode model matches Git's executable
+    # bit rather than host-specific permission details.
+    context_manifest,
+    canonical_json_bytes as build_evidence_json_bytes,
 )
 from scripts.verification.verify_docker_context import materialize_context
 
@@ -36,7 +43,6 @@ CONTEXT_DISCRIMINATION_BYTES = b"governed-context-control-v1\n"
 BUILD_PURPOSES = (
     "diagnostic",
     "release-candidate",
-    "reproducibility-comparison",
 )
 
 
@@ -49,52 +55,6 @@ def clean_checkout_required(*, purpose: str, requested: bool) -> bool:
     if purpose not in BUILD_PURPOSES:
         raise BuildTransactionFailure(f"unknown build purpose: {purpose}")
     return requested or purpose != "diagnostic"
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def context_manifest(root: Path) -> dict[str, object]:
-    """Independently describe the materializer output before BuildKit sees it."""
-    root = root.resolve()
-    entries: list[dict[str, object]] = []
-    for path in sorted(root.rglob("*"), key=lambda item: item.as_posix()):
-        relative = path.relative_to(root).as_posix()
-        metadata = path.lstat()
-        entry: dict[str, object] = {
-            "path": relative,
-            "mode": f"{stat.S_IMODE(metadata.st_mode):04o}",
-            "size_bytes": None,
-            "sha256": None,
-            "symlink_target": None,
-        }
-        if path.is_symlink():
-            entry.update(type="symlink", symlink_target=os.readlink(path))
-        elif path.is_file():
-            entry.update(
-                type="file",
-                size_bytes=metadata.st_size,
-                sha256=_sha256(path),
-            )
-        elif path.is_dir():
-            entry["type"] = "directory"
-        else:
-            entry["type"] = "special"
-        entries.append(entry)
-    canonical = json.dumps(
-        entries, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
-    return {
-        "schema_version": "build-context-identity-v1",
-        "producer": "materialized_context_observation",
-        "entries": entries,
-        "identity_sha256": hashlib.sha256(canonical).hexdigest(),
-    }
 
 
 def assert_context_receipts_match(
@@ -124,9 +84,27 @@ def assert_context_receipts_match(
             for path in set(expected_by_path) & set(observed_by_path)
             if expected_by_path[path] != observed_by_path[path]
         )
+        # Naming the paths is not naming the difference.  When every entry
+        # differs the useful fact is which field differs, and a two-minute
+        # hosted build should not have to be repeated to learn it.
+        fields = sorted({
+            field
+            for path in changed
+            for field in set(expected_by_path[path]) | set(observed_by_path[path])
+            if expected_by_path[path].get(field) != observed_by_path[path].get(field)
+        })
+        sample = [
+            {
+                "path": path,
+                "expected": expected_by_path[path],
+                "observed": observed_by_path[path],
+            }
+            for path in changed[:3]
+        ]
         raise BuildTransactionFailure(
             "BuildKit context differs from materialized context: "
-            f"extra={extra}, missing={missing}, changed={changed}"
+            f"extra={extra}, missing={missing}, changed_count={len(changed)}, "
+            f"differing_fields={fields}, sample={sample}, changed={changed}"
         )
 
 
@@ -139,7 +117,7 @@ def assert_embedded_contract_consistent(
     platform: str,
 ) -> None:
     toolchain_identity = hashlib.sha256(
-        json.dumps(toolchain, sort_keys=True, separators=(",", ":")).encode()
+        build_evidence_json_bytes(toolchain)
     ).hexdigest()
     if contract != {
         "schema_version": "build-contract-v1",
@@ -207,25 +185,6 @@ def _clean_revision(root: Path, require_clean: bool) -> str:
     if require_clean and status:
         raise BuildTransactionFailure("release-capable build requires a clean checkout")
     return revision
-
-
-def _git_snapshot(root: Path, revision: str, destination: Path) -> Path:
-    destination.mkdir(parents=True)
-    archive = subprocess.Popen(
-        ["git", "archive", "--format=tar", revision],
-        cwd=root,
-        stdout=subprocess.PIPE,
-    )
-    if archive.stdout is None:
-        raise BuildTransactionFailure("cannot read Git archive")
-    try:
-        with tarfile.open(fileobj=archive.stdout, mode="r|") as source:
-            source.extractall(destination, filter="data")
-    finally:
-        archive.stdout.close()
-    if archive.wait() != 0:
-        raise BuildTransactionFailure("cannot materialize exact Git snapshot")
-    return destination
 
 
 def _path_signature(root: Path, paths: tuple[str, ...]) -> tuple[tuple[object, ...], ...]:
@@ -329,96 +288,6 @@ def _identity_delta(before: SourceTreeIdentity, after: SourceTreeIdentity) -> st
     )
 
 
-def _read_evidence(directory: Path, name: str) -> dict[str, Any]:
-    try:
-        value = json.loads((directory / name).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise BuildTransactionFailure(f"cannot read {name}: {error}") from None
-    if not isinstance(value, dict):
-        raise BuildTransactionFailure(f"{name} is not an object")
-    return value
-
-
-def compare_reproducibility_builds(
-    candidate_dir: Path, comparison_dir: Path
-) -> dict[str, Any]:
-    candidate = _read_evidence(candidate_dir, "build-transaction.json")
-    comparison = _read_evidence(comparison_dir, "build-transaction.json")
-    if candidate.get("purpose") != "release-candidate" or comparison.get(
-        "purpose"
-    ) != "reproducibility-comparison":
-        raise BuildTransactionFailure(
-            "reproducibility comparison requires candidate then comparison purposes"
-        )
-    equal_axes = (
-        "source_revision",
-        "platform",
-        "publication_status",
-        "materialized_context_identity_sha256",
-        "buildkit_context_identity_sha256",
-    )
-    drift = [axis for axis in equal_axes if candidate.get(axis) != comparison.get(axis)]
-    if drift:
-        raise BuildTransactionFailure(
-            "reproducibility build inputs differ: " + ", ".join(drift)
-        )
-    candidate_toolchain = _read_evidence(candidate_dir, "builder-toolchain.json")
-    comparison_toolchain = _read_evidence(comparison_dir, "builder-toolchain.json")
-    if candidate_toolchain != comparison_toolchain:
-        raise BuildTransactionFailure(
-            "builder toolchain receipts differ; comparison is inconclusive and "
-            "native-byte drift must not be attributed to the compiler"
-        )
-    candidate_native = _read_evidence(candidate_dir, "native-extensions.json")
-    comparison_native = _read_evidence(comparison_dir, "native-extensions.json")
-    candidate_artifacts = {
-        item["path"]: item
-        for item in candidate_native.get("artifacts", [])
-        if isinstance(item, dict) and isinstance(item.get("path"), str)
-    }
-    comparison_artifacts = {
-        item["path"]: item
-        for item in comparison_native.get("artifacts", [])
-        if isinstance(item, dict) and isinstance(item.get("path"), str)
-    }
-    if candidate_artifacts.keys() != comparison_artifacts.keys():
-        raise BuildTransactionFailure("native extension populations differ")
-    changed = sorted(
-        path
-        for path in candidate_artifacts
-        if candidate_artifacts[path] != comparison_artifacts[path]
-    )
-    source_built = sorted(
-        path
-        for path, item in candidate_artifacts.items()
-        if item.get("origin_class") == "source_built_native"
-    )
-    if not source_built:
-        raise BuildTransactionFailure("comparison has no source-built native extension")
-    if changed:
-        classes = {
-            path: candidate_artifacts[path].get("origin_class") for path in changed
-        }
-        raise BuildTransactionFailure(
-            "same-toolchain native extension bytes differ: "
-            + json.dumps(classes, sort_keys=True)
-        )
-    return {
-        "schema_version": "native-extension-reproducibility-comparison-v1",
-        "status": "byte_identical_same_toolchain_scoped",
-        "source_revision": candidate["source_revision"],
-        "platform": candidate["platform"],
-        "source_built_native_paths": source_built,
-        "acquired_native_wheel_paths": sorted(
-            path
-            for path, item in candidate_artifacts.items()
-            if item.get("origin_class") == "acquired_native_wheel"
-        ),
-        "native_artifact_count": len(candidate_artifacts),
-        "base_image_elf_scope": "not_compared_here_bound_by_pinned_base_digest",
-    }
-
-
 def build_image(
     *,
     source_root: Path,
@@ -456,7 +325,9 @@ def build_image(
     builder_inspection = "default diagnostic builder"
     with tempfile.TemporaryDirectory(prefix="armillary-build-transaction-") as raw:
         temporary = Path(raw)
-        snapshot = _git_snapshot(source_root, revision, temporary / "snapshot")
+        snapshot = materialize_git_snapshot(
+            source_root, revision, temporary / "snapshot"
+        )
         context = temporary / "context"
         materialize_context(
             snapshot,
@@ -487,7 +358,7 @@ def build_image(
             "--secret",
             f"id=private_alpha_probe,src={secret_path}",
         ]
-        if purpose in {"release-candidate", "reproducibility-comparison"}:
+        if purpose == "release-candidate":
             builder_name = "armillary-release-" + secrets.token_hex(8)
             _run(
                 [
@@ -646,7 +517,6 @@ def main() -> int:
     parser.add_argument("--publication-receipt", type=Path)
     parser.add_argument("--evidence-dir", type=Path, required=True)
     parser.add_argument("--require-clean", action="store_true")
-    parser.add_argument("--compare-to-evidence-dir", type=Path)
     args = parser.parse_args()
     try:
         receipt = build_image(
@@ -658,18 +528,6 @@ def main() -> int:
             evidence_dir=args.evidence_dir,
             require_clean=args.require_clean,
         )
-        if args.compare_to_evidence_dir is not None:
-            if args.purpose != "reproducibility-comparison":
-                raise BuildTransactionFailure(
-                    "--compare-to-evidence-dir requires reproducibility-comparison"
-                )
-            comparison = compare_reproducibility_builds(
-                args.compare_to_evidence_dir.resolve(), args.evidence_dir.resolve()
-            )
-            (args.evidence_dir / "reproducibility-comparison.json").write_text(
-                json.dumps(comparison, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
     except (BuildTransactionFailure, OSError, subprocess.TimeoutExpired, ValueError) as error:
         print(f"RELEASE BUILD FAILED: {error}", file=sys.stderr)
         return 1

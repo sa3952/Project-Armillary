@@ -8,16 +8,20 @@ import base64
 import hashlib
 import ipaddress
 import json
-import os
 from pathlib import Path
 import re
-import stat
 import subprocess
 import sys
 import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import ProxyHandler, Request, build_opener
+
+from scripts.deployment.verify_staging_http import _request
+from scripts.tools.staging_secure_io import (
+    atomic_owner_only_replace,
+    read_owner_only,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,31 +29,25 @@ SYNTHETIC_PAYLOAD = Path("deploy/staging/synthetic-availability-chart.json")
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 THRESHOLD = 3
 COOLDOWN_SECONDS = 15 * 60
+SYNTHETIC_PLACE_SEARCH = {
+    "query": "臺中",
+    "country_code": "TW",
+    "limit": 3,
+}
+_DIRECT_NOTIFICATION_OPENER = build_opener(ProxyHandler({}))
 
 
 class AvailabilityFailure(RuntimeError):
     """A closed, privacy-safe availability predicate failed."""
 
 
-class _NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise AvailabilityFailure("availability probe refuses redirects")
-
-
 def _bounded_owner_file(path: Path) -> str:
     try:
-        metadata = path.lstat()
-    except OSError as error:
-        raise AvailabilityFailure("monitor credential file is missing") from error
-    if (
-        not stat.S_ISREG(metadata.st_mode)
-        or path.is_symlink()
-        or metadata.st_uid != os.geteuid()
-        or stat.S_IMODE(metadata.st_mode) & 0o077
-        or not 1 <= metadata.st_size <= 1024
-    ):
-        raise AvailabilityFailure("monitor credential file ownership or mode is unsafe")
-    lines = path.read_text(encoding="utf-8").splitlines()
+        lines = read_owner_only(
+            path, role="monitor credential", maximum_bytes=1024
+        ).decode("utf-8").splitlines()
+    except (UnicodeError, ValueError) as error:
+        raise AvailabilityFailure(str(error)) from None
     if len(lines) != 1 or lines[0] != lines[0].strip() or ":" not in lines[0]:
         raise AvailabilityFailure("monitor credential must be one basic-auth pair")
     return lines[0]
@@ -107,20 +105,34 @@ def validate_chart_payload(payload: object) -> None:
         raise AvailabilityFailure("chart full ephemeris readiness is unavailable")
 
 
-def _read_json(request: Request, *, timeout: float) -> object:
-    try:
-        with build_opener(_NoRedirect).open(request, timeout=timeout) as response:
-            body = response.read(MAX_RESPONSE_BYTES + 1)
-            if response.status != 200 or len(body) > MAX_RESPONSE_BYTES:
-                raise AvailabilityFailure("availability endpoint returned HTTP failure")
-    except HTTPError as error:
-        raise AvailabilityFailure("availability endpoint returned HTTP failure") from error
-    except (OSError, TimeoutError, URLError) as error:
-        raise AvailabilityFailure("availability endpoint is unreachable") from error
-    try:
-        return json.loads(body)
-    except (UnicodeError, json.JSONDecodeError) as error:
-        raise AvailabilityFailure("availability endpoint returned invalid JSON") from error
+def validate_place_search_payload(payload: object) -> None:
+    if not isinstance(payload, dict):
+        raise AvailabilityFailure("place search payload is unavailable")
+    execution = payload.get("execution")
+    query = payload.get("query")
+    results = payload.get("results")
+    if execution != {
+        "catalog_mode": "bundled_read_only_sqlite",
+        "runtime_outbound": False,
+    }:
+        raise AvailabilityFailure("place search execution identity is unavailable")
+    if (
+        not isinstance(query, dict)
+        or query.get("truncated") is not False
+        or query.get("tokens_used") != ["臺中"]
+        or query.get("tokens_ignored") != []
+    ):
+        raise AvailabilityFailure("place search query receipt is unavailable")
+    if not isinstance(results, list) or not results:
+        raise AvailabilityFailure("place search result is unavailable")
+    if not any(
+        isinstance(item, dict)
+        and item.get("country_code") == "TW"
+        and isinstance(item.get("source_record_id"), str)
+        and item["source_record_id"]
+        for item in results
+    ):
+        raise AvailabilityFailure("place search expected result identity is unavailable")
 
 
 def probe(
@@ -139,29 +151,53 @@ def probe(
     if credential is not None:
         encoded = base64.b64encode(credential.encode("utf-8")).decode("ascii")
         headers["Authorization"] = f"Basic {encoded}"
-    health = _read_json(
-        Request(f"{origin}/api/health", headers=headers, method="GET"),
-        timeout=timeout,
-    )
+    def read_json(path: str, *, body: bytes | None = None) -> object:
+        try:
+            status, payload, _ = _request(
+                origin + path,
+                body=body,
+                content_type="application/json" if body is not None else None,
+                extra_headers=headers,
+                timeout=timeout,
+                maximum_bytes=MAX_RESPONSE_BYTES,
+            )
+        except (OSError, TimeoutError, URLError, ValueError) as error:
+            raise AvailabilityFailure("availability endpoint is unreachable or invalid") from error
+        if status != 200:
+            raise AvailabilityFailure("availability endpoint returned HTTP failure")
+        try:
+            return json.loads(payload)
+        except (UnicodeError, json.JSONDecodeError) as error:
+            raise AvailabilityFailure("availability endpoint returned invalid JSON") from error
+
+    health = read_json("/api/health")
     validate_health_payload(health)
     payload_path = source_root / SYNTHETIC_PAYLOAD
     if not payload_path.is_file() or payload_path.is_symlink():
         raise AvailabilityFailure("synthetic payload is missing or unsafe")
     payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    chart = _read_json(
-        Request(
-            f"{origin}/api/chart",
-            data=json.dumps(payload, separators=(",", ":")).encode("utf-8"),
-            headers={**headers, "Content-Type": "application/json"},
-            method="POST",
-        ),
-        timeout=timeout,
+    chart = read_json(
+        "/api/chart",
+        body=json.dumps(payload, separators=(",", ":")).encode("utf-8"),
     )
     validate_chart_payload(chart)
+    places = read_json(
+        "/api/places/search",
+        body=json.dumps(
+            SYNTHETIC_PLACE_SEARCH,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8"),
+    )
+    validate_place_search_payload(places)
     return {
         "schema_version": "private-alpha-availability-probe-v1",
         "status": "passed",
-        "checks": ["process_liveness", "synthetic_chart_full_ephemeris"],
+        "checks": [
+            "process_liveness",
+            "synthetic_chart_full_ephemeris",
+            "synthetic_place_search",
+        ],
         "synthetic_payload_sha256": hashlib.sha256(
             payload_path.read_bytes()
         ).hexdigest(),
@@ -176,6 +212,43 @@ def initial_state() -> dict[str, object]:
         "last_restart_epoch": None,
         "pending_notifications": [],
     }
+
+
+def worker_population_ok(source_root: Path, *, expected: int = 2) -> bool:
+    compose = [
+        "docker", "compose",
+        "--file", str(source_root / "deploy/compose.yaml"),
+        "--file", str(source_root / "deploy/staging/compose.staging.yaml"),
+    ]
+    container = subprocess.run(
+        [*compose, "ps", "--quiet", "private-alpha-app"],
+        check=False, capture_output=True, text=True,
+    )
+    container_id = container.stdout.strip()
+    if container.returncode or not container_id:
+        return False
+    program = (
+        "import json,os,pathlib;out=[];marker=b'spawn_main';"
+        "\nfor p in pathlib.Path('/proc').glob('[0-9]*/cmdline'):"
+        "\n try: pid=int(p.parent.name);cmd=p.read_bytes();"
+        " state=(p.parent/'status').read_text().split('State:',1)[1].lstrip()[:1]"
+        "\n except (FileNotFoundError,PermissionError): continue"
+        "\n if pid not in (1,os.getpid()) and marker in cmd and state in 'RS': out.append(pid)"
+        "\nprint(json.dumps(sorted(out)))"
+    )
+    observed = subprocess.run(
+        ["docker", "exec", container_id, "/opt/venv/bin/python", "-c", program],
+        check=False, capture_output=True, text=True,
+    )
+    try:
+        workers = json.loads(observed.stdout)
+    except json.JSONDecodeError:
+        return False
+    return (
+        observed.returncode == 0
+        and isinstance(workers, list)
+        and len(workers) == expected
+    )
 
 
 def decide(state, *, external_ok: bool, local_ok: bool, now: int):
@@ -287,13 +360,8 @@ def _state(path: Path) -> dict[str, object]:
 
 
 def _save_state(path: Path, value: dict[str, object]) -> None:
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".partial")
-    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600)
-    with os.fdopen(descriptor, "w") as handle:
-        json.dump(value, handle, sort_keys=True, separators=(",", ":")); handle.write("\n")
-        handle.flush(); os.fsync(handle.fileno())
-    os.replace(temporary, path)
+    payload = (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    atomic_owner_only_replace(path, payload, role="watchdog state")
 
 
 def _owner_url(path: Path) -> str:
@@ -306,7 +374,10 @@ def _owner_url(path: Path) -> str:
 
 def _send(url: str, payload: bytes) -> None:
     try:
-        with build_opener().open(Request(url, data=payload, headers={"Content-Type": "application/json"}), timeout=10) as response:
+        with _DIRECT_NOTIFICATION_OPENER.open(
+            Request(url, data=payload, headers={"Content-Type": "application/json"}),
+            timeout=10,
+        ) as response:
             if not 200 <= response.status < 300:
                 raise AvailabilityFailure("notification endpoint returned HTTP failure")
     except (HTTPError, URLError, OSError, TimeoutError) as error:
@@ -355,14 +426,18 @@ def main() -> int:
                 return True
             except AvailabilityFailure:
                 return False
+        def local_ready():
+            return checked(
+                args.local_base_url, None, True
+            ) and worker_population_ok(args.source_root)
         def notify(event, failure, status):
             _send(notification_url, notification_payload(event=event, failure_class=failure, revision=args.revision, restart_status=status))
         updated, result = run_once(
             external_probe=lambda: checked(args.external_base_url, credential, False),
-            local_probe=lambda: checked(args.local_base_url, None, True),
+            local_probe=local_ready,
             restart=lambda: restart_and_wait(
                 args.source_root,
-                lambda: checked(args.local_base_url, None, True),
+                local_ready,
             ),
             notify=notify, state=state, now=int(time.time()),
         )

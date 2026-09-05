@@ -7,7 +7,7 @@
 MTH-Q-004 裁決（Sebastian 2026-08-03，A1，比照三王星處理）：
 標為 `research_only`，維持預設關閉、opt-in，介面須明示其為**近現代技法、非古典傳統**。
 赤緯平行／反平行主要由 20 世紀作者推廣，非希臘化或中世紀主流；既有實作可保留，
-但**稱之為「古典」將構成不實陳述**（憲法：可被證偽的陳述完全禁止）。
+但**稱之為「古典」將構成不實陳述**，而可被證偽的陳述一律不得出現。
 """
 
 from .trace import Trace
@@ -17,6 +17,22 @@ DECLINATION_ASPECT_METHOD_STATUS = "provisional_pending_method_audit"
 DECLINATION_ASPECT_CLASSIFICATION = "research_only"
 DECLINATION_ASPECT_CLASSIFICATION_RULING = "MTH-Q-004 A1 (2026-08-03)"
 DECLINATION_ASPECT_PROVENANCE = "modern_20th_century_not_classical"
+NODE_KEYS = frozenset({
+    "true_node", "mean_node", "true_south_node", "mean_south_node",
+})
+DERIVED_ANTIPODE_PAIRS = frozenset({
+    frozenset({"true_node", "true_south_node"}),
+    frozenset({"mean_node", "mean_south_node"}),
+})
+
+
+def declination_participants(bodies: list[dict], *, include_nodes: bool) -> list[dict]:
+    """Apply the existing aspect node option to the declination participant set."""
+
+    return [
+        body for body in bodies
+        if include_nodes or body.get("key") not in NODE_KEYS
+    ]
 
 
 def _declination_side(value: float) -> str:
@@ -43,6 +59,8 @@ def compute_declination_aspects(
     for i in range(len(bodies)):
         for j in range(i + 1, len(bodies)):
             a, b = bodies[i], bodies[j]
+            if frozenset({a.get("key"), b.get("key")}) in DERIVED_ANTIPODE_PAIRS:
+                continue
             d1, d2 = a["declination"], b["declination"]
             if d1 is None or d2 is None:
                 continue

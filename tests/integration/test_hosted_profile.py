@@ -3,50 +3,44 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
 from fastapi.testclient import TestClient
 import pytest
+from app.frontend_assets import discover_source_assets
+from app.main import create_app
+from app.runtime_static import RuntimeStaticFiles
+from app.settings import AppProfile, AppSettings, load_settings
+from tests.backend import minimal_chart_payload
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2] / "backend"
 
 
 def _payload() -> dict:
-    return {
-        "datetime": {
-            "year": 1997,
-            "month": 8,
-            "day": 17,
-            "hour": 9,
-            "minute": 42,
-            "second": 0,
-        },
-        "timezone": {"mode": "iana", "iana_name": "Asia/Taipei"},
-        "location": {
-            "latitude": 24.1477,
-            "longitude": 120.6736,
-            "altitude_m": 80,
-        },
-    }
+    return minimal_chart_payload(
+        year=1997, month=8, day=17, hour=9, minute=42,
+        latitude=24.1477, longitude=120.6736, altitude_m=80,
+    )
 
 
 def test_profile_parser_accepts_only_closed_vocabulary():
-    from app.settings import AppProfile, load_settings
-
-    assert load_settings({}).profile is AppProfile.LOCAL
+    assert load_settings({}).profile is AppProfile.PRIVATE_ALPHA
     assert (
         load_settings({"CLASSICAL_ASTROLOGY_PROFILE": "private_alpha"}).profile
         is AppProfile.PRIVATE_ALPHA
+    )
+    assert (
+        load_settings({"CLASSICAL_ASTROLOGY_PROFILE": "public"}).profile
+        is AppProfile.PUBLIC
     )
     with pytest.raises(RuntimeError, match="unsupported application profile"):
         load_settings({"CLASSICAL_ASTROLOGY_PROFILE": "production"})
 
 
 def test_build_revision_is_release_controlled_and_fail_closed():
-    from app.settings import load_settings
-
     revision = "b" * 40
     settings = load_settings(
         {
@@ -59,9 +53,9 @@ def test_build_revision_is_release_controlled_and_fail_closed():
         "build_environment:CLASSICAL_ASTROLOGY_SOURCE_REVISION"
     )
 
-    local = load_settings({})
-    assert local.source_revision is None
-    assert local.revision_source is None
+    default = load_settings({})
+    assert default.source_revision is None
+    assert default.revision_source is None
 
     uncommitted = load_settings(
         {"CLASSICAL_ASTROLOGY_SOURCE_REVISION": "uncommitted"}
@@ -91,45 +85,14 @@ def test_unknown_profile_fails_closed_during_process_import():
     assert "unsupported application profile" in completed.stderr
 
 
-def test_local_profile_preserves_runtime_health_and_live_openapi():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
-    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
-    with TestClient(local_app) as client:
-        health = client.get("/api/health")
-        runtime = client.get(
-            "/api/runtime-health",
-            headers={"X-Local-Runtime-Nonce": "local-profile-test-nonce"},
-        )
-        schema = client.get("/openapi.json")
-
-    assert health.status_code == 200
-    assert health.json()["runtime_contract"] == "local-runtime-v2"
-    assert runtime.status_code == 503
-    assert runtime.json()["detail"]["code"] == "runtime_auth_unavailable"
-    assert schema.status_code == 200
-    assert "/api/runtime-health" in schema.json()["paths"]
-
-
-def test_local_openapi_documents_runtime_failure_and_parser_boundary():
-    from app.main import create_app
-    from app.settings import AppProfile, AppSettings
-
-    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
-    with TestClient(local_app) as client:
-        schema = client.get("/openapi.json").json()
+def test_offline_openapi_documents_parser_boundary_without_live_schema():
+    application = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    schema = application.openapi()
 
     assert "400" in schema["paths"]["/api/chart"]["post"]["responses"]
     assert "503" in schema["paths"]["/api/chart"]["post"]["responses"]
     assert "400" in schema["paths"]["/api/places/search"]["post"]["responses"]
     assert "503" in schema["paths"]["/api/places/search"]["post"]["responses"]
-    runtime_failure = schema["paths"]["/api/runtime-health"]["get"][
-        "responses"
-    ]["503"]["content"]["application/json"]["schema"]
-    assert runtime_failure == {
-        "$ref": "#/components/schemas/HostedBoundaryErrorResponse"
-    }
     location_conditions = schema["components"]["schemas"]["LocationInput"][
         "allOf"
     ]
@@ -147,26 +110,18 @@ def test_local_openapi_documents_runtime_failure_and_parser_boundary():
 
 
 def test_api_method_rejections_keep_allow_header_before_static_mount():
-    from app.main import create_app
-    from app.settings import AppProfile, AppSettings
-
-    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
-    with TestClient(local_app) as client:
+    application = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    with TestClient(application) as client:
         health = client.request("TRACE", "/api/health")
         chart = client.request("TRACE", "/api/chart")
         search = client.request("TRACE", "/api/places/search")
-        runtime = client.request("TRACE", "/api/runtime-health")
 
     assert (health.status_code, health.headers.get("allow")) == (405, "GET")
     assert (chart.status_code, chart.headers.get("allow")) == (405, "POST")
     assert (search.status_code, search.headers.get("allow")) == (405, "POST")
-    assert (runtime.status_code, runtime.headers.get("allow")) == (405, "GET")
 
 
 def test_private_alpha_exposes_only_hosted_health_and_no_live_schema():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
     with TestClient(hosted_app) as client:
         health = client.get("/api/health")
@@ -183,40 +138,61 @@ def test_private_alpha_exposes_only_hosted_health_and_no_live_schema():
     assert schema.status_code == 404
 
 
+def test_public_profile_keeps_hosted_safety_without_private_indexing_headers():
+    public_app = create_app(AppSettings(profile=AppProfile.PUBLIC))
+    payload = _payload()
+    payload["datetime"]["month"] = 13
+    with TestClient(public_app) as client:
+        health = client.get("/api/health")
+        runtime = client.get("/api/runtime-health")
+        schema = client.get("/openapi.json")
+        unsupported = client.post(
+            "/api/chart",
+            content=b"{}",
+            headers={"Content-Type": "text/plain"},
+        )
+        invalid = client.post("/api/chart", json=payload)
+        index = client.get("/")
+
+    assert health.json() == {
+        "status": "ok",
+        "ready": True,
+        "readiness_scope": "process_liveness_only",
+    }
+    assert runtime.status_code == 404
+    assert schema.status_code == 404
+    assert unsupported.status_code == 415
+    assert invalid.status_code == 422
+    assert all(set(issue) == {"type", "loc"} for issue in invalid.json()["detail"])
+    assert "x-robots-tag" not in index.headers
+
+
 def test_client_configuration_exposes_only_the_closed_profile_name():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
-    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    public_app = create_app(AppSettings(profile=AppProfile.PUBLIC))
 
-    with TestClient(local_app) as client:
-        local_config = client.get("/api/client-config")
-        local_schema = client.get("/openapi.json").json()
     with TestClient(hosted_app) as client:
         hosted_config = client.get("/api/client-config")
+    with TestClient(public_app) as client:
+        public_config = client.get("/api/client-config")
 
-    assert local_config.status_code == 200
-    assert local_config.json() == {"profile": "local"}
     assert hosted_config.status_code == 200
     assert hosted_config.json() == {"profile": "private_alpha"}
-    assert "/api/client-config" not in local_schema["paths"]
+    assert public_config.status_code == 200
+    assert public_config.json() == {"profile": "public"}
+    assert "/api/client-config" not in hosted_app.openapi()["paths"]
 
 
-def test_private_alpha_applies_noindex_headers_without_changing_local_profile():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
-    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
+def test_private_alpha_applies_noindex_while_public_remains_indexable():
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    public_app = create_app(AppSettings(profile=AppProfile.PUBLIC))
 
-    with TestClient(local_app) as client:
-        local_index = client.get("/")
     with TestClient(hosted_app) as client:
         hosted_index = client.get("/")
         hosted_missing = client.get("/not-a-real-route")
+    with TestClient(public_app) as client:
+        public_index = client.get("/")
 
-    assert "x-robots-tag" not in local_index.headers
     assert (
         hosted_index.headers["x-robots-tag"]
         == "noindex, nofollow, noarchive"
@@ -225,14 +201,77 @@ def test_private_alpha_applies_noindex_headers_without_changing_local_profile():
         hosted_missing.headers["x-robots-tag"]
         == "noindex, nofollow, noarchive"
     )
+    assert "x-robots-tag" not in public_index.headers
+
+
+def test_static_aliases_redirect_to_one_canonical_url_shape():
+    application = create_app(AppSettings(profile=AppProfile.PUBLIC))
+    with TestClient(application, follow_redirects=False) as client:
+        observations = {
+            path: client.get(path)
+            for path in (
+                "/zh-TW/",
+                "/zh-TW/index.html",
+                "/zh-TW/features",
+                "/zh-TW/features.html",
+                "/zh-TW/features/",
+            )
+        }
+
+    assert observations["/zh-TW/"].status_code == 200
+    assert observations["/zh-TW/features"].status_code == 200
+    assert observations["/zh-TW/index.html"].headers["location"] == "/zh-TW/"
+    assert observations["/zh-TW/features.html"].headers["location"] == (
+        "/zh-TW/features"
+    )
+    assert observations["/zh-TW/features/"].headers["location"] == (
+        "/zh-TW/features"
+    )
+    assert all(
+        response.status_code == 308
+        for path, response in observations.items()
+        if path not in {"/zh-TW/", "/zh-TW/features"}
+    )
+
+    runtime = RuntimeStaticFiles(
+        directory=BACKEND_ROOT.parent / "frontend",
+        html=True,
+        allowed_assets=discover_source_assets(BACKEND_ROOT.parent / "frontend"),
+    )
+    assert runtime._canonical_redirect({
+        "method": "GET",
+        "path": "//zh-TW//features",
+        "query_string": b"",
+    }) == "/zh-TW/features"
+
+
+def test_public_discovery_assets_are_exact_runtime_files_not_source_metadata():
+    application = create_app(AppSettings(profile=AppProfile.PUBLIC))
+    with TestClient(application) as client:
+        robots = client.get("/robots.txt")
+        sitemap = client.get("/sitemap.xml")
+        indexnow = client.get("/bbb6ac30c1952dbb592262ea2656d708.txt")
+        source_manifest = client.get("/surfaces.json")
+
+    assert robots.status_code == 200
+    assert robots.headers["content-type"].startswith("text/plain")
+    assert robots.text.endswith(
+        "Sitemap: https://projectarmillary.com/sitemap.xml\n"
+    )
+    assert sitemap.status_code == 200
+    assert sitemap.headers["content-type"].split(";", 1)[0] in {
+        "application/xml",
+        "text/xml",
+    }
+    assert "https://projectarmillary.com/zh-TW/features" in sitemap.text
+    assert "features.html" not in sitemap.text
+    assert indexnow.text == "bbb6ac30c1952dbb592262ea2656d708\n"
+    assert source_manifest.status_code == 404
 
 
 def test_frontend_uses_explicit_zh_tw_urls_and_does_not_keep_legacy_aliases():
     """The first public URL shape must not silently drift when English is added."""
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
-    application = create_app(AppSettings(profile=AppProfile.LOCAL))
+    application = create_app(AppSettings(profile=AppProfile.PUBLIC))
     with TestClient(application, follow_redirects=False) as client:
         root = client.get("/")
         localized = {
@@ -266,9 +305,6 @@ def test_frontend_uses_explicit_zh_tw_urls_and_does_not_keep_legacy_aliases():
 
 
 def test_private_alpha_static_openapi_is_generated_offline_not_served():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
     schema = hosted_app.openapi()
 
@@ -279,9 +315,6 @@ def test_private_alpha_static_openapi_is_generated_offline_not_served():
 
 
 def test_private_alpha_chart_emits_status_only_allowlisted_event():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
     events: list[dict] = []
     hosted_app = create_app(
         AppSettings(profile=AppProfile.PRIVATE_ALPHA),
@@ -300,16 +333,24 @@ def test_private_alpha_chart_emits_status_only_allowlisted_event():
     chart_event = events[0]
     assert chart_event["status_code"] == 200
     assert chart_event["outcome"] == "success"
-    encoded = json.dumps(chart_event, ensure_ascii=False)
+    # `request_id` is a `uuid4().hex`, independent of the request, so scanning
+    # it for a birth year makes this canary's verdict depend on a coincidence:
+    # the export rehearsal drew an id containing "1997" and the canary went red
+    # on a run that leaked nothing.  The id is asserted against its declared
+    # domain instead, and the scan covers every field that carries meaning.
+    assert re.fullmatch(r"[0-9a-f]{32}", chart_event["request_id"])
+    meaningful = {
+        name: value
+        for name, value in chart_event.items()
+        if name != "request_id"
+    }
+    encoded = json.dumps(meaningful, ensure_ascii=False)
     assert str(_payload()["location"]["latitude"]) not in encoded
     assert str(_payload()["location"]["longitude"]) not in encoded
     assert "1997" not in encoded
 
 
 def test_private_alpha_chart_subtree_uses_closed_route_labels():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
     events: list[dict] = []
     hosted_app = create_app(
         AppSettings(profile=AppProfile.PRIVATE_ALPHA),
@@ -320,8 +361,13 @@ def test_private_alpha_chart_subtree_uses_closed_route_labels():
         future_child = client.post("/api/chart/future", json=_payload())
         lookalike = client.get("/api/chartography")
 
-    assert trailing_slash.status_code == 405
-    assert future_child.status_code == 405
+    # The trailing-slash variant is not a registered route, and the API
+    # boundary now answers for its own prefix instead of letting the asset
+    # mount reply 405 with no Allow header and a third body shape.  404 is
+    # also the more accurate refusal: the resource does not exist.
+    assert trailing_slash.status_code == 404
+    assert trailing_slash.json()["detail"]["code"] == "unknown_api_path"
+    assert future_child.status_code == 404
     assert lookalike.status_code == 404
     assert [event["route"] for event in events] == [
         "frontend_or_unmatched",
@@ -331,9 +377,6 @@ def test_private_alpha_chart_subtree_uses_closed_route_labels():
 
 
 def test_private_alpha_does_not_grant_cross_origin_access():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
     with TestClient(hosted_app) as client:
         response = client.options(
@@ -348,9 +391,6 @@ def test_private_alpha_does_not_grant_cross_origin_access():
 
 
 def test_private_alpha_validation_errors_do_not_echo_sensitive_input():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
     payload = _payload()
     payload["datetime"]["month"] = 13
@@ -376,10 +416,56 @@ def test_private_alpha_validation_errors_do_not_echo_sensitive_input():
     )
 
 
-def test_numeric_fields_reject_boolean_and_string_coercion():
-    from app.main import create_app
-    from app.settings import AppProfile, AppSettings
+@pytest.mark.parametrize(
+    ("mutate", "reason_code", "location"),
+    [
+        (
+            lambda payload: payload.update({
+                "birth_time_precision": "approximate_hour"
+            }),
+            "approximate_hour_requires_zero_subhour",
+            ["body"],
+        ),
+        (
+            lambda payload: payload.update({
+                "birth_time_precision": "date_only"
+            }),
+            "date_only_requires_zero_time",
+            ["body"],
+        ),
+        (
+            lambda payload: payload.update({
+                "computation_mode": {"center": "heliocentric"},
+                "options": {"moon_position_profile": "moon_only_topocentric_v1"},
+            }),
+            "moon_profile_center_conflict",
+            ["body"],
+        ),
+        (
+            lambda payload: payload.update({
+                "options": {"aspect_orb_scale_percent": 80.0},
+            }),
+            "aspect_orb_scale_requires_profile",
+            ["body", "options"],
+        ),
+    ],
+)
+def test_model_conflicts_expose_closed_actionable_reason_without_values(
+    mutate, reason_code, location
+):
+    hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
+    payload = _payload()
+    mutate(payload)
+    with TestClient(hosted_app) as client:
+        response = client.post("/api/chart", json=payload)
+    assert response.status_code == 422
+    assert response.json()["detail"] == [{
+        "type": reason_code,
+        "loc": location,
+    }]
 
+
+def test_numeric_fields_reject_boolean_and_string_coercion():
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
     boolean_payload = _payload()
     boolean_payload["timezone"] = {
@@ -401,30 +487,10 @@ def test_numeric_fields_reject_boolean_and_string_coercion():
     assert string_response.status_code == 422
 
 
-def test_local_validation_errors_use_the_same_non_echoing_contract():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
-    local_app = create_app(AppSettings(profile=AppProfile.LOCAL))
-    payload = _payload()
-    payload["datetime"]["month"] = 13
-
-    with TestClient(local_app) as client:
-        response = client.post("/api/chart", json=payload)
-
-    assert response.status_code == 422
-    assert all("input" not in issue for issue in response.json()["detail"])
-    assert all(
-        set(issue) == {"type", "loc"}
-        for issue in response.json()["detail"]
-    )
-
-
-def test_private_alpha_known_errors_return_only_closed_code(monkeypatch):
+@pytest.mark.parametrize("profile_name", ["private_alpha", "public"])
+def test_supported_profiles_return_only_closed_error_code(monkeypatch, profile_name):
     from app import main
     from app.ephemeris import FullEphemerisRequiredError
-    from app.settings import AppSettings, AppProfile
-
     def fail(_request):
         raise FullEphemerisRequiredError(
             operation="CANARY_OPERATION",
@@ -433,8 +499,10 @@ def test_private_alpha_known_errors_return_only_closed_code(monkeypatch):
         )
 
     monkeypatch.setattr(main, "_compute_chart_locked", fail)
+    events = []
     hosted_app = main.create_app(
-        AppSettings(profile=AppProfile.PRIVATE_ALPHA)
+        AppSettings(profile=AppProfile(profile_name)),
+        event_emitter=lambda event: events.append(event) or True,
     )
     with TestClient(hosted_app) as client:
         response = client.post("/api/chart", json=_payload())
@@ -445,39 +513,11 @@ def test_private_alpha_known_errors_return_only_closed_code(monkeypatch):
     }
     assert "2597667" not in response.text
     assert "CANARY_OPERATION" not in response.text
-
-
-def test_hosted_boundary_rejects_conflicting_content_length_and_transfer_encoding():
-    """RFC 9112 forbids framing a body with both Content-Length and
-    Transfer-Encoding.  Parser/proxy normalization can otherwise make the
-    application contract depend on which HTTP stack receives the request."""
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
-    hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
-    with TestClient(hosted_app) as client:
-        response = client.post(
-            "/api/chart",
-            content=json.dumps(_payload()).encode(),
-            headers={
-                "Content-Type": "application/json",
-                "Transfer-Encoding": "chunked",
-            },
-        )
-    assert response.status_code == 400, response.text
-    assert response.json()["detail"]["code"] == "conflicting_request_framing"
-
-    # Positive control: the same body without the conflicting header succeeds,
-    # so the rejection is caused by the framing and not by the payload.
-    with TestClient(hosted_app) as client:
-        ok = client.post("/api/chart", json=_payload())
-    assert ok.status_code == 200, ok.text
+    assert events[-1]["error_code"] == "full_ephemeris_required"
+    assert events[-1]["outcome"] == "error"
 
 
 def test_hosted_boundary_rejects_oversized_headers_before_chart_parsing():
-    from app.main import create_app
-    from app.settings import AppSettings, AppProfile
-
     hosted_app = create_app(AppSettings(profile=AppProfile.PRIVATE_ALPHA))
     with TestClient(hosted_app) as client:
         response = client.post(

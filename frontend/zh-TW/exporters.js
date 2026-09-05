@@ -130,18 +130,16 @@
     };
   }
 
-  // FPI-2026-08-06-E-009。契約 §2 說 section copy 是「TSV 型純文字，供貼入
-  // 筆記或試算表」。TSV 的欄界是 tab、列界是換行，所以儲存格裡的 tab 會多切出
-  // 一欄、換行會拆成兩列——而使用者貼進試算表後**不會察覺資料已錯位**。
-  // markdownCell 早就對表格做了對應處理（換行轉 <br>），TSV 沒有。
+  // 契約 §2 說 section copy 是「TSV 型純文字，供貼入筆記或試算表」。TSV 的
+  // 欄界是 tab、列界是換行，所以儲存格裡的 tab 會多切出一欄、換行會拆成兩列
+  // ——而使用者貼進試算表後**不會察覺資料已錯位**。
   //
   // 折成空白會失去換行這個字形，但保住欄列結構。兩害相權取結構：錯位是靜默的，
   // 少一個換行不是。目前後端進入儲存格的自由文字都不含這些字元，這裡不依賴那件事。
   function tsvCell(value) {
-    // Codex 複審打回：上一版寫的是 `.replace(/\r?\n/g, " ")`，只涵蓋 CRLF 與 LF。
-    // **單獨的 CR 對試算表本身就是 record separator**，貼上後照樣拆列，
-    // 而那正是這個 finding 要防的靜默錯位。改為逐一中和三個控制字元。
-    return text(value).replace(/[\t\r\n]+/g, " ");
+    // 三個控制字元都要中和，不只 CRLF 與 LF：單獨的 CR 對試算表本身就是
+    // record separator，貼上後照樣拆列。
+    return spreadsheetScalar(value).replace(/[\t\r\n]+/g, " ");
   }
 
   function renderTableText(table) {
@@ -211,11 +209,31 @@
     return lines.join("\n").trim() + "\n";
   }
 
-  function csvCell(value) {
+  // 前導不可見字元原本是手列的，而零寬字元在 Unicode 裡不歸在空白：
+  // U+200B、U+200C、U+200D、U+2060 都在那份手列之外。改用類別而不是列舉。
+  const CSV_FORMULA_LEAD = /^[\s\p{Cf}]*[=+\-@]/u;
+  // 帶單位的量測值在試算表裡不是公式。判斷仍看開頭，只是把「數字後接已宣告
+  // 單位」這一形狀豁免：否則一份普通星盤的匯出會有九格帶單引號，讀起來像
+  // 資料壞了。單位集合宣告在這裡一次，匯出契約引用同一組。
+  const CSV_MEASURED_UNITS = "\u00b0\u2032\u2033hms\u2103%";
+  const CSV_MEASURED_VALUE = new RegExp(
+    "^[\\s\\p{Cf}]*[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)"
+    + "[\\d\\s.,:+-]*[" + CSV_MEASURED_UNITS + "]"
+    + "[\\d\\s.,:+-" + CSV_MEASURED_UNITS + "]*$",
+    "u"
+  );
+
+  function spreadsheetScalar(value) {
     let raw = text(value);
-    const formulaLike = /^[\t\r\n \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[=+\-@]/u.test(raw);
+    const formulaLike = CSV_FORMULA_LEAD.test(raw);
     const numericLiteral = /^[\t\r\n ]*[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?[\t\r\n ]*$/.test(raw);
-    if (formulaLike && !numericLiteral) raw = "'" + raw;
+    const measured = CSV_MEASURED_VALUE.test(raw);
+    if (formulaLike && !numericLiteral && !measured) raw = "'" + raw;
+    return raw;
+  }
+
+  function csvCell(value) {
+    const raw = spreadsheetScalar(value);
     return /[",\r\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
   }
 
@@ -311,11 +329,11 @@
 
   /**
    * Markdown 允許 raw HTML，所以任何未經處理就插進 Markdown 的自由文字，
-   * 在支援 HTML 的 renderer 裡都是 active content（PIA-2026-08-06-002）。
+   * 在支援 HTML 的 renderer 裡都是 active content。
    *
-   * 這是 serializer 自己的責任，不是上游的：契約 §3A 明文規定「不得因目前
-   * schema 沒有自由文字就假設未來輸入永遠安全」。同一個值在 DOM 走
-   * `textContent`、在 CSV 有 formula hardening，只有 Markdown 沒有守衛。
+   * 這是 serializer 自己的責任，不是上游的：目前 schema 沒有自由文字，不是
+   * 未來輸入也永遠安全的理由。每一種輸出各自負責自己的
+   * 中和：DOM 走 `textContent`、CSV 有 formula hardening、Markdown 走這裡。
    *
    * `&` 必須先換，否則後面兩個換出來的 `&lt;` 會被自己再換一次。
    */
@@ -329,16 +347,9 @@
   }
 
   function markdownCell(value) {
-    // 先 escape 再插 <br>：反過來會把我們自己刻意產生的換行標記也吃掉。
-    //
-    // `FPI-2026-08-06-E-023`：上一版寫 `/\r?\n/`，與 tsvCell 修好之前一模一樣的
-    // 錯誤——**單獨的 CR 走不到那個分支**，於是裸 CR 直接進 Markdown 表格列。
-    // 我在同一輪修好了 tsvCell（E-009）卻沒有回頭看它旁邊這個姊妹函式。
-    // 三種行結束符（CRLF／CR／LF）現在一起處理。
-    return escapeMarkdownText(value)
-      .replace(/\\/g, "\\\\")
-      .replace(/\|/g, "\\|")
-      .replace(/\r\n?|\n/g, "<br>");
+    // 表格與一般Markdown文字共用同一個escaping owner；再escape一次會把
+    // 已保護的反斜線與直線變成使用者可見的額外字元。
+    return escapeMarkdownText(value);
   }
 
   function renderMarkdownTable(table) {
@@ -354,8 +365,8 @@
     return lines.join("\n");
   }
 
-  // 依內容選一段比內容裡最長的反引號串還長的 fence。原本只判斷「有沒有 ```」，
-  // 對 ```` 之類更長的串就不夠；一併補上。
+  // 依內容選一段比內容裡最長的反引號串還長的 fence：判斷「有沒有 ```」不夠，
+  // 內容可能含 ```` 之類更長的串。
   function longestBacktickRun(value) {
     const runs = String(value).match(/`+/g);
     return runs ? Math.max(...runs.map((run) => run.length)) : 0;
@@ -365,7 +376,7 @@
     return "`".repeat(Math.max(3, longestBacktickRun(value) + 1));
   }
 
-  // FPI-2026-08-06-E-008。inline code span 內的反引號會提早關閉 span，
+  // inline code span 內的反引號會提早關閉 span，
   // 後面的文字就落在 code 之外、不受 escape。加長分隔並在必要時補空白
   // （CommonMark：首尾為反引號時各補一個空白，解析時會被去掉）。
   function markdownInlineCode(value) {
@@ -394,8 +405,6 @@
       `- Export contract: \`${document.export_contract_version}\``,
       `- API schema: \`${document.source_response.schema_version || "—"}\``,
       `- Calculation Dossier: \`${dossier.dossier_version || "—"}\``,
-      // FPI-2026-08-06-E-008：這一個插值點漏了 escape。同函式其餘六處都有，
-      // 上方註解也寫著「每一個把自由文字插進 Markdown 的位置都要經過 escape」。
       `- Authority: ${escapeMarkdownText(dossier.authority || "—")}`,
     ];
     const utc = dossier.time_conversion && dossier.time_conversion.utc_iso_8601;
@@ -404,17 +413,16 @@
     const warnings = warningLines(dossier);
     warnings.forEach((warning) => lines.push(`- ${escapeMarkdownText(warning)}`));
 
-    // 每一個把自由文字插進 Markdown 的位置都要經過 escape，不只是表格儲存格。
-    // 原本標題、備註與表格標題三處都是直接插值，raw HTML 一樣照過。
+    // 每一個把自由文字插進 Markdown 的位置都要經過 escape，不只是表格儲存格：
+    // 標題、備註與表格標題同樣會讓 raw HTML 直接通過。
     document.sections.forEach((section) => {
       lines.push("", `## ${escapeMarkdownText(section.title)}`, "");
       if (section.layer_label) {
         lines.push(`**層級：** ${escapeMarkdownText(section.layer_label)}`, "");
       }
       if (section.status && section.status.state !== "present") {
-        // Codex 複審打回：這是同一輪裡我漏掉的第四個插值點。上面三處都改用了
-        // markdownInlineCode，這裡還留著固定的單一反引號，於是
-        // `alpha\`x\`omega` 會提前關閉 span，中間那段變成不受保護的散文。
+        // 這裡與上面三處一致使用 markdownInlineCode：固定的單一反引號會被
+        // `alpha\`x\`omega` 這種內容提前關閉，中間那段變成不受保護的散文。
         const reason = section.status.reason_code
           ? `（原因代碼 ${markdownInlineCode(section.status.reason_code)}）`
           : "";

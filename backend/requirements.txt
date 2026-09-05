@@ -1,5 +1,0 @@
-# 版本鎖定為目前實際測試過、確認可用的版本；升級前請重新跑過一輪測試。
-fastapi==0.141.1
-uvicorn==0.52.1
-pyswisseph==2.10.3.2
-exceptiongroup; python_version < "3.11"

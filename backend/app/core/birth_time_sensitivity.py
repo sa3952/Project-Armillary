@@ -7,14 +7,15 @@ from typing import TypedDict
 
 import swisseph as swe
 
-from ..config import CLASSICAL_BODIES, NODE_BODIES, OUTER_BODIES
+from ..config import BODY_ID_BY_KEY, CLASSICAL_BODIES, NODE_BODIES, OUTER_BODIES
 from .bodies import compute_bodies, make_longitude_sampler
 from .computation_mode import ComputationContext
 from .house_placements import compute_planet_house_placements
-from .houses import compute_houses
+from .houses import HouseSystemUnavailableError, compute_houses
 from .lots import compute_lots, determine_sect
 from .moon import determine_void_of_course, find_voc_candidates
 from .time_utils import (
+    AmbiguousLocalTimeChoiceRequiredError,
     NonexistentLocalTimeError,
     _to_utc_datetime,
     compute_time_conversion,
@@ -22,8 +23,130 @@ from .time_utils import (
 from .trace import Trace
 
 
+# Which response paths a sensitivity pass can speak about, and what each
+# precision actually does with them.  The disclosure ledger is derived from
+# these by subtraction rather than written out beside them: a hand-kept list
+# drifts silently the moment a pass starts or stops recomputing something,
+# and the reader cannot tell a path that was assessed and stable from a path
+# that was never looked at.
+#
+# Paths that describe the request rather than a result — the atmosphere, the
+# time conversion, the fixed-star policy — are not assessable: nothing about
+# them varies with the birth instant within the interval.
+#
+# The universe is fixed rather than narrowed to the modules a given request
+# asked for.  A ledger that shrinks with the request answers "was this
+# assessed?" only for what happened to be switched on, and leaves the reader to
+# infer the rest from an absence.
+ASSESSABLE_RESPONSE_PATHS = (
+    "astronomical_data.angles",
+    "astronomical_data.bodies",
+    "astronomical_data.extra_angles",
+    "astronomical_data.fixed_stars",
+    "astronomical_data.horizon_events",
+    "astronomical_data.lunar_apsides",
+    "astronomical_data.lunar_events",
+    "astronomical_data.nodes",
+    "astronomical_data.parallax_moon",
+    "derived_geometry.antiscia",
+    "derived_methods.aspects",
+    "derived_methods.declination_aspects",
+    "derived_methods.essential_dignities",
+    "derived_methods.house_division",
+    "derived_methods.lots",
+    "derived_methods.planet_in_house",
+    "derived_methods.sect",
+    "derived_methods.void_of_course",
+)
+
+# "partial" is its own state because a boolean agreeing across probes does not
+# make the module it belongs to stable.  Reporting it as fully assessed would
+# let a reader take one field's stability for the whole module's.
+COVERAGE_BY_PRECISION: dict[str, dict[str, str]] = {
+    "approximate_hour": {
+        "astronomical_data.angles": "recomputed",
+        "astronomical_data.bodies": "recomputed",
+        "derived_methods.house_division": "recomputed",
+        "derived_methods.lots": "recomputed",
+        "derived_methods.planet_in_house": "recomputed",
+        "derived_methods.sect": "recomputed",
+        "derived_methods.void_of_course": "partial",
+    },
+    "date_only": {
+        "astronomical_data.bodies": "recomputed",
+        "astronomical_data.nodes": "recomputed",
+    },
+}
+
+# What the partial coverage above does and does not compare.
+PARTIAL_COVERAGE_SEMANTICS = {
+    "derived_methods.void_of_course": (
+        "只比較了「是否月空亡」這一項；離相位的出宮時刻、下一個完成的相位、"
+        "其完成時刻，以及求解器證據，都沒有在各取樣點之間重新評估。"
+    ),
+}
+
+
+# A probe that cannot evaluate one sample degrades that sample.  The except
+# clause named the one refusal that had actually been seen, and its siblings —
+# a house system unavailable at this latitude, an hour the zone repeats — were
+# outside it, so a refusal about one sampling instant answered for the whole
+# chart.  The set is the declared domain refusals, not the ones observed so far.
+UNEVALUABLE_SAMPLE_ERRORS = (
+    NonexistentLocalTimeError,
+    AmbiguousLocalTimeChoiceRequiredError,
+    HouseSystemUnavailableError,
+)
+
+
+def _coverage_ledger(precision: str) -> dict:
+    coverage = COVERAGE_BY_PRECISION[precision]
+    unknown = set(coverage) - set(ASSESSABLE_RESPONSE_PATHS)
+    if unknown:
+        raise ValueError(f"coverage names unassessable paths: {sorted(unknown)}")
+    return {
+        "not_evaluated_paths": [
+            path for path in ASSESSABLE_RESPONSE_PATHS if path not in coverage
+        ],
+        "partially_evaluated_paths": [
+            {"path": path, "semantics": PARTIAL_COVERAGE_SEMANTICS[path]}
+            for path in ASSESSABLE_RESPONSE_PATHS
+            if coverage.get(path) == "partial"
+        ],
+    }
+
+
 PROBE_OFFSETS_SECONDS = (0, 900, 1800, 2700, 3599)
 TRANSITION_RESOLUTION_SECONDS = 15
+
+
+def approximate_hour_representative_request(request):
+    """Choose the midpoint when real, otherwise the first real governed probe."""
+
+    preferred = (1800, *(value for value in PROBE_OFFSETS_SECONDS if value != 1800))
+    for offset_seconds in preferred:
+        candidate = request.model_copy(
+            update={
+                "datetime": request.datetime.model_copy(
+                    update={
+                        "minute": offset_seconds // 60,
+                        "second": float(offset_seconds % 60),
+                    }
+                )
+            }
+        )
+        try:
+            _to_utc_datetime(
+                candidate.datetime,
+                candidate.timezone,
+                require_explicit_fold=True,
+            )
+        except NonexistentLocalTimeError:
+            continue
+        return candidate, offset_seconds
+    raise NonexistentLocalTimeError(
+        "no instant in the stated civil hour exists in this time zone"
+    )
 
 
 class _ResolvedLocalInstant(TypedDict):
@@ -31,14 +154,6 @@ class _ResolvedLocalInstant(TypedDict):
     fold: int
     utc_datetime: dtmod.datetime
     utc_time: str
-
-# 敏感度探針要重複算數十次盤，故只在此保留一份 Swiss 天體 id 對照表，
-# 與 main.py 的同名對照表由測試看守其一致性。
-_BODY_ID_BY_KEY = {
-    body["key"]: body["id"]
-    for body in CLASSICAL_BODIES + OUTER_BODIES + NODE_BODIES
-}
-
 
 def _sign_index(longitude: float) -> int:
     return int((longitude % 360.0) // 30.0)
@@ -198,7 +313,7 @@ def _extract_probe(
             if item["key"] != "moon"
         }
         other_bodies = [
-            {**item, "body_id": _BODY_ID_BY_KEY[item["key"]]}
+            {**item, "body_id": BODY_ID_BY_KEY[item["key"]]}
             for item in bodies
             if item["key"] in classical_keys
         ]
@@ -211,7 +326,7 @@ def _extract_probe(
                 longitude_at=make_longitude_sampler(
                     context, moon_ctx=moon_context
                 ),
-                moon_id=_BODY_ID_BY_KEY["moon"],
+                moon_id=BODY_ID_BY_KEY["moon"],
             ),
             trace,
         )
@@ -240,6 +355,13 @@ def _status(possible_values: list) -> str:
     )
 
 
+# A body may legitimately have no longitude: a heliocentric chart returns the
+# Sun that way, and the primary response says so rather than inventing a value.
+# Anything that re-reads those bodies must carry the same allowance, or it
+# re-imposes a premise the chart already relaxed.
+UNAVAILABLE_COORDINATE_STATUS = "not_applicable_no_longitude_in_this_mode"
+
+
 def _classification_state(probe: dict, body_defs: list[dict]) -> dict:
     body_map = {item["key"]: item for item in probe["bodies"]}
     state = {
@@ -247,6 +369,7 @@ def _classification_state(probe: dict, body_defs: list[dict]) -> dict:
             body_map[item["key"]]["longitude"]
         )
         for item in body_defs
+        if body_map[item["key"]]["longitude"] is not None
     }
     if probe["placements"]["execution_status"] == "computed":
         state.update(
@@ -287,78 +410,71 @@ def _refine_transitions(
 ) -> list[dict]:
     """Refine only sampled classification changes; hidden reversals remain possible."""
 
-    transitions = []
+    missing = object()
+    transitions: list[tuple[int, str, dict]] = []
+
+    def state_at(offset: int) -> dict:
+        if offset not in probes_by_offset:
+            probes_by_offset[offset] = _extract_probe(
+                offset_seconds=offset,
+                request=request,
+                body_defs=body_defs,
+                representative=None,
+            )
+        return _classification_state(probes_by_offset[offset], body_defs)
+
     ordered_offsets = sorted(probes_by_offset)
-    for left_offset, right_offset in zip(
+    for segment_left, segment_right in zip(
         ordered_offsets,
         ordered_offsets[1:],
     ):
-        left_state = _classification_state(
-            probes_by_offset[left_offset],
-            body_defs,
-        )
-        right_state = _classification_state(
-            probes_by_offset[right_offset],
-            body_defs,
-        )
+        left_state = state_at(segment_left)
+        right_state = state_at(segment_right)
         if left_state == right_state:
             continue
 
-        original_left_state = left_state
-        original_right_state = right_state
-        while (
-            right_offset - left_offset
-            > TRANSITION_RESOLUTION_SECONDS
-        ):
-            midpoint = (left_offset + right_offset) // 2
-            if midpoint not in probes_by_offset:
-                try:
-                    probes_by_offset[midpoint] = _extract_probe(
-                        offset_seconds=midpoint,
-                        request=request,
-                        body_defs=body_defs,
-                        representative=None,
-                    )
-                except NonexistentLocalTimeError:
-                    # `FPI-2026-08-06-E-007`: a DST gap can fall between two
-                    # sampled offsets. The bracket cannot be narrowed past it,
-                    # so stop bisecting and report the bracket we did reach
-                    # rather than aborting the whole chart.
-                    break
-            midpoint_state = _classification_state(
-                probes_by_offset[midpoint],
-                body_defs,
-            )
-            if midpoint_state == left_state:
-                left_offset = midpoint
-            else:
-                right_offset = midpoint
-                right_state = midpoint_state
-
         changed_paths = sorted(
             key
-            for key in set(original_left_state) | set(original_right_state)
-            if original_left_state.get(key)
-            != original_right_state.get(key)
+            for key in set(left_state) | set(right_state)
+            if left_state.get(key, missing) != right_state.get(key, missing)
         )
-        transitions.append(
-            {
-                "lower_bound_local": _format_local_offset(
-                    request,
+        for path in changed_paths:
+            left_offset = segment_left
+            right_offset = segment_right
+            left_value = left_state.get(path, missing)
+            while right_offset - left_offset > TRANSITION_RESOLUTION_SECONDS:
+                midpoint = (left_offset + right_offset) // 2
+                try:
+                    midpoint_state = state_at(midpoint)
+                except UNEVALUABLE_SAMPLE_ERRORS:
+                    break
+                if midpoint_state.get(path, missing) == left_value:
+                    left_offset = midpoint
+                else:
+                    right_offset = midpoint
+
+            transitions.append(
+                (
                     left_offset,
-                ),
-                "upper_bound_local": _format_local_offset(
-                    request,
-                    right_offset,
-                ),
-                "resolution_seconds": right_offset - left_offset,
-                "changed_paths": changed_paths,
-                "semantics": (
-                    "bounded_bisection_of_a_sampled_classification_change"
-                ),
-            }
-        )
-    return transitions
+                    path,
+                    {
+                        "lower_bound_local": _format_local_offset(
+                            request,
+                            left_offset,
+                        ),
+                        "upper_bound_local": _format_local_offset(
+                            request,
+                            right_offset,
+                        ),
+                        "resolution_seconds": right_offset - left_offset,
+                        "changed_paths": [path],
+                        "semantics": (
+                            "bounded_bisection_of_a_sampled_classification_change"
+                        ),
+                    },
+                )
+            )
+    return [record for _offset, _path, record in sorted(transitions)]
 
 
 def build_approximate_hour_sensitivity(
@@ -371,13 +487,16 @@ def build_approximate_hour_sensitivity(
     representative_sect: dict | None,
     representative_lots: dict | None,
     representative_void_of_course: dict | None,
+    representative_offset_seconds: int,
 ) -> dict:
-    """Build five probe receipts but reuse the already-computed 30-minute chart."""
+    """Build governed probes and reuse the selected real representative chart."""
 
     representative = {
         "input_local_time": (
             f"{request.datetime.year:04d}-{request.datetime.month:02d}-"
-            f"{request.datetime.day:02d} {request.datetime.hour:02d}:30:00.00"
+            f"{request.datetime.day:02d} {request.datetime.hour:02d}:"
+            f"{representative_offset_seconds // 60:02d}:"
+            f"{representative_offset_seconds % 60:02d}.00"
         ),
         "bodies": representative_bodies,
         "houses": representative_houses,
@@ -386,9 +505,9 @@ def build_approximate_hour_sensitivity(
         "lots": representative_lots,
         "void_of_course": representative_void_of_course,
     }
-    # `FPI-2026-08-06-E-007`。半小時位移的時區（例如 Australia/Lord_Howe）會讓一個
+    # 半小時位移的時區（例如 Australia/Lord_Howe）會讓一個
     # 民用小時**部分**不存在：2024-10-06 的 02:00–02:29 不存在，02:30–02:59 存在。
-    # 原本任何一個探針擲出 NonexistentLocalTimeError 就讓整個請求變成 422，訊息還說
+    # 任何一個探針擲出 NonexistentLocalTimeError 就讓整個請求變成 422 是錯的：那會說
     # 「該時鐘從未指向 02:00，請改正出生時間」——但使用者說的是「生於 02 那個小時」，
     # 那句陳述與該時區規則相容，代表時刻 02:30 的整張盤也算得出來。錯誤歸因不成立。
     #
@@ -403,10 +522,12 @@ def build_approximate_hour_sensitivity(
                 request=request,
                 body_defs=body_defs,
                 representative=(
-                    representative if offset_seconds == 1800 else None
+                    representative
+                    if offset_seconds == representative_offset_seconds
+                    else None
                 ),
             )
-        except NonexistentLocalTimeError:
+        except UNEVALUABLE_SAMPLE_ERRORS:
             skipped_offsets.append(offset_seconds)
 
     usable_offsets = [
@@ -419,7 +540,7 @@ def build_approximate_hour_sensitivity(
         )
     probes = [probes_by_offset[offset] for offset in usable_offsets]
     representative_index = (
-        usable_offsets.index(1800) if 1800 in usable_offsets else 0
+        usable_offsets.index(representative_offset_seconds)
     )
     probe_coverage = {
         "requested_offsets_seconds": list(PROBE_OFFSETS_SECONDS),
@@ -449,10 +570,23 @@ def build_approximate_hour_sensitivity(
             )
             for probe in probes
         ]
+        if any(value is None for value in values):
+            body_signs.append(
+                {
+                    "key": body_def["key"],
+                    "name": body_def["zh"],
+                    "representative_sign_index": None,
+                    "possible_sign_indices": [],
+                    "status": UNAVAILABLE_COORDINATE_STATUS,
+                    "longitude_envelope": None,
+                }
+            )
+            continue
         possible_signs = sorted({_sign_index(value) for value in values})
         body_signs.append(
             {
                 "key": body_def["key"],
+                "name": body_def["zh"],
                 "representative_sign_index": _sign_index(
                     values[representative_index]
                 ),
@@ -483,6 +617,7 @@ def build_approximate_hour_sensitivity(
             planet_in_house.append(
                 {
                     "key": body_def["key"],
+                    "name": body_def["zh"],
                     "representative_house": representative_house,
                     "possible_houses": possible_houses,
                     "status": _status(possible_houses),
@@ -582,14 +717,14 @@ def build_approximate_hour_sensitivity(
         ),
         "interval_start_local": start.isoformat(timespec="minutes"),
         "interval_end_exclusive_local": end.isoformat(timespec="minutes"),
-        "representative_minute": 30,
+        "representative_minute": representative_offset_seconds // 60,
         "representative_local_time": representative["input_local_time"],
         "representative_semantics": (
             "representative_midpoint_not_exact_birth_time"
+            if representative_offset_seconds == 1800
+            else "representative_first_available_probe_not_exact_birth_time"
         ),
-        "sampling_semantics": (
-            "five_discrete_probes_not_continuous_hour_proof"
-        ),
+        "sampling_semantics": "five_discrete_probes_not_continuous_hour_proof",
         "probe_coverage": probe_coverage,
         "probes": [
             {
@@ -610,23 +745,10 @@ def build_approximate_hour_sensitivity(
         "sect": sect_summary,
         "lots": lots_summary,
         "void_of_course": voc_summary,
-        "not_evaluated_paths": [
-            "astronomical_data.fixed_stars",
-            "astronomical_data.lunar_events",
-            "astronomical_data.horizon_events",
-            "derived_geometry.antiscia",
-            "derived_methods.declination_aspects",
-            "derived_methods.essential_dignities",
-        ],
+        **_coverage_ledger("approximate_hour"),
         "limitations": [
-            (
-                "Five probes can reveal sampled changes but cannot prove "
-                "continuous stability for every instant in the hour."
-            ),
-            (
-                "The midpoint chart is representative, not a claim that the "
-                "birth occurred at minute 30."
-            ),
+            "five_discrete_probes_not_continuous_hour_proof",
+            "representative_midpoint_not_exact_birth_time",
         ],
     }
 
@@ -706,11 +828,17 @@ def _date_only_sample_instants(
 
     def first_real_instant(
         boundary: dtmod.datetime,
+        *,
+        days: int = 1,
     ) -> _ResolvedLocalInstant | None:
-        # Some IANA zones historically advanced the clock at local midnight.
-        # The civil-day boundary is then the first real wall-clock minute of
-        # that date, not a fabricated fold-normalized midnight.
-        for minute in range(24 * 60):
+        # Some IANA zones advanced the clock at local midnight, so the civil-day
+        # boundary is the first real wall-clock minute on or after that label,
+        # not a fabricated fold-normalized midnight.  Others skipped a whole
+        # civil date when they crossed the date line, so the instant that ends
+        # the selected day can carry the label of a later date entirely.  The
+        # search is over instants, and the label is whatever the zone gives the
+        # instant it finds.
+        for minute in range(days * 24 * 60):
             candidates = _date_only_local_instants(
                 request,
                 boundary + dtmod.timedelta(minutes=minute),
@@ -720,7 +848,10 @@ def _date_only_sample_instants(
         return None
 
     day_start = first_real_instant(start)
-    next_day_start = first_real_instant(next_day)
+    # A skipped civil date is bounded in practice by a single day, and this
+    # window is generous rather than open-ended: a search that never terminates
+    # is not a repair.
+    next_day_start = first_real_instant(next_day, days=8)
     if not samples or day_start is None or next_day_start is None:
         raise ValueError(
             "date_only civil-day boundary is unavailable in the selected timezone"
@@ -872,20 +1003,17 @@ def build_date_only_sensitivity(
         item["status"] == "varies_within_sampled_day"
         for item in position_ranges
     )
-    start_local = dtmod.datetime(
-        request.datetime.year,
-        request.datetime.month,
-        request.datetime.day,
-    )
+    # The local bounds are the local rendering of the same two instants the UTC
+    # bounds and the duration are taken from.  Writing them independently from
+    # the nominal date is how a receipt comes to state a local midnight that
+    # the zone never had.
     return {
         "precision": "date_only",
         "status": (
             "varies_within_sampled_day" if any_variation else "sampled_stable"
         ),
-        "interval_start_local": start_local.isoformat(timespec="seconds"),
-        "interval_end_exclusive_local": (
-            start_local + dtmod.timedelta(days=1)
-        ).isoformat(timespec="seconds"),
+        "interval_start_local": day_start["local_time"],
+        "interval_end_exclusive_local": next_day_start["local_time"],
         "interval_start_utc": day_start["utc_time"],
         "interval_end_exclusive_utc": next_day_start["utc_time"],
         "civil_day_duration_hours": duration_hours,
@@ -920,28 +1048,9 @@ def build_date_only_sensitivity(
             "sampled_sign_boundary_transitions": moon_transitions,
             "sampled_longitude_envelope": moon_envelope,
         },
-        "not_evaluated_paths": [
-            "astronomical_data.fixed_stars",
-            "astronomical_data.lunar_events",
-            "astronomical_data.horizon_events",
-            "derived_geometry.antiscia",
-            "derived_methods.house_division",
-            "derived_methods.planet_in_house",
-            "derived_methods.sect",
-            "derived_methods.lots",
-            "derived_methods.void_of_course",
-            "derived_methods.aspects",
-            "derived_methods.declination_aspects",
-            "derived_methods.essential_dignities",
-        ],
+        **_coverage_ledger("date_only"),
         "limitations": [
-            (
-                "Hourly samples plus the final second can reveal sampled sign "
-                "changes but cannot prove continuous extrema or stability."
-            ),
-            (
-                "The local-noon chart is a reproducible computational anchor, "
-                "not a statement that the birth occurred at noon."
-            ),
+            "hourly_local_clock_samples_plus_day_end_not_continuous_extrema_proof",
+            "local_noon_computational_anchor_not_birth_time",
         ],
     }

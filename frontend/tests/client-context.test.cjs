@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const test = require("node:test");
 const {
   PROFILES,
   validateClientConfiguration,
@@ -6,6 +7,7 @@ const {
   apiErrorActions,
   networkErrorMessage,
   placeQueryNotice,
+  resolveProfileBounded,
 } = require("../zh-TW/client-context.js");
 
 assert.match(
@@ -28,15 +30,43 @@ assert.ok(
   ).some((value) => value.includes("修正輸入"))
 );
 
-assert.deepEqual(validateClientConfiguration({ profile: "local" }), {
-  profile: "local",
-});
 assert.deepEqual(validateClientConfiguration({ profile: "private_alpha" }), {
   profile: "private_alpha",
+});
+assert.deepEqual(validateClientConfiguration({ profile: "public" }), {
+  profile: "public",
 });
 for (const invalid of [null, {}, { profile: "production" }]) {
   assert.throws(() => validateClientConfiguration(invalid));
 }
+
+test("client configuration timeout settles even when fetch never does", async () => {
+  let timeout;
+  let cancelled = 0;
+  const result = resolveProfileBounded(
+    () => new Promise(() => {}),
+    () => { cancelled += 1; },
+    5000,
+    (callback) => { timeout = callback; return 7; },
+    () => {}
+  );
+  timeout();
+  assert.equal(await result, null);
+  assert.equal(cancelled, 1);
+});
+
+test("client configuration success clears the timeout and returns public", async () => {
+  const cleared = [];
+  const result = resolveProfileBounded(
+    () => Promise.resolve({ profile: "public" }),
+    () => assert.fail("successful load must not cancel"),
+    5000,
+    () => 9,
+    (token) => cleared.push(token)
+  );
+  assert.equal(await result, "public");
+  assert.deepEqual(cleared, [9]);
+});
 
 const timezoneError = formatApiError(
   [
@@ -101,9 +131,7 @@ assert.equal(
 assert.ok(!formatApiError("caller supplied secret", 400).includes("secret"));
 assert.match(formatApiError(null, 500), /服務暫時無法完成計算/);
 
-const localNetworkError = networkErrorMessage(PROFILES.LOCAL);
 const hostedNetworkError = networkErrorMessage(PROFILES.PRIVATE_ALPHA);
-assert.match(localNetworkError, /重新啟動 Classical Astrology App/);
 assert.match(hostedNetworkError, /Private Alpha/);
 assert.match(hostedNetworkError, /聯絡邀請者/);
 assert.ok(!hostedNetworkError.includes("127.0.0.1"));
@@ -128,8 +156,14 @@ assert.ok(ambiguous.includes("出現了兩次"));
 // 一則指向不存在控制項的「可行動訊息」比沒有訊息更糟——使用者會去找。
 assert.ok(!ambiguous.includes("固定偏移"),
   "訊息又指向了本頁不存在的固定偏移輸入");
-assert.ok(ambiguous.includes("精確到分鐘"),
-  "訊息必須指向本頁真的提供的出路");
+// 這則訊息一度自己宣稱「只知道約略小時無法指明是哪一次」。那在寫的當天是對的，
+// SD-32 的修復讓頁面對該精度也提供了選擇，而這句話沒有任何路徑會被通知——文案與
+// 介面矛盾了 27 天。訊息現在只描述情況；出路由 calculate.js 依選擇區是否真的出現
+// 在畫面上導出，因為只有它知道。
+assert.ok(!ambiguous.includes("無法"),
+  "訊息不得自行宣稱頁面能或不能做什麼；那是 calculate.js 才知道的事");
+assert.ok(ambiguous.includes("需要知道是哪一次"),
+  "訊息必須說出服務要的是什麼");
 assert.ok(!ambiguous.includes("fold"));
 assert.ok(!ambiguous.includes("America/New_York"));
 assert.ok(!ambiguous.includes("UTC-04"));
@@ -168,6 +202,17 @@ assert.ok(
   !outOfRangeYear.includes("確實存在"),
   "年份超範圍不得沿用「請確認日期確實存在」——那句話指向錯誤的原因"
 );
+
+for (const [type, expected] of [
+  ["approximate_hour_requires_zero_subhour", /整點|精確到分鐘/],
+  ["date_only_requires_zero_time", /清除時間|出生時間類型/],
+  ["moon_profile_center_conflict", /站心模式|計算中心/],
+  ["aspect_orb_scale_requires_profile", /具名容許度來源/],
+]) {
+  const message = formatApiError([{ type, loc: ["body"] }], 422);
+  assert.match(message, expected);
+  assert.ok(!message.includes("輸入資料格式無效"));
+}
 assert.equal(
   formatApiError(
     [{ type: "less_than_equal", loc: ["body", "datetime", "hour"] }],
@@ -185,9 +230,9 @@ assert.equal(
 );
 console.log("datetime range guidance tests passed");
 
-// ── PIA-2026-08-06-009：地名查詢截斷告知 ──────────────────
-// 後端逐字交代哪些詞被丟掉；前端原本只讀 results，於是把一個被改寫過的
-// 查詢報成使用者自己的查詢。有截斷必說、沒截斷不吵，兩邊都要成立。
+// ── 地名查詢截斷告知 ──────────────────────────────────────
+// 後端逐字交代哪些詞被丟掉，前端必須讀它：一個被改寫過的查詢不得報成
+// 使用者自己的查詢。有截斷必說、沒截斷不吵，兩邊都要成立。
 
 const truncated = placeQueryNotice({
   token_count: 8,

@@ -1,6 +1,6 @@
 """兩段式角度求根：粗掃描分割根區間，再以二分法收斂。
 
-本模組取代原本散落在 moon.py 的線性外插近似（MTH-Q-003 乙裁決廢止）。線性外插把
+本模組取代線性外插近似（MTH-Q-003 乙裁決廢止）。線性外插把
 兩顆星體的黃經速度視為視窗期間的常數，對以下三種情況都會給出錯誤答案：
 
 1. **速度非定值。** 月亮的黃經速度在 11.7–15.4 度/日之間變化，2.5 天的搜尋視窗內
@@ -60,6 +60,14 @@ _MAX_WRAP_DISAMBIGUATION_DEPTH = 8
 _MAX_COARSE_SAMPLES = 100_000
 _SAMPLE_ZERO_EPSILON_DEGREES = 1e-12
 
+# What this solver assumes, stated because it is the caller who chooses whether
+# it holds.  A coarse step may hide a pair of roots when the function rises above
+# `tangency_probe_degrees` at both ends of one step and crosses twice inside it.
+# The tangency probe covers the shallow case; a fast excursion is not covered.
+# The callers pick 0.05 days (moon) and 0.125 days (aspect perfection), and no
+# real ephemeris moves a separation far enough within three hours to produce
+# that shape.  Changing a step is therefore a change to this assumption, and the
+# named ranking of the caller is where that has to be argued.
 SOLVER_NAME = "two_stage_scan_then_bisection_v1"
 
 
@@ -132,9 +140,9 @@ def _is_ambiguous_span(f_left: float, f_right: float) -> bool:
     f 定義在 (-180, 180] 上。從 −90 走到 +90 有兩種可能：經過 0（真的成相），
     或經過 ±180（只是環繞不連續）。兩者的 |Δf| 都恰好是 180，端點資訊不足以區分。
 
-    舊版用嚴格的 `< 180` 判定，等於把這種情形一律當成環繞——於是
-    `f(t) = −90 + 180t` 這個在 t=0.5 確實過零的函式回傳空清單
-    （RT-BACKEND-9-E-003）。正確作法不是把門檻放寬成 `<= 180`（那會把真正的
+    嚴格的 `< 180` 判定等於把這種情形一律當成環繞——於是
+    `f(t) = −90 + 180t` 這個在 t=0.5 確實過零的函式回傳空清單。
+    正確作法不是把門檻放寬成 `<= 180`（那會把真正的
     環繞誤判成根），而是**取得更多資訊**：把區間對半再取樣，直到跨度縮到
     180 以下、足以分辨為止。真實運動的 |Δf| 會隨步長等比縮小，環繞則不會。
     """
@@ -171,8 +179,8 @@ def find_crossings_detailed(
     roots: list[dict] = []
     # 收集階段的上限刻意高於 `max_roots`：同一個根可能被多條路徑找到
     # （取樣點恰為根、環繞細分、相切細掃各一次），若在**去重之前**就用
-    # `max_roots` 截斷，重複項會擠掉後面真正不同的根
-    # （RT-BACKEND-9-E-004）。因此先寬鬆地收，去重之後才套用預算。
+    # `max_roots` 截斷，重複項會擠掉後面真正不同的根。
+    # 因此先寬鬆地收，去重之後才套用預算。
     # 這個上限只用來防止病態輸入把記憶體吃光，不是結果數量的政策。
     _collect(
         separation_at,
@@ -250,10 +258,10 @@ def _collect(
 ) -> None:
     # --- 第一輪：取樣點本身恰為根 ---
     #
-    # 這一輪必須與「相鄰區間變號」分開處理。舊版把兩者混在同一個迴圈裡，
-    # 於是 f(t) = (t−1)(t−2) 以步長 1 掃描時：區間 [0,1] 因右端為零而收下
+    # 這一輪必須與「相鄰區間變號」分開處理。混在同一個迴圈裡時，
+    # f(t) = (t−1)(t−2) 以步長 1 掃描會：區間 [0,1] 因右端為零而收下
     # t=1，接著區間 [1,2] 因**左端**為零又收下一次 t=1，而 t=2 這個真正的根
-    # 從頭到尾沒有被檢查過（RT-BACKEND-9-E-004）。分開兩輪之後，
+    # 從頭到尾沒有被檢查過。分開兩輪之後，
     # 每個為零的取樣點只會被收一次，且不會擋住任何區間的檢查。
     for t, f_value in samples:
         if abs(f_value) <= _SAMPLE_ZERO_EPSILON_DEGREES:
@@ -321,10 +329,10 @@ def _collect(
             continue
         left_t = samples[index - 1][0]
         right_t = samples[index + 1][0]
-        # 這裡刻意**不**因為鄰域內已有根就跳過細掃。舊版有這個「省事」的條件，
-        # 結果是 f(t) = (t−1)·((t−1.35)² − 0.01) 這種形狀：t=1 的根在第一輪就
+        # 這裡刻意**不**因為鄰域內已有根就跳過細掃。加上那個「省事」的條件之後，
+        # f(t) = (t−1)·((t−1.35)² − 0.01) 這種形狀：t=1 的根在第一輪就
         # 被收下，於是 t=1.25 與 t=1.45 這兩個藏在同一步長裡的根永遠不會被找到
-        # （RT-BACKEND-9-E-004）。重複收斂同一個根是無害的——最後的去重會處理；
+        # 重複收斂同一個根是無害的——最後的去重會處理；
         # 漏掉相鄰的另一個根則是靜默的錯誤答案。
         finer_step = (right_t - left_t) / (2 * _REFINEMENT_FACTOR)
         if finer_step <= tolerance_days:

@@ -1,27 +1,19 @@
 # Offline place catalog
 
-`places.sqlite3` is a generated, immutable runtime catalog. It contains:
+`places.sqlite3`is an immutable generated runtime catalog：GeoNames`cities500`provides the global
+base and Taiwan Ministry of the Interior data provides a higher-priority overlay. Deterministic
+ranking prefers exact normalized names、major populated cities、Taiwan source priority and population.
+Both`臺／台`forms are indexed. For every top-level Taiwan county/city, the
+producer derives one picker-only administrative representative point from the
+coordinate-bearing MOI child records. It is explicitly not a city hall,
+geometric centroid, address, or asserted birth location.
 
-- GeoNames `cities500` as the global base;
-- Taiwan Ministry of the Interior administrative-area and settlement place
-  names as a higher-priority Taiwan overlay.
+The application opens SQLite with`mode=ro&immutable=1`. `POST /api/places/search`is same-origin and
+makes no outbound request；the catalog stores no query、birth data、account or runtime cache. Results
+retain source record、representative coordinates、timezone and precision so users can correct them；
+representative points are not verified addresses.
 
-Ranking is deterministic: an exact normalized place name comes first, then a
-major populated city, then the remaining full-text matches with Taiwan source
-priority and population as tie-breakers. The index includes both common
-`臺`/`台` spellings. This keeps fine-grained Taiwan matches available without
-letting incidental county-name matches hide the main city.
-
-The application opens this file with SQLite `mode=ro&immutable=1`. It stores no
-requests, searches, birth data, accounts, or runtime cache. The search endpoint
-is same-origin `POST /api/places/search`; it performs no runtime outbound
-request.
-
-Coordinates are dataset representative points, not verified birth addresses.
-Results retain `source`, `source_record_id`, `location_precision`, coordinates,
-and timezone so the user can inspect or correct the resolution.
-
-Rebuild from pinned source snapshots:
+Rebuild only from pinned snapshots：
 
 ```bash
 python -m scripts.validation.build_place_catalog \
@@ -30,13 +22,8 @@ python -m scripts.validation.build_place_catalog \
   --taiwan-settlement-csv /path/to/taiwan-settlement.csv \
   --output backend/place_data/places.sqlite3 \
   --manifest backend/place_data/catalog_manifest.json \
-  --source-date 2026-07-29
+  --source-date YYYY-MM-DD
 ```
 
-See `catalog_manifest.json` and the distributed `THIRD_PARTY_NOTICES.md` for
-source hashes, attribution, licensing, and limitations.
-
-Dataset updates are low-frequency, intentional releases. The catalog, manifest,
-source hashes, row counts, license notices, Docker context, publication candidate,
-and CI verification must change as one reviewed unit; Git LFS and release-artifact
-indirection are not the current policy.
+Catalog、manifest、hashes、row counts、notices、Docker context and publication candidate change as one
+reviewed release unit. Source identity and licenses come from the manifest and distributed notices.

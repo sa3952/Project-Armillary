@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from contextlib import suppress
 import threading
 from typing import Final, Mapping
 
@@ -10,34 +12,51 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
 MAX_CHART_REQUEST_BYTES: Final = 16 * 1024
-MAX_HOSTED_HEADER_BYTES: Final = 16 * 1024
-# Two pools, because the two classes of traffic fail for different reasons.
-#
-# The compute cap exists because a chart is an order of magnitude more
-# expensive than anything else this service does.  The general cap exists so
-# that concurrency is bounded at all, inside the application's own response
-# lifecycle.  Sharing one four-slot pool between them meant a page bootstrap -
-# a dozen parallel asset GETs - could exhaust the budget reserved for
-# computation and 503 its own stylesheet (`PIA-2026-08-06-001`).
-#
-# The general cap is sized so an ordinary bootstrap cannot reach it: the page
-# requests 12 assets, and a small number of tabs must still fit.  It is not
-# "unlimited" - an unbounded static path would just move the exhaustion into
-# the worker's event loop, where a rejection could no longer carry the
-# application's security headers or closed telemetry.
+MAX_HOSTED_API_HEADER_BYTES: Final = 16 * 1024
+# Separate compute and general pools so expensive JSON work cannot starve a
+# normal page bootstrap; both remain inside the reviewed ASGI response boundary.
 MAX_HOSTED_REQUESTS_PER_WORKER: Final = 32
 MAX_HOSTED_COMPUTE_REQUESTS_PER_WORKER: Final = 4
+# One retry contract for both general and compute admission refusal.
+RETRY_AFTER_SECONDS: Final = 5
+# Bound the gap between body chunks independently of edge buffering.
+CHUNK_RECEIVE_TIMEOUT_SECONDS: Final = 10.0
+API_PATH_PREFIX: Final = "/api/"
 _CHART_PATH: Final = "/api/chart"
+# Body-bounded JSON routes and high-cost compute routes are distinct sets.
 _BOUNDED_JSON_PATHS: Final = frozenset(
     {
         _CHART_PATH,
         "/api/places/search",
     }
 )
+_COMPUTE_PATHS: Final = frozenset({_CHART_PATH})
 BOUNDARY_REASON_STATE_KEY: Final = "armillary.boundary_reason.v1"
+COMPUTE_ENTERED_STATE_KEY: Final = "armillary.compute_entered.v1"
+
+# One vocabulary owns every reason this boundary can place in the request
+# scope.  Call sites still name the reason they observed; this set makes an
+# unregistered new reason fail at the producer instead of disappearing later
+# in telemetry or public documentation.
+BOUNDARY_REASON_CODES: Final = frozenset({
+    "undeclared_host",
+    "unknown_api_path",
+    "unsupported_method",
+    "request_capacity_exhausted",
+    "compute_capacity_exhausted",
+    "request_headers_too_large",
+    "unsupported_media_type",
+    "conflicting_request_framing",
+    "invalid_content_length",
+    "request_body_too_large",
+    "empty_request_body",
+    "request_body_read_timeout",
+})
 
 
 def _mark_boundary_reason(scope: Scope, reason: str) -> None:
+    if reason not in BOUNDARY_REASON_CODES:
+        raise RuntimeError(f"unregistered request boundary reason: {reason}")
     state = scope.get("state")
     if not isinstance(state, dict):
         state = {}
@@ -47,15 +66,52 @@ def _mark_boundary_reason(scope: Scope, reason: str) -> None:
     state[BOUNDARY_REASON_STATE_KEY] = reason
 
 
-class ApiMethodBoundary:
-    """Return an RFC-compliant ``Allow`` header for known API paths.
+def mark_compute_entered(scope: Scope) -> None:
+    state = scope.get("state")
+    if not isinstance(state, dict):
+        state = {}
+        scope["state"] = state
+    state[COMPUTE_ENTERED_STATE_KEY] = True
 
-    The frontend is mounted at ``/`` after the API routes.  Starlette's static
-    mount can therefore answer an unsupported method before the partial API
-    route gets a chance to construct its normal 405 response.  Keep the
-    method map explicit and profile-specific rather than exposing a generic
-    router introspection surface.
+
+def _compute_entered(scope: Scope) -> bool:
+    state = scope.get("state")
+    return isinstance(state, dict) and state.get(COMPUTE_ENTERED_STATE_KEY) is True
+
+
+class DeclaredHostBoundary:
+    """Refuse a request that names a host this deployment does not answer for.
+
+    Admission belongs to the proxy, which strips `Authorization` before
+    forwarding; the application therefore has no authorization of its own and
+    that is deliberate.  What it can do cheaply is notice that it was reached by
+    a route the deployment never declared — the shape a published container port
+    produces, where a scanner sends the address as the host.  A caller who can
+    reach the socket can also set this header, so this catches the accident, not
+    the attacker, and the difference is stated rather than implied.
     """
+
+    def __init__(self, app: ASGIApp, *, expected_host: str | None) -> None:
+        self.app = app
+        self.expected_host = (expected_host or "").strip().lower() or None
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if self.expected_host is not None and scope.get("type") == "http":
+            headers = dict(scope.get("headers") or ())
+            raw = headers.get(b"host", b"").decode("latin-1")
+            host = raw.split(":", 1)[0].strip().lower()
+            if host != self.expected_host:
+                _mark_boundary_reason(scope, "undeclared_host")
+                await _error_response(
+                    404,
+                    "undeclared_host",
+                    "此服務不回應這個主機名稱。",
+                )(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+class ApiMethodBoundary:
 
     def __init__(
         self,
@@ -81,46 +137,54 @@ class ApiMethodBoundary:
             methods = (
                 self.route_methods.get(path) if isinstance(path, str) else None
             )
+            # An unregistered /api path used to fall through to the frontend
+            # asset mount, which answered 405 with no Allow header and a third
+            # body shape.  The API boundary answers for the API prefix.
+            if (
+                methods is None
+                and isinstance(path, str)
+                and path.startswith(API_PATH_PREFIX)
+            ):
+                _mark_boundary_reason(scope, "unknown_api_path")
+                await _error_response(
+                    404,
+                    "unknown_api_path",
+                    "此服務沒有這個 API 路徑。",
+                )(scope, receive, send)
+                return
             if methods is not None and method not in methods:
                 _mark_boundary_reason(scope, "unsupported_method")
-                await JSONResponse(
-                    status_code=405,
-                    headers={"Allow": ", ".join(sorted(methods))},
-                    content={"detail": "Method Not Allowed"},
-                )(scope, receive, send)
+                response = _error_response(
+                    405,
+                    "unsupported_method",
+                    "此路徑不接受這個 HTTP 方法。",
+                )
+                response.headers["Allow"] = ", ".join(sorted(methods))
+                await response(scope, receive, send)
                 return
         await self.app(scope, receive, send)
 
 
-class _RequestBodyTooLarge(Exception):
-    pass
-
-
-def _error_response(status_code: int, code: str, message: str) -> JSONResponse:
+def _error_response(
+    status_code: int,
+    code: str,
+    message: str,
+    *,
+    retry_after_seconds: int | None = None,
+) -> JSONResponse:
+    headers = (
+        {"Retry-After": str(retry_after_seconds)}
+        if retry_after_seconds is not None
+        else None
+    )
     return JSONResponse(
         status_code=status_code,
         content={"detail": {"code": code, "message": message}},
+        headers=headers,
     )
 
 
 class RequestCapacityBoundary:
-    """Reject excess requests inside the privacy/header boundary.
-
-    Uvicorn's ``--limit-concurrency`` rejects below ASGI, so those responses
-    cannot receive application security headers or closed telemetry.  Keeping
-    the per-worker caps here preserves bounded concurrency while making every
-    rejection traverse the application's reviewed response lifecycle.
-
-    Each request occupies exactly one pool, chosen by path: the expensive JSON
-    endpoints draw on the compute pool, everything else on the general pool.
-    One request never holds both, so saturating either class leaves the other
-    class answering normally.
-
-    Residual, deliberately not fixed here: place search and chart share the
-    compute pool, so a search burst can still delay a chart.  Both are already
-    bounded and no observed failure separates them; splitting a third pool
-    without that evidence would be speculation (CG-08).
-    """
 
     def __init__(
         self,
@@ -150,7 +214,7 @@ class RequestCapacityBoundary:
             await self.app(scope, receive, send)
             return
 
-        compute = scope.get("path") in _BOUNDED_JSON_PATHS
+        compute = scope.get("path") in _COMPUTE_PATHS
         with self._lock:
             if compute:
                 accepted = self._active_compute < self.max_compute_concurrent
@@ -161,27 +225,90 @@ class RequestCapacityBoundary:
                 if accepted:
                     self._active += 1
         if not accepted:
-            _mark_boundary_reason(
-                scope,
+            error_code = (
                 "compute_capacity_exhausted"
                 if compute
-                else "request_capacity_exhausted",
+                else "request_capacity_exhausted"
+            )
+            _mark_boundary_reason(
+                scope,
+                error_code,
             )
             await _error_response(
                 503,
-                "request_capacity_exhausted",
+                error_code,
                 "服務目前忙碌，請稍後重試。",
+                retry_after_seconds=RETRY_AFTER_SECONDS,
             )(scope, receive, send)
             return
 
         try:
-            await self.app(scope, receive, send)
+            if compute:
+                await self._run_compute(scope, receive, send)
+            else:
+                await self.app(scope, receive, send)
         finally:
             with self._lock:
                 if compute:
                     self._active_compute -= 1
                 else:
                     self._active -= 1
+
+    async def _run_compute(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        queue: asyncio.Queue[Message] = asyncio.Queue(maxsize=1)
+        disconnected = asyncio.Event()
+
+        async def pump() -> None:
+            while True:
+                message = await receive()
+                if message["type"] == "http.disconnect":
+                    disconnected.set()
+                    if not queue.full():
+                        queue.put_nowait(message)
+                    return
+                await queue.put(message)
+
+        async def receive_brokered() -> Message:
+            if disconnected.is_set() and queue.empty():
+                return {"type": "http.disconnect"}
+            return await queue.get()
+
+        pump_task = asyncio.create_task(pump())
+        app_task: asyncio.Future[None] = asyncio.ensure_future(
+            self.app(scope, receive_brokered, send)
+        )
+        try:
+            done, _pending = await asyncio.wait(
+                {pump_task, app_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if app_task in done:
+                await app_task
+                return
+            error = pump_task.exception()
+            if error is not None:
+                app_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await app_task
+                raise error
+            if not _compute_entered(scope):
+                app_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await app_task
+                return
+            await app_task
+        finally:
+            for task in (pump_task, app_task):
+                if not task.done():
+                    task.cancel()
+            for task in (pump_task, app_task):
+                with suppress(asyncio.CancelledError):
+                    await task
 
 
 def _header_values(scope: Scope, name: bytes) -> list[bytes]:
@@ -215,13 +342,6 @@ def _content_length(scope: Scope) -> int | None:
 
 
 def _has_conflicting_framing(scope: Scope) -> bool:
-    """Reject a body framed by both Content-Length and Transfer-Encoding.
-
-    RFC 9112 forbids the combination.  A parser or proxy can normalize the
-    ambiguity before ASGI exposes it, so relying on one layer's precedence
-    would make the application contract parser-dependent.  Rejecting the
-    combination here keeps the application's own framing contract explicit.
-    """
 
     return bool(
         _header_values(scope, b"content-length")
@@ -281,7 +401,7 @@ class ChartRequestBoundary:
             await self.app(scope, receive, send)
             return
 
-        if _header_bytes(scope) > MAX_HOSTED_HEADER_BYTES:
+        if _header_bytes(scope) > MAX_HOSTED_API_HEADER_BYTES:
             _mark_boundary_reason(scope, "request_headers_too_large")
             await _error_response(
                 431,
@@ -349,7 +469,18 @@ class ChartRequestBoundary:
         buffered: list[Message] = []
         received_bytes = 0
         while True:
-            message = await receive()
+            try:
+                message = await asyncio.wait_for(
+                    receive(), timeout=CHUNK_RECEIVE_TIMEOUT_SECONDS
+                )
+            except TimeoutError:
+                _mark_boundary_reason(scope, "request_body_read_timeout")
+                await _error_response(
+                    408,
+                    "request_body_read_timeout",
+                    "讀取請求內容逾時。",
+                )(scope, receive, send)
+                return
             if message["type"] != "http.request":
                 buffered.append(message)
                 break
@@ -369,6 +500,9 @@ class ChartRequestBoundary:
         async def receive_buffered() -> Message:
             if buffered:
                 return buffered.pop(0)
-            return {"type": "http.disconnect"}
+            # Once the bounded body has been replayed, preserve the real ASGI
+            # receive channel.  Fabricating disconnect here made every normal
+            # request look abandoned to downstream admission control.
+            return await receive()
 
         await self.app(scope, receive_buffered, send)

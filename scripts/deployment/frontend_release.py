@@ -4,36 +4,41 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date
-import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
 import tempfile
 
+from scripts.tools.source_tree_identity import sha256_file as _sha256
+
 try:
-    # The governed test/runtime environment exposes backend/ as the app package
-    # root. Prefer that canonical import so prior test modules cannot shadow the
-    # namespace-package name ``backend``.
+    # Prefer the canonical app package; clean public checkouts use the fallback.
     from app.frontend_release import (
         combined_release_id as _runtime_combined_release_id,
+        artifact_digest as _runtime_artifact_digest,
+        canonical_json_bytes,
         exact_contract as _runtime_exact_contract,
+        FORMAL_LEGAL_FIELDS,
+        load_publication_evidence,
+        REVISION_RE,
+        SOURCE_URL_PREFIX,
         verify_release as _runtime_verify_release,
     )
     from app.frontend_assets import discover_source_assets
 except ModuleNotFoundError:
-    # The backend package is not installed for a clean public-source CLI
-    # invocation started at the repository root.
-    # Add the application package root, but retain one canonical module name so
-    # static analysis cannot load the same source as both app.* and backend.app.*.
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
     from app.frontend_release import (
         combined_release_id as _runtime_combined_release_id,
+        artifact_digest as _runtime_artifact_digest,
+        canonical_json_bytes,
         exact_contract as _runtime_exact_contract,
+        FORMAL_LEGAL_FIELDS,
+        load_publication_evidence,
+        REVISION_RE,
+        SOURCE_URL_PREFIX,
         verify_release as _runtime_verify_release,
     )
     from app.frontend_assets import discover_source_assets
@@ -41,36 +46,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_NAME = "frontend-release.json"
-SOURCE_URL_PREFIX = "https://github.com/sa3952/Project-Armillary/tree/"
-SOURCE_ARCHIVE_URL_PREFIX = "https://github.com/sa3952/Project-Armillary/archive/"
 FORMAL_LEGAL_CONTRACT = Path("docs/publication/formal_legal_release_copy.json")
-FORMAL_LEGAL_FIELDS = frozenset({
-    "effective_date",
-    "release_version",
-    "public_revision",
-    "source_archive_url",
-    "source_archive_sha256",
-})
-_REVISION = re.compile(r"^[0-9a-f]{40}$")
-_DIGEST = re.compile(r"^[0-9a-f]{64}$")
-_RELEASE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-
-
-def _canonical_bytes(value: object) -> bytes:
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def validate_publication_receipt(
@@ -79,61 +55,7 @@ def validate_publication_receipt(
     expected_revision: str,
 ) -> dict[str, str]:
     """Consume evidence of publication instead of an operator assertion."""
-    metadata = path.lstat()
-    if (
-        not path.is_file()
-        or path.is_symlink()
-        or metadata.st_size > 32 * 1024
-    ):
-        raise ValueError("Corresponding Source publication receipt is unsafe")
-    try:
-        receipt = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        raise ValueError(
-            f"Corresponding Source publication receipt is unreadable: {error}"
-        ) from None
-    expected_keys = {
-        "schema_version",
-        "status",
-        "effective_date",
-        "release_version",
-        "public_source_revision",
-        "source_url",
-        "source_archive_url",
-        "source_archive_sha256",
-        "anonymous_checkout_sha256",
-        "evidence_sha256",
-    }
-    if not isinstance(receipt, dict) or set(receipt) != expected_keys:
-        raise ValueError("Corresponding Source publication receipt key set is invalid")
-    try:
-        parsed_date = date.fromisoformat(str(receipt.get("effective_date", "")))
-    except ValueError:
-        parsed_date = None
-    if (
-        receipt.get("schema_version")
-        != "corresponding-source-publication-receipt-v1"
-        or receipt.get("status") != "published_anonymously_reachable"
-        or receipt.get("public_source_revision") != expected_revision
-        or receipt.get("source_url") != f"{SOURCE_URL_PREFIX}{expected_revision}"
-        or receipt.get("source_archive_url")
-        != f"{SOURCE_ARCHIVE_URL_PREFIX}{expected_revision}.tar.gz"
-        or parsed_date is None
-        or parsed_date.isoformat() != receipt.get("effective_date")
-        or not _RELEASE_VERSION.fullmatch(str(receipt.get("release_version", "")))
-        or any(
-            not _DIGEST.fullmatch(str(receipt.get(key, "")))
-            for key in (
-                "source_archive_sha256",
-                "anonymous_checkout_sha256",
-                "evidence_sha256",
-            )
-        )
-    ):
-        raise ValueError(
-            "Corresponding Source publication receipt identity or evidence is invalid"
-        )
-    return {key: str(receipt[key]) for key in expected_keys}
+    return load_publication_evidence(path, expected_revision=expected_revision)
 
 
 def formal_legal_release_fields(
@@ -159,7 +81,7 @@ def formal_legal_release_fields(
         or set(machine_fields) != FORMAL_LEGAL_FIELDS
         or any(
             not isinstance(item, dict)
-            or item.get("owner") != "S21 publication/frontend release producer"
+            or item.get("owner") != "verified publication/frontend release producer"
             or item.get("source_value") is not None
             for item in machine_fields.values()
         )
@@ -204,13 +126,7 @@ def _manifest_payload(
         "artifact_type": "classical-astrology-frontend-release",
         "frontend_public_source_revision": revision,
         "source_url": f"{SOURCE_URL_PREFIX}{revision}",
-        # The manifest is immutable, so an unresolvable URL in it is a false
-        # statement that can never be corrected in place.  The Corresponding
-        # Source is not published yet (`PIA-2026-08-06-011`), and building a
-        # release before it is would bake in exactly the claim
-        # `PIA-2026-08-06-010` refused to make in the third-party notices.
-        # The status is derived from a verified receipt.  A CLI boolean used to
-        # let the builder assert publication and then discard the evidence.
+        # Only a verified publication receipt may make an immutable public claim.
         "source_url_status": (
             "published_and_expected_anonymously_reachable"
             if publication_evidence is not None
@@ -227,10 +143,6 @@ def _manifest_payload(
     }
 
 
-def _artifact_digest(payload: dict[str, object]) -> str:
-    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
-
-
 def build_release(
     *,
     source_root: Path,
@@ -241,7 +153,7 @@ def build_release(
 ) -> dict[str, object]:
     source_root = source_root.resolve()
     output_parent = Path(os.path.abspath(output_parent))
-    if not _REVISION.fullmatch(public_source_revision):
+    if not REVISION_RE.fullmatch(public_source_revision):
         raise ValueError("frontend public source revision must be 40 lowercase hex")
     publication_evidence = (
         validate_publication_receipt(
@@ -314,10 +226,10 @@ def build_release(
             publication_evidence=publication_evidence,
             legal_release_fields=legal_release_fields,
         )
-        digest = _artifact_digest(payload)
+        digest = _runtime_artifact_digest(payload)
         manifest = {**payload, "artifact_digest": digest}
         manifest_path = temporary / MANIFEST_NAME
-        manifest_path.write_bytes(_canonical_bytes(manifest) + b"\n")
+        manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
         os.chmod(manifest_path, 0o444)
         for directory in sorted(
             (path for path in temporary.rglob("*") if path.is_dir()),
@@ -351,19 +263,7 @@ def verify_release(
 
 
 
-def combined_release_id(
-    *,
-    backend_image_id: str,
-    backend_public_source_revision: str,
-    frontend_artifact_digest: str,
-    frontend_public_source_revision: str,
-) -> str:
-    return _runtime_combined_release_id(
-        backend_image_id=backend_image_id,
-        backend_public_source_revision=backend_public_source_revision,
-        frontend_artifact_digest=frontend_artifact_digest,
-        frontend_public_source_revision=frontend_public_source_revision,
-    )
+combined_release_id = _runtime_combined_release_id
 
 
 

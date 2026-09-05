@@ -12,6 +12,16 @@ from .trace import Trace
 DELTA_T_FAR_EPOCH_YEAR = 2100
 
 
+def jd_ut_to_iso_utc(jd_ut: float) -> str:
+    year, month, day, hour, minute, second = swe.jdut1_to_utc(
+        jd_ut, swe.GREG_CAL
+    )
+    value = dtmod.datetime(
+        year, month, day, hour, minute, tzinfo=dtmod.timezone.utc
+    ) + dtmod.timedelta(seconds=second)
+    return value.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
 class NonexistentLocalTimeError(ValueError):
     """Raised when an IANA-zone wall-clock time has no corresponding UTC instant."""
 
@@ -29,6 +39,24 @@ def _required_utc_offset_hours(value: dtmod.datetime) -> float:
     if offset is None:
         raise RuntimeError("timezone-aware datetime has no UTC offset")
     return offset.total_seconds() / 3600.0
+
+
+def _input_local_label(dt_input: DateTimeInput) -> str:
+    """Render one canonical centisecond label without a false second 60."""
+
+    if dt_input.second == 60:
+        return (
+            f"{dt_input.year:04d}-{dt_input.month:02d}-{dt_input.day:02d} "
+            f"{dt_input.hour:02d}:{dt_input.minute:02d}:60.00"
+        )
+    value = dtmod.datetime(
+        dt_input.year,
+        dt_input.month,
+        dt_input.day,
+        dt_input.hour,
+        dt_input.minute,
+    ) + dtmod.timedelta(seconds=dt_input.second, milliseconds=5)
+    return value.strftime("%Y-%m-%d %H:%M:%S.") + f"{value.microsecond // 10_000:02d}"
 
 
 def _to_utc_datetime(
@@ -156,8 +184,7 @@ def compute_time_conversion(
         "本地時間 -> UTC",
         formula="UTC = 本地時間 - 時區偏移",
         inputs={
-            "本地時間": f"{dt_input.year:04d}-{dt_input.month:02d}-{dt_input.day:02d} "
-                       f"{dt_input.hour:02d}:{dt_input.minute:02d}:{dt_input.second:05.2f}",
+            "本地時間": _input_local_label(dt_input),
             "時區": tz_label,
             "時區偏移(小時)": round(offset_hours, 4),
         },
@@ -258,8 +285,7 @@ def compute_time_conversion(
     )
 
     return {
-        "input_local_time": f"{dt_input.year:04d}-{dt_input.month:02d}-{dt_input.day:02d} "
-                             f"{dt_input.hour:02d}:{dt_input.minute:02d}:{dt_input.second:05.2f}",
+        "input_local_time": _input_local_label(dt_input),
         "input_semantics": input_semantics,
         "timezone_label": tz_label,
         "utc_offset_hours": offset_hours,

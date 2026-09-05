@@ -7,8 +7,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.error import URLError
+
+from tests.backend import http_request as _request
+from tests.backend import minimal_chart_payload
+from tests.backend import unused_local_port as _unused_local_port
 
 
 BACKEND_ROOT = str(Path(__file__).resolve().parents[2] / "backend")
@@ -16,46 +19,34 @@ PROFILE_ENV = "CLASSICAL_ASTROLOGY_PROFILE"
 CANARY = "HOSTED_PRIVACY_CANARY_842761"
 
 
-def _unused_local_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
-
-
 def _payload() -> dict:
-    return {
-        "datetime": {
-            "year": 1997,
-            "month": 8,
-            "day": 17,
-            "hour": 9,
-            "minute": 42,
-            "second": 0,
-        },
-        "timezone": {"mode": "iana", "iana_name": "Asia/Taipei"},
-        "location": {
-            "latitude": 24.1477,
-            "longitude": 120.6736,
-            "altitude_m": 80,
-        },
-    }
+    return minimal_chart_payload(
+        year=1997, month=8, day=17, hour=9, minute=42,
+        latitude=24.1477, longitude=120.6736, altitude_m=80,
+    )
 
 
-def _request(
-    url: str,
-    *,
-    body: bytes | None = None,
-    content_type: str | None = None,
-) -> tuple[int, bytes]:
-    headers = {}
-    if content_type is not None:
-        headers["Content-Type"] = content_type
-    request = Request(url, data=body, headers=headers)
-    try:
-        with urlopen(request, timeout=20) as response:
-            return response.status, response.read()
-    except HTTPError as error:
-        return error.code, error.read()
+def _raw_conflicting_framing_request(port: int, body: bytes) -> tuple[int, bytes]:
+    """Send the wire representation that normal HTTP clients normalize away."""
+
+    request = (
+        b"POST /api/chart HTTP/1.1\r\n"
+        b"Host: 127.0.0.1\r\n"
+        b"Content-Type: application/json\r\n"
+        + f"Content-Length: {len(body)}\r\n".encode()
+        + b"Transfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
+        + f"{len(body):x}\r\n".encode()
+        + body
+        + b"\r\n0\r\n\r\n"
+    )
+    with socket.create_connection(("127.0.0.1", port), timeout=5) as client:
+        client.sendall(request)
+        response = b""
+        while chunk := client.recv(65536):
+            response += chunk
+    head, response_body = response.split(b"\r\n\r\n", 1)
+    status = int(head.split(b"\r\n", 1)[0].split()[1])
+    return status, response_body
 
 
 def _wait_until_ready(process: subprocess.Popen, base_url: str) -> None:
@@ -121,6 +112,10 @@ def test_real_hosted_server_success_rejections_and_process_output_are_bounded():
             body=json.dumps(_payload()).encode(),
             content_type="application/json",
         )
+        conflicting_framing = _raw_conflicting_framing_request(
+            port,
+            json.dumps(_payload()).encode(),
+        )
         wrong_type = _request(
             f"{base_url}/api/chart",
             body=CANARY.encode(),
@@ -161,12 +156,22 @@ def test_real_hosted_server_success_rejections_and_process_output_are_bounded():
         output = _stop_and_read(process)
 
     assert success[0] == 200
+    assert conflicting_framing[0] == 400
+    assert json.loads(conflicting_framing[1])["detail"]["code"] == (
+        "conflicting_request_framing"
+    )
     assert wrong_type[0] == 415
-    assert malformed[0] == 422
+    # Malformed syntax and rejected values are different refusals and now say
+    # so: 400 for a body the parser never read, 422 for one it did.
+    assert malformed[0] == 400
+    assert json.loads(malformed[1])["detail"][0]["type"] == "json_invalid"
     assert invalid[0] == 422
     assert oversized[0] == 413
-    assert trailing_slash[0] == 405
-    assert future_child[0] == 405
+    # Answered by the API boundary rather than the asset mount; 404 is the
+    # accurate refusal for a path that is not a route.
+    assert trailing_slash[0] == 404
+    assert json.loads(trailing_slash[1])["detail"]["code"] == "unknown_api_path"
+    assert future_child[0] == 404
     assert lookalike[0] == 404
     assert openapi[0] == 404
     assert runtime[0] == 404
@@ -174,8 +179,8 @@ def test_real_hosted_server_success_rejections_and_process_output_are_bounded():
     assert CANARY not in invalid[1].decode()
     assert CANARY not in output
     assert '"POST /api/chart HTTP/' not in output
-    assert output.count('"route":"/api/chart"') == 5
-    assert output.count('"route":"frontend_or_unmatched"') == 3
+    assert output.count('"route":"/api/chart"') == 6
+    assert output.count('"route":"frontend_or_unmatched"') == 5
     assert "Traceback (most recent call last)" not in output
 
 
@@ -227,11 +232,10 @@ def test_real_hosted_server_unexpected_error_is_generic_and_not_logged():
     assert "Traceback (most recent call last)" not in output
 
 
-def test_real_local_server_sanitizes_validation_input_and_nonfinite_numbers():
-    """The response boundary is private in local mode too, not only hosted."""
+def test_real_supported_server_sanitizes_validation_input_and_nonfinite_numbers():
 
     port = _unused_local_port()
-    environment = {**os.environ, PROFILE_ENV: "local"}
+    environment = {**os.environ, PROFILE_ENV: "private_alpha"}
     process = subprocess.Popen(
         [
             sys.executable, "-m", "uvicorn", "app.main:app", "--http", "h11", "--host",

@@ -1,10 +1,4 @@
-"""Backend-authored, versioned receipt for one chart calculation.
-
-The dossier records validated inputs, effective policy, runtime provenance, and
-structured warnings.  It deliberately does not duplicate the calculated chart
-tables or the full trace: those remain canonical in their existing response
-paths.
-"""
+"""Backend-authored receipt for validated inputs, policy and provenance."""
 
 from __future__ import annotations
 
@@ -17,6 +11,13 @@ import swisseph as swe
 
 from ..config import PRODUCT_YEAR_RANGE
 from ..ephemeris import EPHE_DIR
+from ..frontend_release import (
+    CANONICAL_JSON_ENSURE_ASCII,
+    CANONICAL_JSON_SEPARATORS,
+    CANONICAL_JSON_SORT_KEYS,
+    canonical_json_bytes,
+)
+from ..privacy_receipt import privacy_attestation
 from . import essential_dignities
 
 
@@ -126,6 +127,19 @@ def _object_provenance(item: dict) -> dict:
     }
 
 
+def _execution_status(
+    requested: bool,
+    *,
+    available: bool,
+    applicable: bool = True,
+) -> str:
+    """Map one observable module state to the public closed vocabulary."""
+
+    if not requested:
+        return "not_requested"
+    return "computed" if applicable and available else "not_applicable"
+
+
 def _module_status(
     options,
     derived_methods: dict,
@@ -152,42 +166,32 @@ def _module_status(
     parallax_moon = astronomical_data.get("parallax_moon") or {}
     essential_dignities = derived_methods.get("essential_dignities") or {}
 
-    if sect is None:
-        sect_status = (
-            "not_applicable"
-            if options.include_lots and not options.include_houses
-            else "not_requested"
-        )
-    elif sect.get("is_day") is None:
-        sect_status = "not_applicable"
-    else:
-        sect_status = "computed"
-
-    if not options.include_lots:
-        lots_status = "not_requested"
-    elif not lots or lots.get("fortune") is None or lots.get("spirit") is None:
-        lots_status = "not_applicable"
-    else:
-        lots_status = "computed"
-
-    if not options.include_void_of_course:
-        void_of_course_status = "not_requested"
-    elif (
-        not void_of_course
-        or void_of_course.get("is_void_of_course") is None
-    ):
-        void_of_course_status = "not_applicable"
-    else:
-        void_of_course_status = "computed"
-
-    if not options.include_aspects:
-        aspects_status = "not_requested"
-    elif not aspects or not aspects.get("pairs"):
-        # 參與者不足兩個時沒有任何組合可比較（例如 heliocentric 模式下太陽退化為
-        # null）。這與「沒有要求」是不同的情況，必須分開回報。
-        aspects_status = "not_applicable"
-    else:
-        aspects_status = "computed"
+    sect_status = _execution_status(
+        options.include_lots,
+        applicable=options.include_houses,
+        available=sect is not None and sect.get("is_day") is not None,
+    )
+    lots_status = _execution_status(
+        options.include_lots,
+        applicable=options.include_houses,
+        available=bool(
+            lots
+            and lots.get("fortune") is not None
+            and lots.get("spirit") is not None
+        ),
+    )
+    void_of_course_status = _execution_status(
+        options.include_void_of_course,
+        available=bool(
+            void_of_course
+            and void_of_course.get("is_void_of_course") is not None
+        ),
+    )
+    # Fewer than two participants is not_applicable, not a silent empty result.
+    aspects_status = _execution_status(
+        options.include_aspects,
+        available=bool(aspects and aspects.get("pairs")),
+    )
 
     return {
         "core_positions": "computed",
@@ -196,77 +200,54 @@ def _module_status(
         ),
         "planet_in_house": planet_in_house["execution_status"],
         "aspects": aspects_status,
-        "fixed_stars": (
-            "computed" if options.include_fixed_stars else "not_requested"
+        "fixed_stars": _execution_status(
+            options.include_fixed_stars, available=True
         ),
-        "outer_planets": (
-            "computed" if options.include_outer_planets else "not_requested"
+        "outer_planets": _execution_status(
+            options.include_outer_planets, available=True
         ),
-        "chiron": (
-            "not_requested"
-            if not options.include_chiron
-            else "computed"
-            if chiron is not None and chiron.get("longitude") is not None
-            else "not_applicable"
+        "chiron": _execution_status(
+            options.include_chiron,
+            available=chiron is not None and chiron.get("longitude") is not None,
         ),
-        "south_nodes": (
-            "not_requested"
-            if not options.include_south_nodes
-            else "computed"
-            if south_nodes and all(
+        "south_nodes": _execution_status(
+            options.include_south_nodes,
+            available=bool(south_nodes) and all(
                 node.get("longitude") is not None for node in south_nodes
-            )
-            else "not_applicable"
+            ),
         ),
-        "anti_vertex": (
-            "not_requested"
-            if not options.include_anti_vertex
-            else "computed"
-            if anti_vertex is not None
-            else "not_applicable"
+        "anti_vertex": _execution_status(
+            options.include_anti_vertex,
+            available=(
+                anti_vertex is not None
+                and anti_vertex.get("longitude") is not None
+            ),
         ),
-        "lunar_apsides": (
-            "not_requested"
-            if not options.include_lilith_priapus
-            else "computed"
-            if lunar_apsides.get("available")
-            else "not_applicable"
+        "lunar_apsides": _execution_status(
+            options.include_lilith_priapus,
+            available=bool(lunar_apsides.get("available")),
         ),
-        "parallax_moon": (
-            "not_requested"
-            if options.moon_position_profile == "global_computation_mode"
-            else "computed"
-            if parallax_moon.get("available")
-            else "not_applicable"
+        "parallax_moon": _execution_status(
+            options.moon_position_profile != "global_computation_mode",
+            available=bool(parallax_moon.get("available")),
         ),
-        "essential_dignities": (
-            "not_requested"
-            if not essential_dignities
-            else "computed"
-            if essential_dignities.get("available")
-            else "not_applicable"
+        "essential_dignities": _execution_status(
+            bool(essential_dignities),
+            available=bool(essential_dignities.get("available")),
         ),
-        "antiscia": (
-            "computed" if options.include_antiscia else "not_requested"
-        ),
+        "antiscia": _execution_status(options.include_antiscia, available=True),
         # Sect reflects actual execution rather than merely echoing the request.
         # Lots requires Sect; VOC is independent and must not request it.
         "sect": sect_status,
         "lots": lots_status,
         "void_of_course": void_of_course_status,
-        "declination_aspects": (
-            "computed"
-            if options.include_declination_aspects
-            else "not_requested"
+        "declination_aspects": _execution_status(
+            options.include_declination_aspects, available=True
         ),
         "lunar_phases": event_module_availability["lunar_phases"]["status"],
-        "eclipses": (
-            "computed" if options.include_eclipses else "not_requested"
-        ),
-        "rise_set_transits": (
-            "computed"
-            if options.include_rise_set_transits
-            else "not_requested"
+        "eclipses": _execution_status(options.include_eclipses, available=True),
+        "rise_set_transits": _execution_status(
+            options.include_rise_set_transits, available=True
         ),
     }
 
@@ -312,13 +293,7 @@ def _option_state_receipts(
     event_module_availability: dict,
     derived_methods: dict,
 ) -> dict:
-    """Closed per-option execution receipts for the exact OptionsInput set.
-
-    ``requested_options`` preserves values, but a value alone cannot say
-    whether its consumer ran or whether a dependent option was ignored.  This
-    table keeps input presence separate from execution state and is deliberately
-    exhaustive: the contract test compares its keys with ``OptionsInput``.
-    """
+    """Closed execution receipts for the exact OptionsInput set."""
 
     options = request.options
     explicit = set(options.model_fields_set)
@@ -328,26 +303,37 @@ def _option_state_receipts(
         name: str,
         *,
         requested: bool,
-        executed: bool,
-        applicable: bool,
-        available: bool,
-        source: str | None,
-        reason_code: str | None,
-        response_paths: list[str],
+        status: str,
+        path: str,
+        reason: str | None = None,
+        executed: bool | None = None,
+        source_path: str | None = None,
     ) -> None:
+        available = requested and status == "computed"
+        applicable = requested and status != "not_applicable"
         receipts[name] = {
             "input_presence": "explicit" if name in explicit else "defaulted",
             "requested_value": getattr(options, name),
             "requested": requested,
-            "executed": executed,
+            "executed": available if executed is None else executed,
             "applicable": applicable,
             "available": available,
-            "source": source,
-            "reason_code": reason_code,
-            "response_paths": response_paths,
+            "source": (
+                source_path or path
+                if (available if executed is None else executed)
+                else None
+            ),
+            "reason_code": (
+                "option_not_requested"
+                if not requested
+                else reason or "module_not_applicable"
+                if not applicable
+                else None
+            ),
+            "response_paths": [path],
         }
 
-    module_toggles = {
+    toggles = {
         "include_houses": ("house_division", "derived_methods.house_division"),
         "include_fixed_stars": ("fixed_stars", "astronomical_data.fixed_stars"),
         "include_lots": ("lots", "derived_methods.lots"),
@@ -364,7 +350,7 @@ def _option_state_receipts(
         "include_aspects": ("aspects", "derived_methods.aspects"),
         "include_anti_vertex": ("anti_vertex", "astronomical_data.extra_angles.angles.anti_vertex"),
     }
-    reason_by_module = {
+    reasons = {
         "house_division": "house_calculation_disabled",
         "lots": (derived_methods.get("lots") or {}).get("reason_code"),
         "void_of_course": (derived_methods.get("void_of_course") or {}).get("reason_code"),
@@ -372,117 +358,58 @@ def _option_state_receipts(
         "anti_vertex": "house_calculation_not_executed",
         "lunar_phases": event_module_availability["lunar_phases"].get("reason_code"),
     }
-    for option_name, (module_name, response_path) in module_toggles.items():
+    for option_name, (module_name, path) in toggles.items():
         requested = bool(getattr(options, option_name))
         status = modules[module_name]
-        # Lunar-phase not_applicable is an attempted upstream search failure;
-        # the other not_applicable states are skipped incompatible consumers.
         attempted_failure = (
             module_name == "lunar_phases"
             and requested
             and status == "not_applicable"
         )
-        executed = status == "computed" or attempted_failure
-        applicable = requested and status != "not_applicable"
-        available = status == "computed"
-        reason = None
-        if not requested:
-            reason = "option_not_requested"
-        elif status == "not_applicable":
-            reason = reason_by_module.get(module_name) or "module_not_applicable"
         add(
             option_name,
             requested=requested,
-            executed=executed,
-            applicable=applicable,
-            available=available,
-            source=response_path if executed else None,
-            reason_code=reason,
-            response_paths=[response_path],
+            status=status,
+            path=path,
+            reason=reasons.get(module_name),
+            executed=status == "computed" or attempted_failure,
         )
 
-    # Domicile/exaltation is one independently selectable dignity component;
-    # the aggregate essential_dignities module may still run for another profile.
-    dignity_requested = bool(options.include_domicile_exaltation)
     dignity_status = modules["essential_dignities"]
-    dignity_available = dignity_requested and dignity_status == "computed"
     dignity_reason = (derived_methods.get("essential_dignities") or {}).get(
         "reason_code"
     )
     add(
         "include_domicile_exaltation",
-        requested=dignity_requested,
-        executed=dignity_available,
-        applicable=dignity_requested and dignity_status != "not_applicable",
-        available=dignity_available,
-        source=("derived_methods.essential_dignities.profile_results" if dignity_available else None),
-        reason_code=(
-            "option_not_requested"
-            if not dignity_requested
-            else dignity_reason
-            if dignity_status == "not_applicable"
-            else None
-        ),
-        response_paths=["derived_methods.essential_dignities"],
+        requested=bool(options.include_domicile_exaltation),
+        status=dignity_status,
+        path="derived_methods.essential_dignities",
+        reason=dignity_reason,
+        source_path="derived_methods.essential_dignities.profile_results",
     )
 
-    # Extra angles has a structured receipt in astronomical_data even though
-    # the legacy modules summary only names Anti-Vertex separately.
     extra_requested = bool(options.include_extra_angles)
-    extra_applicable = extra_requested and bool(options.include_houses)
     add(
         "include_extra_angles",
         requested=extra_requested,
-        executed=extra_applicable,
-        applicable=extra_applicable,
-        available=extra_applicable,
-        source=("astronomical_data.extra_angles" if extra_applicable else None),
-        reason_code=(
-            "option_not_requested"
-            if not extra_requested
-            else "house_calculation_not_executed"
-            if not options.include_houses
-            else None
-        ),
-        response_paths=["astronomical_data.extra_angles"],
+        status=("computed" if options.include_houses else "not_applicable"),
+        path="astronomical_data.extra_angles",
+        reason="house_calculation_not_executed",
     )
 
-    # Profile-valued modules whose non-default value is itself the request.
-    moon_requested = True
     moon_status = modules["parallax_moon"]
     moon_is_global = options.moon_position_profile == "global_computation_mode"
-    moon_executed = moon_is_global or moon_status == "computed"
-    moon_available = moon_is_global or moon_status == "computed"
     add(
         "moon_position_profile",
-        requested=moon_requested,
-        executed=moon_executed,
-        applicable=moon_is_global or moon_status != "not_applicable",
-        available=moon_available,
-        source=(
+        requested=True,
+        status="computed" if moon_is_global else moon_status,
+        path=(
             "astronomical_data.bodies"
             if moon_is_global
             else "astronomical_data.parallax_moon"
-            if moon_status == "computed"
-            else None
         ),
-        reason_code=(
-            "module_not_applicable"
-            if not moon_is_global and moon_status == "not_applicable"
-            else None
-        ),
-        response_paths=[
-            (
-                "astronomical_data.bodies"
-                if moon_is_global
-                else "astronomical_data.parallax_moon"
-            )
-        ],
     )
 
-    # Configuration options inherit their parent module state.  ``selected``
-    # distinguishes None-valued optional profiles from defaulted profiles that
-    # really are executed (house system, aspect set, partile convention, etc.).
     configurations = {
         "house_system": (bool(options.include_houses), modules["house_division"], "derived_methods.house_division"),
         "declination_aspect_orb_degrees": (bool(options.include_declination_aspects), modules["declination_aspects"], "derived_methods.declination_aspects"),
@@ -498,26 +425,19 @@ def _option_state_receipts(
         "triplicity_profile": (options.triplicity_profile is not None, modules["essential_dignities"], "derived_methods.essential_dignities.profile_results"),
     }
     for name, (selected, status, path) in configurations.items():
-        available = bool(selected and status == "computed")
         add(
             name,
             requested=bool(selected),
-            executed=available,
-            applicable=bool(selected and status != "not_applicable"),
-            available=available,
-            source=path if available else None,
-            reason_code=(
-                "configuration_not_selected"
-                if not selected
-                else dignity_reason
-                if status == "not_applicable"
-                and name in {"bounds_profile", "decan_profile", "triplicity_profile"}
+            status=status,
+            path=path,
+            reason=(
+                dignity_reason
+                if name in {"bounds_profile", "decan_profile", "triplicity_profile"}
                 else "module_not_applicable"
-                if status == "not_applicable"
-                else None
             ),
-            response_paths=[path],
         )
+        if not selected:
+            receipts[name]["reason_code"] = "configuration_not_selected"
 
     dependent_flags = {
         "antiscia_include_nodes": (bool(options.include_antiscia), modules["antiscia"], "derived_geometry.antiscia.scope"),
@@ -528,23 +448,20 @@ def _option_state_receipts(
     }
     for name, (parent_applicable, status, path) in dependent_flags.items():
         requested = bool(getattr(options, name))
-        applicable = requested and parent_applicable and status != "not_applicable"
-        available = applicable and status == "computed"
+        reason = "parent_module_not_requested_or_not_applicable"
+        executed = None
+        if name == "include_aspect_perfection" and parent_applicable and requested:
+            perfection = (derived_methods.get("aspects") or {}).get("perfection", {})
+            status = str(perfection.get("status") or "not_applicable")
+            reason = perfection.get("reason_code") or "module_not_applicable"
+            executed = bool(perfection.get("executed"))
         add(
             name,
             requested=requested,
-            executed=available,
-            applicable=applicable,
-            available=available,
-            source=path if available else None,
-            reason_code=(
-                "option_not_requested"
-                if not requested
-                else "parent_module_not_requested_or_not_applicable"
-                if not applicable
-                else None
-            ),
-            response_paths=[path],
+            status=(status if parent_applicable else "not_applicable"),
+            path=path,
+            reason=reason,
+            executed=executed,
         )
 
     return receipts
@@ -566,15 +483,13 @@ def _warning(
     }
 
 
-# 邊界警告的門檻。三者都是「呈現決定」而非方法裁決：它們不改變任何計算結果，
-# 只標示哪些結果對出生時刻或座標的微小誤差特別敏感。門檻取值理由見各常數註解。
-#
-# 星座邊界 1.0°：星體以最快的月亮計約需 1.6 小時走完，以太陽計約一日。落在此範圍內
-# 表示星座歸屬對出生日期／時刻的常見誤差敏感。
+# Presentation thresholds flag sensitivity without changing calculations.
+# Sebastian ruled a method-layer signal, not a refusal, with this threshold on
+# 2026-09-03.  Calibration: the most extreme legal pairing in the world is
+# western China, where Kashgar at 76E runs on Beijing time — 2.93 hours.  3.5
+# lets that through and still catches a zone picked from the wrong continent.
+GEOGRAPHIC_ZONE_INCOHERENCE_HOURS = 3.5
 SIGN_BOUNDARY_WARNING_DEGREES = 1.0
-# 宮頭 1.0°：ASC 每約 4 分鐘移動 1°，故 1° 對應約 4 分鐘的出生時刻誤差——正好是
-# 一般人記得的出生時刻精度。MTH-Q-007 A3 已裁決一律顯示距最近宮頭的角距；
-# 本警告是那項裁決在「敏感時」的主動提示，兩者不衝突。
 CUSP_PROXIMITY_WARNING_DEGREES = 1.0
 
 
@@ -584,6 +499,8 @@ def _boundary_warnings(
     planet_in_house: dict,
     latitude_regime: dict | None,
     sect: dict | None,
+    longitude: float | None = None,
+    utc_offset_hours: float | None = None,
 ) -> list[dict]:
     """高緯度、宮頭鄰近、星座邊界鄰近三類敏感度提示。
 
@@ -592,6 +509,29 @@ def _boundary_warnings(
     """
 
     warnings = []
+
+    # Coordinates and a zone each pass their own validation; their relationship
+    # belongs to neither field, so a Taipei latitude paired with a New York zone
+    # produced a chart that is wrong in a way nothing said out loud.
+    if longitude is not None and utc_offset_hours is not None:
+        solar_offset_hours = longitude / 15.0
+        divergence = abs(solar_offset_hours - utc_offset_hours)
+        if divergence > GEOGRAPHIC_ZONE_INCOHERENCE_HOURS:
+            warnings.append(
+                _warning(
+                    "geographic_timezone_incoherence",
+                    "warning",
+                    (
+                        f"這個經度的地方平太陽時約為 UTC{solar_offset_hours:+.2f}，"
+                        f"而所選時區的偏移是 UTC{utc_offset_hours:+.2f}，"
+                        f"相差 {divergence:.2f} 小時，超過 "
+                        f"{GEOGRAPHIC_ZONE_INCOHERENCE_HOURS} 小時的合理範圍。"
+                        "計算仍依你提供的值完成；請確認座標與時區是否同屬一地。"
+                    ),
+                    "astronomical_data.time",
+                    ["astronomical_data.time", "astronomical_data.angles"],
+                )
+            )
 
     if latitude_regime and latitude_regime["band"] != "ordinary":
         beyond_polar = latitude_regime["band"] == "beyond_polar_circle"
@@ -730,6 +670,8 @@ def _structured_warnings(
             planet_in_house=planet_in_house,
             latitude_regime=latitude_regime,
             sect=sect,
+            longitude=request.location.longitude,
+            utc_offset_hours=time_conversion.get("utc_offset_hours"),
         )
     )
     limited_topocentric_speeds = [
@@ -955,18 +897,14 @@ def _structured_warnings(
                 "true_position_refraction_semantics_provisional",
                 "notice",
                 "true position 與大氣折射同時使用時的產品語意仍待確認。",
-                "docs/product/methods/METHOD_AUDIT.md",
+                "product_method_audit_pending",
                 [
                     "calculation_dossier.calculation_policy.computation_mode",
                     "astronomical_data.atmosphere",
                 ],
             )
         )
-        # MTH-Q-018 裁決（Sebastian 2026-08-03，甲＋觸發式說明）：
-        # MTH-Q-009 的視高度抑制只涵蓋星體／恆星欄位，升降事件維持自己的框架。
-        # 這在同一份回應裡會造成一個看起來矛盾的畫面——一邊 altitude_apparent
-        # 為 null，一邊升降證據裡有九十幾筆視高度取樣。裁決要求在該組合**實際
-        # 發生時**主動說明原因，而不是只寫在契約文件裡等使用者自己去查。
+        # Horizon events retain their own apparent topocentric frame (MTH-Q-018).
         if request.options.include_rise_set_transits:
             warnings.append(
                 _warning(
@@ -1055,12 +993,7 @@ def _structured_warnings(
 
 
 def _trace_receipt(trace_steps: list[dict]) -> dict:
-    serialized = json.dumps(
-        trace_steps,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode()
+    serialized = canonical_json_bytes(trace_steps)
     return {
         "response_path": "calculation_trace",
         "step_count": len(trace_steps),
@@ -1069,408 +1002,13 @@ def _trace_receipt(trace_steps: list[dict]) -> dict:
         ).hexdigest(),
         "serialization_recipe": {
             "implementation": "Python json.dumps",
-            "ensure_ascii": False,
-            "sort_keys": True,
-            "separators": [",", ":"],
+            "ensure_ascii": CANONICAL_JSON_ENSURE_ASCII,
+            "sort_keys": CANONICAL_JSON_SORT_KEYS,
+            "separators": list(CANONICAL_JSON_SEPARATORS),
             "encoding": "UTF-8",
             "float_serialization": "Python runtime json encoder",
             "portable_across_languages": False,
         },
-    }
-
-
-def _privacy_evidence(
-    evidence_type: str,
-    reference: str,
-) -> dict:
-    return {
-        "type": evidence_type,
-        "reference": reference,
-        "semantics": "repository_pointer_not_test_execution_result",
-    }
-
-
-def _privacy_claim(
-    *,
-    claim_id: str,
-    status: str,
-    statement: str,
-    enforcement_layer: str,
-    control_id: str,
-    mechanism: str,
-    evidence: list[dict],
-    applies_to: list[str],
-    excludes: list[str],
-    limitations: list[str],
-) -> dict:
-    return {
-        "id": claim_id,
-        "status": status,
-        "statement": statement,
-        "enforcement_layer": enforcement_layer,
-        "control": {
-            "id": control_id,
-            "mechanism": mechanism,
-        },
-        "evidence": evidence,
-        "scope": {
-            "surface": "current_local_product",
-            "applies_to": applies_to,
-            "excludes": excludes,
-        },
-        "limitations": limitations,
-    }
-
-
-# `FPI-2026-08-06-E-011`. Two layers of this attestation used to be written as
-# constants describing a local, not-yet-deployed checkout. Under
-# `CLASSICAL_ASTROLOGY_PROFILE=private_alpha` — the profile the twenty invitees
-# use — the receipt still told each of them that no reverse-proxy layer exists
-# and that the VPS is not deployed. That is not stale copy: the whole purpose of
-# this attestation is to let a reader work out which enforcement layers touch
-# their birth data, and `AGENTS.md` §4A requires those layers to be named. A
-# reader who is told "this layer does not exist" concludes no proxy sees the
-# request. After deployment that conclusion is wrong.
-#
-# The first attempt at this wording said, under a hosted profile, that a
-# reverse proxy layer "exists". Codex's independent replay sent the finding
-# back for that, and it was right: a process knows which profile it was
-# started with, and nothing more. It cannot see what is in front of it, so
-# "the deployment requires one" is an argument about intent, not an
-# observation — the receipt would have been asserting a fact it has no way to
-# check, which is the same defect as the original, pointed the other way.
-#
-# The wording therefore states the profile's *expectation* and says plainly
-# that this is a declared intent rather than evidence about this run. Anything
-# stronger is a privacy claim, which is Sebastian's to make and a deployment
-# canary's to support, not this function's.
-_UNCOVERED_LAYERS_BY_PROFILE: dict[str, dict[str, str]] = {
-    "local": {
-        "reverse_proxy_cdn_waf": (
-            "本機執行路徑不存在此層。此陳述只涵蓋本機 profile；"
-            "託管部署的形態另行敘述於該 profile 的收據。"
-        ),
-        "hosting_supervisor": (
-            "本機執行，無 hosting supervisor。Infomaniak provider 已選且"
-            "identity verification 已通過，但本機 profile 下不涉及該主機。"
-        ),
-    },
-    "private_alpha": {
-        "reverse_proxy_cdn_waf": (
-            "本 profile **預期**應用程式前方有一層反向代理（規劃為 host NGINX）。"
-            "這是本次執行所宣告的部署意圖，**不是本次執行確實具有該層的證據**——"
-            "行程只知道自己被以哪個 profile 啟動，看不到自己前面有什麼。"
-            "本產品亦未驗證該層的 log 關閉、retention 或轉發標頭處理，"
-            "相關證據須由部署方以 deployment canary 提出。"
-        ),
-        "hosting_supervisor": (
-            "本 profile **預期**託管於 Infomaniak VPS（identity verification 已通過）。"
-            "同上：這是宣告的部署意圖，不是本次執行的實測結果。"
-            "本產品未驗證 host 層的 log、backup、snapshot 或 retention，"
-            "hypervisor 與機房人員的存取亦不在本產品控制範圍內。"
-        ),
-    },
-}
-
-
-def _privacy_attestation(deployment_profile: str | None = None) -> dict:
-    """Describe implemented controls without claiming per-request revalidation.
-
-    `deployment_profile` selects the wording for the layers this product does
-    not control. An unrecognised or absent profile falls back to `local` and
-    says so in `deployment_profile_status`, so a receipt can never silently
-    describe the wrong deployment shape again.
-    """
-
-    resolved = (
-        deployment_profile
-        if deployment_profile in _UNCOVERED_LAYERS_BY_PROFILE
-        else "local"
-    )
-    profile_status = (
-        "declared_by_running_process"
-        if deployment_profile in _UNCOVERED_LAYERS_BY_PROFILE
-        else "not_declared_defaulted_to_local"
-    )
-    uncovered_notes = _UNCOVERED_LAYERS_BY_PROFILE[resolved]
-
-    return {
-        "deployment_profile": resolved,
-        "deployment_profile_status": profile_status,
-        "uncovered_layer_semantics": (
-            "these layers are named so the reader can see what this product "
-            "does not control; presence of a layer is not a claim about its "
-            "behaviour"
-        ),
-        # 1.3.0：新增 deployment_profile／deployment_profile_status 與
-        # uncovered_layer_semantics，且未涵蓋層的敘述改為隨 profile 變動
-        # （`FPI-2026-08-06-E-011`）。純新增欄位，既有欄位語意未變。
-        "privacy_attestation_version": "1.3.0",
-        "attestation_status": "provisional_pending_external_review",
-        "contains_sensitive_birth_data": True,
-        "anonymous_share_ready": False,
-        "evidence_semantics": (
-            "repository_test_references_not_execution_attestation"
-        ),
-        "claims": [
-            _privacy_claim(
-                claim_id="application_chart_path_no_persistence",
-                status="implemented_in_application_layer",
-                statement=(
-                    "目前 /api/chart application path 不使用出生資料資料庫、"
-                    "session store、request cache或background queue，並以"
-                    "Python write guard監看目前同步處理路徑。"
-                ),
-                enforcement_layer="application_request_path",
-                control_id="application-no-persistence-current-chart-path-v1",
-                mechanism=(
-                    "No persistence dependency on the current chart path plus "
-                    "Python file-write API regression guards."
-                ),
-                evidence=[
-                    _privacy_evidence(
-                        "python_test_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_chart_request_does_not_use_python_file_write_apis"
-                        ),
-                    ),
-                    _privacy_evidence(
-                        "static_contract_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_backend_has_no_third_party_telemetry_or_"
-                            "persistence_dependency"
-                        ),
-                    ),
-                ],
-                applies_to=[
-                    "current synchronous FastAPI POST /api/chart path",
-                ],
-                excludes=[
-                    "pyswisseph native or OS side effects",
-                    "RAM, swap, crash dump and backup retention",
-                    "user-initiated browser clipboard and downloads",
-                ],
-                limitations=[
-                    "No secure memory erasure claim.",
-                    (
-                        "Python write guards do not intercept every native "
-                        "library or operating-system side effect."
-                    ),
-                ],
-            ),
-            _privacy_claim(
-                claim_id="application_telemetry_allowlist",
-                status="implemented_in_application_layer",
-                statement=(
-                    "Application營運事件由封閉欄位與封閉 vocabulary重建，"
-                    "不直接序列化request、response、header或exception。"
-                ),
-                enforcement_layer="application_event_sink",
-                control_id="privacy-request-event-v1",
-                mechanism=(
-                    "Closed event builder plus sink-side schema validation and "
-                    "non-propagating dedicated logger."
-                ),
-                evidence=[
-                    _privacy_evidence(
-                        "python_test_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_structured_event_schema_is_closed_and_"
-                            "discards_attacker_controlled_text"
-                        ),
-                    ),
-                    _privacy_evidence(
-                        "python_test_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_emitter_rejects_direct_unsanitized_event"
-                        ),
-                    ),
-                ],
-                applies_to=[
-                    "classical_astrology.privacy application event sink",
-                ],
-                excludes=[
-                    "ASGI server access log",
-                    "reverse proxy, hosting supervisor and third-party telemetry",
-                ],
-                limitations=[
-                    (
-                        "Future logger or telemetry changes require a new "
-                        "privacy review and canary test."
-                    ),
-                ],
-            ),
-            _privacy_claim(
-                claim_id="asgi_exception_data_minimization",
-                status="implemented_in_asgi_layer",
-                statement=(
-                    "目前ASGI application boundary以固定錯誤回應與完整"
-                    "response-lifecycle containment避免原始exception進入"
-                    "response或Uvicorn traceback。"
-                ),
-                enforcement_layer="asgi_application_boundary",
-                control_id="privacy-asgi-boundary-v1",
-                mechanism=(
-                    "Low-level ASGI middleware contains pre-start and post-start "
-                    "Exception paths and isolates event-sink failures."
-                ),
-                evidence=[
-                    _privacy_evidence(
-                        "python_test_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_real_uvicorn_unexpected_error_does_not_emit_"
-                            "traceback_or_canary"
-                        ),
-                    ),
-                    _privacy_evidence(
-                        "python_test_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_real_uvicorn_post_start_errors_are_contained_"
-                            "and_reported"
-                        ),
-                    ),
-                    _privacy_evidence(
-                        "python_test_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_real_uvicorn_event_emitter_failure_is_isolated"
-                        ),
-                    ),
-                ],
-                applies_to=[
-                    "current FastAPI application wrapped by PrivacyBoundaryMiddleware",
-                ],
-                excludes=[
-                    "process-control BaseException and cancellation semantics",
-                    "transport failures outside the application boundary",
-                    "future process supervisor error capture",
-                ],
-                limitations=[
-                    (
-                        "Post-response-start failures cannot rewrite an HTTP "
-                        "status already sent on the wire."
-                    ),
-                ],
-            ),
-            _privacy_claim(
-                claim_id="canonical_launcher_access_log_suppression",
-                status="conditional_on_canonical_launcher",
-                statement=(
-                    "Canonical本機launcher以--no-access-log啟動Uvicorn，"
-                    "避免request line與query進入Uvicorn access output。"
-                ),
-                enforcement_layer="canonical_local_launcher",
-                control_id="canonical-uvicorn-no-access-log-v1",
-                mechanism=(
-                    "scripts/local/run-local.sh passes an explicit --no-access-log "
-                    "argument and real-launcher canaries inspect process output."
-                ),
-                evidence=[
-                    _privacy_evidence(
-                        "static_contract_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_supported_launcher_disables_uvicorn_access_"
-                            "log_and_loads_privacy_boundary"
-                        ),
-                    ),
-                    _privacy_evidence(
-                        "python_test_reference",
-                        (
-                            "tests/backend/test_privacy_logging.py::"
-                            "test_real_launcher_logs_are_body_free_for_success_"
-                            "rejection_and_malformed_json"
-                        ),
-                    ),
-                ],
-                applies_to=[
-                    "start.command and scripts/local/run-local.sh canonical local runtime",
-                ],
-                excludes=[
-                    "manual or alternate Uvicorn invocation",
-                    "future reverse proxy, CDN, WAF and hosting logs",
-                ],
-                limitations=[
-                    (
-                        "Startup and shutdown messages remain visible in the "
-                        "local terminal."
-                    ),
-                ],
-            ),
-            _privacy_claim(
-                claim_id="browser_transient_sensitive_state",
-                status="conditional_on_bundled_frontend",
-                statement=(
-                    "目前browser application不使用persistent storage API，"
-                    "並集中失效canonical document、section reference、"
-                    "Blob URL與in-flight request。"
-                ),
-                enforcement_layer="browser_application",
-                control_id="browser-sensitive-lifecycle-v1",
-                mechanism=(
-                    "Central lifecycle controller, request generation checks, "
-                    "AbortController, result clear, panic clear and pagehide clear."
-                ),
-                evidence=[
-                    _privacy_evidence(
-                        "node_test_reference",
-                        "frontend/tests/privacy_lifecycle.test.cjs",
-                    ),
-                    _privacy_evidence(
-                        "static_contract_reference",
-                        (
-                            "tests/integration/test_frontend_contract.py::"
-                            "test_privacy_lifecycle_guards_requests_exports_"
-                            "and_page_exit"
-                        ),
-                    ),
-                ],
-                applies_to=[
-                    "current same-origin frontend calculation and export UI",
-                ],
-                excludes=[
-                    "API clients that do not load the bundled frontend",
-                    "browser extensions and compromised browser",
-                    "browser or OS crash/session restoration",
-                    "completed clipboard writes and downloaded files",
-                ],
-                limitations=[
-                    "autocomplete=off is a browser hint, not an enforcement API.",
-                    (
-                        "JavaScript cannot securely erase runtime or "
-                        "operating-system memory."
-                    ),
-                ],
-            ),
-        ],
-        "uncovered_layers": [
-            {
-                "layer": "reverse_proxy_cdn_waf",
-                "status": "outside_current_control_scope",
-                "note": uncovered_notes["reverse_proxy_cdn_waf"],
-            },
-            {
-                "layer": "hosting_supervisor",
-                "status": "outside_current_control_scope",
-                "note": uncovered_notes["hosting_supervisor"],
-            },
-            {
-                "layer": "third_party_telemetry",
-                "status": "outside_current_control_scope",
-                "note": "目前未整合；未來新增前必須重新進行隱私審查。",
-            },
-            {
-                "layer": "browser_os_native_memory",
-                "status": "outside_current_control_scope",
-                "note": "不宣稱RAM、swap、crash restore或原生函式庫資料可安全抹除。",
-            },
-        ],
     }
 
 
@@ -1586,7 +1124,10 @@ def build_calculation_dossier(
                 and request.options.include_houses
             ),
             "applicable": request.options.include_houses,
-            "available": anti_vertex is not None,
+            "available": (
+                anti_vertex is not None
+                and anti_vertex.get("longitude") is not None
+            ),
             "source": "vertex_longitude_antipode",
             "source_vertex_longitude_degrees": (
                 anti_vertex.get("source_vertex_longitude_degrees")
@@ -1946,5 +1487,5 @@ def build_calculation_dossier(
         "methodology": methodology,
         "warnings": warnings,
         "trace_receipt": _trace_receipt(trace_steps),
-        "privacy": _privacy_attestation(deployment_profile),
+        "privacy": privacy_attestation(deployment_profile),
     }

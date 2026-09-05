@@ -21,6 +21,14 @@ while (($#)); do
 done
 
 root="$(cd -- "$root" && pwd -P)"
+
+# This wrapper proves verification does not write bytecode into the candidate.
+# A candidate root is an exported tree, never a Git working tree.
+if [[ -e "$root/.git" ]]; then
+  echo "PUBLICATION CANDIDATE REFUSED: $root is a working tree, not a candidate." >&2
+  echo "Export a candidate first and run this against that directory." >&2
+  exit 2
+fi
 cache_parent="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
 cache_root="$(mktemp -d "$cache_parent/project-armillary-pycache.XXXXXX")"
 cleanup() {

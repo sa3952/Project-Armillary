@@ -1,14 +1,7 @@
-"""FastAPI 入口：組裝所有計算模組，並提供 /api/chart 端點與前端靜態頁面。
+"""FastAPI chart orchestration; facts, geometry and methods stay separate."""
 
-回應分三層，刻意不混在一起：
-- astronomical_data：原始天文事實（星體位置/速度、ASC/MC 等角點、恆星位置），不含任何占星方法判斷
-- derived_geometry：純幾何轉換，無需判斷「是否成立」（目前只有對蹠點）
-- derived_methods：帶有技法假設/規則選擇的判斷結果（宮位劃分、Sect、Lots、VOC、赤緯相位），
-  每一項都標註具名 method，方便日後替換不同流派規則而不影響天文資料層
-"""
-
-import hashlib
-import hmac
+import asyncio
+from dataclasses import dataclass
 import importlib.metadata
 import os
 from pathlib import Path
@@ -19,11 +12,16 @@ from contextvars import ContextVar
 from typing import Any
 
 import swisseph as swe
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
+from http import HTTPStatus
+
+from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import (
+    BODY_ID_BY_KEY,
     CLASSICAL_BODIES,
     NODE_BODIES,
     OUTER_BODIES,
@@ -43,6 +41,7 @@ from .schemas import (
     ChartRequest,
     HostedBoundaryErrorResponse,
     HostedValidationResponse,
+    OptionsInput,
     PlaceSearchRequest,
 )
 from .core.trace import Trace
@@ -56,7 +55,7 @@ from .core.time_utils import (
 from .core.bodies import compute_bodies, derive_node_antipode, make_longitude_sampler
 from .core.essential_dignities import compute_essential_dignities
 from .core.aspects import compute_aspects
-from .core.declination import compute_declination_aspects
+from .core.declination import compute_declination_aspects, declination_participants
 from .core.houses import (
     EXTRA_ANGLE_PROVENANCE,
     HouseSystemUnavailableError,
@@ -64,6 +63,7 @@ from .core.houses import (
 )
 from .core.house_placements import compute_planet_house_placements
 from .core.birth_time_sensitivity import (
+    approximate_hour_representative_request,
     build_approximate_hour_sensitivity,
     build_date_only_sensitivity,
 )
@@ -79,11 +79,18 @@ from .core.place_catalog import (
     PlaceCatalog,
     PlaceCatalogUnavailableError,
 )
-from .privacy_logging import PrivacyBoundaryMiddleware, emit_security_event
+from .privacy_logging import (
+    DOMAIN_ERROR_STATE_KEY,
+    PrivacyBoundaryMiddleware,
+    emit_security_event,
+)
 from .request_limits import (
+    RETRY_AFTER_SECONDS,
     ApiMethodBoundary,
+    DeclaredHostBoundary,
     ChartRequestBoundary,
     RequestCapacityBoundary,
+    mark_compute_entered,
 )
 from .runtime_static import RuntimeStaticFiles
 from .frontend_release import load_runtime_release
@@ -92,25 +99,16 @@ from .settings import AppProfile, AppSettings, load_settings
 
 SCHEMA_VERSION = "0.13.0"
 
-# Swiss 天體 id 依 key 索引。求根器需要在時間軸上重新查詢星曆，而 astronomical_data
-# 的星體紀錄刻意不外洩 Swiss 內部 id，故在此另建對照表，不改動既有輸出形狀。
-_BODY_ID_BY_KEY = {
-    body["key"]: body["id"]
-    for body in CLASSICAL_BODIES + OUTER_BODIES + MODERN_MINOR_BODIES + NODE_BODIES
-}
 _CLASSICAL_KEYS = tuple(body["key"] for body in CLASSICAL_BODIES)
 _OUTER_KEYS = tuple(body["key"] for body in OUTER_BODIES)
 _NODE_KEYS = tuple(body["key"] for body in NODE_BODIES)
 
 init_ephemeris()
 
-# 是否有完整星曆檔只取決於 backend/ephe 目錄內容，執行期間不會變，啟動時算一次即可，
-# 不需要每個請求都重新 listdir（尤其現在整個請求都在 _COMPUTE_LOCK 內序列執行）。
+# Bundled ephemeris availability is immutable for the process lifetime.
 _HAS_FULL_EPHEMERIS = has_full_ephemeris_files()
 
-# pyswisseph 這個 Python 套件的 distribution 版本號（如 2.10.3.2）跟它內建的
-# Swiss Ephemeris C 函式庫版本號（swe.version，如 "2.10.03"）是兩個獨立數字，
-# 只是長得很像；曾經誤把兩者視為同一個值回傳，這裡分開讀取、分開回報。
+# Python distribution and embedded Swiss C-library versions are distinct.
 try:
     _PYSWISSEPH_DISTRIBUTION_VERSION: str | None = (
         importlib.metadata.version("pyswisseph")
@@ -118,22 +116,12 @@ try:
 except importlib.metadata.PackageNotFoundError:
     _PYSWISSEPH_DISTRIBUTION_VERSION = None
 
-def health_check(settings: AppSettings):
+def health_check() -> dict[str, object]:
     """Report process liveness, not end-to-end calculation readiness."""
-    if settings.profile is AppProfile.PRIVATE_ALPHA:
-        return {
-            "status": "ok",
-            "ready": True,
-            "readiness_scope": "process_liveness_only",
-        }
     return {
         "status": "ok",
         "ready": True,
         "readiness_scope": "process_liveness_only",
-        "service": "classical-astrology-app",
-        "runtime_contract": "local-runtime-v2",
-        "full_ephemeris_files": _HAS_FULL_EPHEMERIS,
-        "swiss_ephemeris_library_version": swe.version,
     }
 
 
@@ -148,195 +136,40 @@ def client_configuration(
     return response
 
 
-# run-local.sh and diagnose_local_runtime.py both refuse a token record whose
-# secret is shorter than this, so the three sides agree on one floor.
-_MINIMUM_RUNTIME_TOKEN_LENGTH = 32
-
-
-def authenticated_runtime_health(
-    x_local_runtime_nonce: str = Header(
-        min_length=16,
-        max_length=128,
-        pattern=r"^[A-Za-z0-9_-]+$",
-    ),
-):
-    """Prove that the listener was started with the launcher's per-run secret.
-
-    The nonce is public and changes for every probe.  The secret stays in the
-    launcher-owned token file and Uvicorn environment, so a process that merely
-    pre-binds the port cannot copy a static health response.
-    """
-    runtime_token = os.environ.get("CLASSICAL_ASTROLOGY_RUNTIME_TOKEN")
-    if not runtime_token:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "detail": {
-                    "code": "runtime_auth_unavailable",
-                    "message": "此伺服器不是由本機一鍵啟動器建立，無法證明執行身分。",
-                }
-            },
-        )
-    if len(runtime_token) < _MINIMUM_RUNTIME_TOKEN_LENGTH:
-        # This endpoint answers with HMAC(token, caller-chosen nonce), which is
-        # how a challenge-response attestation is supposed to work: the launcher
-        # picks the nonce and compares the digest itself.  HMAC-SHA256 is a PRF,
-        # so serving those pairs does not leak the key.  What it *does* do is
-        # give anyone who can reach the endpoint unlimited known-plaintext pairs
-        # to brute-force offline, which means the whole scheme is worth exactly
-        # the token's entropy and nothing more.
-        #
-        # The endpoint is only registered outside Private Alpha and the local
-        # launcher binds 127.0.0.1, so there is no reachable oracle in either
-        # supported configuration.  This check is the depth behind that: refuse
-        # to answer at all rather than attest with a weak secret, so a future
-        # launcher that regressed to a short token fails loudly here instead of
-        # quietly shrinking the search space.  run-local.sh issues
-        # secrets.token_urlsafe(32) (256 bits, 43 characters).
-        return JSONResponse(
-            status_code=503,
-            content={
-                "detail": {
-                    "code": "runtime_auth_token_too_weak",
-                    "message": "本機執行驗證 token 的長度不足，拒絕以其證明執行身分。",
-                }
-            },
-        )
-
-    nonce_hmac = hmac.new(
-        runtime_token.encode(),
-        x_local_runtime_nonce.encode(),
-        hashlib.sha256,
-    ).hexdigest()
-    return {
-        "service": "classical-astrology-app",
-        "ready": True,
-        "runtime_contract": "local-runtime-v2",
-        "nonce_hmac": nonce_hmac,
-    }
-
-
-async def _handle_nonexistent_local_time(request: Request, exc: NonexistentLocalTimeError):
-    if request.app.state.settings.is_private_alpha:
-        return JSONResponse(
-            status_code=422,
-            content={"detail": {"code": exc.code}},
-        )
+def _exception_response(
+    *,
+    status_code: int,
+    code: str,
+    headers: dict[str, str] | None = None,
+) -> JSONResponse:
     return JSONResponse(
-        status_code=422,
-        content={"detail": {"code": exc.code, "message": str(exc)}},
-    )
-
-
-async def _handle_ambiguous_local_time_choice(
-    request: Request,
-    exc: AmbiguousLocalTimeChoiceRequiredError,
-):
-    if request.app.state.settings.is_private_alpha:
-        return JSONResponse(
-            status_code=422,
-            content={"detail": {"code": exc.code}},
-        )
-    return JSONResponse(
-        status_code=422,
-        content={"detail": {"code": exc.code, "message": str(exc)}},
-    )
-
-
-async def _handle_full_ephemeris_required(request: Request, exc: FullEphemerisRequiredError):
-    if request.app.state.settings.is_private_alpha:
-        return JSONResponse(
-            status_code=503,
-            content={"detail": {"code": exc.code}},
-        )
-    return JSONResponse(
-        status_code=503,
-        content={
-            "detail": {
-                "code": exc.code,
-                "message": str(exc),
-                "operation": exc.operation,
-                "jd_ut": exc.jd_ut,
-                "retflag": exc.retflag,
-            }
-        },
-    )
-
-
-async def _handle_house_system_unavailable(request: Request, exc: HouseSystemUnavailableError):
-    if request.app.state.settings.is_private_alpha:
-        return JSONResponse(
-            status_code=422,
-            content={"detail": {"code": exc.code}},
-        )
-    return JSONResponse(
-        status_code=422,
-        content={
-            "detail": {
-                "code": exc.code,
-                "message": str(exc),
-                "house_system": exc.house_system,
-                "latitude": exc.latitude,
-            }
-        },
-    )
-
-
-async def _handle_place_catalog_unavailable(
-    request: Request,
-    exc: PlaceCatalogUnavailableError,
-):
-    if request.app.state.settings.is_private_alpha:
-        return JSONResponse(
-            status_code=503,
-            content={"detail": {"code": exc.code}},
-        )
-    return JSONResponse(
-        status_code=503,
-        content={"detail": {"code": exc.code, "message": str(exc)}},
-    )
-
-
-async def _handle_compute_capacity_exhausted(
-    request: Request,
-    exc: "ComputeCapacityExhaustedError",
-):
-    headers = {"Retry-After": str(exc.retry_after_seconds)}
-    if request.app.state.settings.is_private_alpha:
-        return JSONResponse(
-            status_code=503,
-            content={"detail": {"code": exc.code}},
-            headers=headers,
-        )
-    return JSONResponse(
-        status_code=503,
-        content={
-            "detail": {
-                "code": exc.code,
-                "message": "伺服器目前的計算佇列已滿，請稍後重試。",
-            }
-        },
+        status_code=status_code,
+        content={"detail": {"code": code}},
         headers=headers,
     )
 
 
-# 日期/時區的「使用者輸入是否合法」已經在 schemas.py 的 Pydantic model_validator 裡驗證過，
-# 會統一以 422 回應。若程式跑到這裡才拋出 swe.Error，代表的是合法輸入下的伺服器端問題
-# （例如星曆檔缺失/損毀），故回 500，不要跟輸入錯誤混在一起回 400。
-async def _handle_swisseph_error(request: Request, exc: Exception):
-    if request.app.state.settings.is_private_alpha:
-        return JSONResponse(
-            status_code=500,
-            content={"detail": {"code": "swiss_ephemeris_error"}},
-        )
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": {
-                "code": "swiss_ephemeris_error",
-                "message": "天文計算失敗；伺服器端星曆資料可能無法使用。",
-            }
-        },
+async def _handle_domain_error(request: Request, exc: Exception):
+    """Map closed domain failures without giving each class a parallel owner."""
+
+    status_code = 422
+    headers = None
+    code = getattr(exc, "code", "swiss_ephemeris_error")
+    if isinstance(exc, FullEphemerisRequiredError):
+        status_code = 503
+    elif isinstance(exc, PlaceCatalogUnavailableError):
+        status_code = 503
+    elif isinstance(exc, ComputeCapacityExhaustedError):
+        status_code = 503
+        headers = {"Retry-After": str(exc.retry_after_seconds)}
+    elif isinstance(exc, swe.Error):
+        status_code = 500
+        code = "swiss_ephemeris_error"
+    request.scope.setdefault("state", {})[DOMAIN_ERROR_STATE_KEY] = code
+    return _exception_response(
+        status_code=status_code,
+        code=code,
+        headers=headers,
     )
 
 
@@ -368,20 +201,6 @@ _HOSTED_VALIDATION_LOCATIONS = frozenset(
         "pressure_hpa",
         "temperature_c",
         "options",
-        "include_houses",
-        "house_system",
-        "aspect_orb_profile",
-        "aspect_set_profile",
-        "aspect_orb_scale_percent",
-        "aspect_fixed_orb_degrees",
-        "aspect_include_angles",
-        "aspect_angle_orb_degrees",
-        "declination_aspect_orb_degrees",
-        "partile_profile",
-        "include_south_nodes",
-        "include_anti_vertex",
-        "include_chiron",
-        "body_selection_preset",
         "computation_mode",
         "center",
         "zodiac",
@@ -393,7 +212,7 @@ _HOSTED_VALIDATION_LOCATIONS = frozenset(
         "country_code",
         "limit",
     }
-)
+) | frozenset(OptionsInput.model_fields)
 _HOSTED_VALIDATION_TYPE = re.compile(r"^[a-z0-9_.]{1,64}$")
 
 
@@ -421,41 +240,55 @@ def _hosted_validation_detail(exc: RequestValidationError) -> list[dict]:
     return sanitized
 
 
+async def _handle_http_exception(request: Request, exc: Exception):
+    """Give the framework's own refusals the shape this service declares.
+
+    `detail` carried three mutually exclusive types: an object for domain
+    refusals, a list for validation, and a bare string wherever Starlette
+    answered — the asset mount's 405 for a non-GET, for instance.  A consumer
+    could not branch on it.  Two shapes remain and they mean different things:
+    an object names one refusal, a list enumerates field errors.
+    """
+
+    status_code = getattr(exc, "status_code", 500)
+    headers = dict(getattr(exc, "headers", None) or {})
+    code = HTTPStatus(status_code).phrase.lower().replace(" ", "_")
+    return _exception_response(
+        status_code=status_code,
+        code=code,
+        headers=headers or None,
+    )
+
+
 async def _handle_request_validation(
     request: Request,
     exc: RequestValidationError,
 ):
+    detail = _hosted_validation_detail(exc)
+    # A body the parser never read is a syntax refusal.  422 states that the
+    # syntax was understood and the content was semantically wrong, so a client
+    # could not tell "my JSON is broken" from "my values were rejected".
+    malformed = bool(detail) and all(
+        issue["type"] == "json_invalid" for issue in detail
+    )
     return JSONResponse(
-        status_code=422,
-        content={"detail": _hosted_validation_detail(exc)},
+        status_code=400 if malformed else 422,
+        content={"detail": detail},
     )
 
 
-# swisseph 的 set_topo/set_sid_mode 是行程層級全域狀態、非執行緒安全；FastAPI 對 sync def 端點會用
-# 執行緒池平行執行，若不加鎖，並發請求可能互相污染彼此的計算中心/ayanamsa 設定，安靜地產生錯誤結果。
-# 每個 production worker 都有自己的鎖；同一 process 內犧牲 thread-level 計算平行度，
-# 由多個 worker process 提供有界並行，避免用全域 Swiss state 換取表面吞吐量。
+# Swiss center／sidereal mode are process-global; serialize per worker.
 _COMPUTE_LOCK = threading.Lock()
 
-# How long a request may wait for the compute lock before it is refused.  The
-# ceiling is generous relative to a served calculation (~0.3 s for the widest
-# option set measured so far), so it never rejects a request that a merely busy
-# service would have answered; it exists to put a bound on the queue.
+# Bound queue wait without interrupting an in-flight Swiss calculation.
 _COMPUTE_LOCK_WAIT_TIMEOUT_SECONDS = 20.0
-_COMPUTE_LOCK_RETRY_AFTER_SECONDS = 5
+# The retry contract is declared once, in the boundary that also refuses.
+_COMPUTE_LOCK_RETRY_AFTER_SECONDS = RETRY_AFTER_SECONDS
 _BUILD_IDENTITY_CONTEXT: ContextVar[dict | None] = ContextVar(
     "classical_astrology_build_identity",
     default=None,
 )
-# `FPI-2026-08-06-E-011`. The privacy attestation used to be a constant, so a
-# hosted deployment kept telling every user that no reverse-proxy layer exists
-# and that the VPS is not deployed — while build_identity in the same receipt
-# carried a controlled build revision. The receipt could not state its own
-# deployment shape because nothing gave it one.
-#
-# Carried the same way as build_identity rather than threaded through
-# compute_chart: both are properties of the running process, not of the
-# request, and the existing seam already works.
+# Process identity belongs in context, not in caller-controlled chart input.
 _DEPLOYMENT_PROFILE_CONTEXT: ContextVar[str | None] = ContextVar(
     "classical_astrology_deployment_profile",
     default=None,
@@ -470,20 +303,6 @@ def _aspect_participants(
     *,
     angle_aspects_applicable: bool,
 ) -> list[dict]:
-    """組出相位模組的參與者清單。
-
-    七政恆為必要成員。三王星與阿拉伯點不另設開關，直接跟隨其本身的計算開關
-    （`include_outer_planets` / `include_lots`），避免出現「要求三王星入相位但
-    根本沒算三王星」這種自相矛盾的請求。交點永遠已算出，故由
-    `aspect_include_nodes` 單獨控制。Chiron 雖可作為現代天文物件 opt-in 計算，
-    本批沒有任何具名相位參與／orb 裁決，故不自動加入。ASC／MC 則依
-    `aspect_include_angles` 加入逐度層；其不互配、整宮與 applying 邊界由 aspects 模組執行。
-
-    阿拉伯點沒有 `body_id`（它不是星曆天體，而是 ASC/日/月的組合），也沒有黃經速度：
-    Fortune 的速度需要 ASC 的角速度，而 ASC 每日轉一整圈，語意與行星速度不同類。
-    因此兩者皆留空，讓相位模組回傳 null 而非給出一個不可比較的數字。
-    """
-
     by_key = {body["key"]: body for body in bodies_all}
     participants = []
 
@@ -497,50 +316,97 @@ def _aspect_participants(
                 "name": body["name"],
                 "longitude": body["longitude"],
                 "speed_longitude": body["speed_longitude"],
-                "body_id": _BODY_ID_BY_KEY[key],
+                "body_id": BODY_ID_BY_KEY[key],
                 "category": category,
             }
         )
 
-    for key in _CLASSICAL_KEYS:
-        add_body(key, "classical_planet")
-    if options.aspect_include_nodes:
-        for key in _NODE_KEYS:
-            add_body(key, "lunar_node")
-    if options.include_outer_planets:
-        for key in _OUTER_KEYS:
-            add_body(key, "outer_planet")
-    if options.include_lots:
-        for key, name in (("fortune", "福點"), ("spirit", "精神點")):
-            longitude = lots.get(key) if lots else None
-            if longitude is None:
-                continue
-            participants.append(
-                {
-                    "key": key,
-                    "name": name,
-                    "longitude": longitude,
-                    "speed_longitude": None,
-                    "body_id": None,
-                    "category": "lot",
-                }
-            )
-    if options.aspect_include_angles and angle_aspects_applicable:
-        for key, name in (("asc", "上升點"), ("mc", "天頂")):
-            longitude = angles.get(key)
-            if longitude is None:
-                continue
-            participants.append(
-                {
-                    "key": key,
-                    "name": name,
-                    "longitude": longitude,
-                    "speed_longitude": None,
-                    "body_id": None,
-                    "category": "angle",
-                }
-            )
+    groups = (
+        (_CLASSICAL_KEYS, "classical_planet", True),
+        (_NODE_KEYS, "lunar_node", options.aspect_include_nodes),
+        (_OUTER_KEYS, "outer_planet", options.include_outer_planets),
+    )
+    for keys, category, enabled in groups:
+        if enabled:
+            for key in keys:
+                add_body(key, category)
+
+    point_groups = (
+        (lots or {}, (("fortune", "福點"), ("spirit", "精神點")), "lot", options.include_lots),
+        (angles, (("asc", "上升點"), ("mc", "天頂")), "angle", options.aspect_include_angles and angle_aspects_applicable),
+    )
+    for values, definitions, category, enabled in point_groups:
+        if enabled:
+            for key, name in definitions:
+                longitude = values.get(key)
+                if longitude is None:
+                    continue
+                participants.append({
+                    "key": key, "name": name, "longitude": longitude,
+                    "speed_longitude": None, "body_id": None,
+                    "category": category,
+                })
     return participants
+
+
+_EXTRA_ANGLE_SOURCE_LABEL = {
+    "swiss_ephemeris_houses_ex": "swe.houses_ex 附帶回傳",
+    "vertex_longitude_antipode": "由 Vertex 黃經對蹠導出",
+}
+
+
+def _extra_angles_container(
+    selected: dict,
+    *,
+    applicable: bool,
+    reason_code: str | None,
+) -> dict:
+    """Describe the members that are actually here.
+
+    The note used to be a hand-written sentence saying five angles came from
+    `swe.houses_ex`.  Requesting only the anti-vertex produced one member that
+    came from somewhere else, under a container asserting both the count and the
+    source — the member's own receipt was right and the container contradicted
+    it.  Both are now read off the members.
+    """
+
+    sources = sorted({
+        entry["calculation_source"] for entry in selected.values()
+    })
+    grouped = {
+        source: sorted(
+            key for key, entry in selected.items()
+            if entry["calculation_source"] == source
+        )
+        for source in sources
+    }
+    note = "；".join(
+        f"{len(keys)} 個角點{_EXTRA_ANGLE_SOURCE_LABEL[source]}"
+        for source, keys in grouped.items()
+    ) or "本次沒有角點"
+    return {
+        "requested": True,
+        "executed": applicable,
+        "applicable": applicable,
+        "available": applicable,
+        "reason_code": reason_code,
+        "source": sources[0] if len(sources) == 1 else "per_angle",
+        "semantics": "non_classical_technical_angles_opt_in",
+        "note": (
+            f"{note}。皆非古典占星的四角。本產品輸出其數值，不對其占星用途表示任何立場。"
+        ),
+        "angles": selected,
+    }
+
+
+def _unavailable_state(reason_code: str, *, requested: bool) -> dict:
+    return {
+        "requested": requested,
+        "executed": False,
+        "applicable": False,
+        "available": False,
+        "reason_code": reason_code,
+    }
 
 
 class ComputeCapacityExhaustedError(Exception):
@@ -551,21 +417,14 @@ class ComputeCapacityExhaustedError(Exception):
 
 
 def compute_chart(req: ChartRequest):
-    # _COMPUTE_LOCK serialises the whole calculation, which is required for
-    # correctness (see its definition) but makes the wait queue the scarcest
-    # resource in the process.  An unbounded `with _COMPUTE_LOCK:` lets a small
-    # number of expensive requests hold every other caller indefinitely: the
-    # connections stay open, nothing times out at this layer, and the service
-    # stops answering rather than answering "not now".
-    #
-    # Bounding the wait does not make the service faster.  It converts an
-    # open-ended stall into a fast, explicit refusal with Retry-After, so
-    # overload degrades as rejected requests instead of as a wedged process.
-    # Requests already holding the lock are never interrupted — cancelling a
-    # calculation mid-way would leave the Swiss global state half-configured,
-    # which is the exact failure the lock exists to prevent.
+    # Swiss global state requires serialization; bound only the wait, never an
+    # in-flight calculation, so overload becomes an explicit retryable refusal.
     if not _COMPUTE_LOCK.acquire(timeout=_COMPUTE_LOCK_WAIT_TIMEOUT_SECONDS):
         raise ComputeCapacityExhaustedError()
+    return _compute_chart_with_acquired_lock(req)
+
+
+def _compute_chart_with_acquired_lock(req: ChartRequest):
     try:
         return _compute_chart_locked(req)
     finally:
@@ -575,15 +434,83 @@ def compute_chart(req: ChartRequest):
             _COMPUTE_LOCK.release()
 
 
-def _compute_chart_locked(req: ChartRequest):
+async def compute_chart_for_request(req: ChartRequest, request: Request):
+    """Cancel only queued work; once Swiss starts, retain lock and admission."""
+
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + _COMPUTE_LOCK_WAIT_TIMEOUT_SECONDS
+    while True:
+        if _COMPUTE_LOCK.acquire(blocking=False):
+            if isinstance(getattr(request, "scope", None), dict):
+                mark_compute_entered(request.scope)
+            break
+        remaining = deadline - loop.time()
+        if remaining <= 0:
+            raise ComputeCapacityExhaustedError()
+        await asyncio.sleep(min(0.05, remaining))
+
+    worker = asyncio.create_task(
+        run_in_threadpool(_compute_chart_with_acquired_lock, req)
+    )
+    try:
+        return await asyncio.shield(worker)
+    except asyncio.CancelledError:
+        # Native Swiss work cannot be cancelled safely.  Keep this request's
+        # capacity and the process-global lock until its worker actually exits.
+        await asyncio.shield(worker)
+        raise
+
+
+@dataclass(frozen=True)
+class AstronomicalFacts:
+    angles: Any
+    asc: Any
+    bodies: Any
+    bodies_all: Any
+    bodies_by_key: Any
+    body_defs: Any
+    build_identity: Any
+    ctx: Any
+    deployment_profile: Any
+    event_module_availability: Any
+    extra_angles: Any
+    fixed_stars: Any
+    horizon_events: Any
+    house_division: Any
+    houses_for_placement: Any
+    input_request: Any
+    jd_ut: Any
+    latitude_regime: Any
+    longitude_at: Any
+    lunar_apsides: Any
+    lunar_events: Any
+    node_defs: Any
+    nodes: Any
+    parallax_moon: Any
+    planet_in_house: Any
+    req: Any
+    representative_offset_seconds: int
+    time_conv: Any
+    trace: Any
+
+
+@dataclass(frozen=True)
+class DerivedChart:
+    antiscia: Any
+    aspects: Any
+    declination_aspects: Any
+    essential_dignities: Any
+    lots: Any
+    sect: Any
+    void_of_course: Any
+
+
+def _astronomical_facts(req: ChartRequest) -> AstronomicalFacts:
     input_request = req
+    representative_offset_seconds = 1800
     if input_request.birth_time_precision == "approximate_hour":
-        req = input_request.model_copy(
-            update={
-                "datetime": input_request.datetime.model_copy(
-                    update={"minute": 30, "second": 0.0}
-                )
-            }
+        req, representative_offset_seconds = (
+            approximate_hour_representative_request(input_request)
         )
     elif input_request.birth_time_precision == "date_only":
         # 12:00 只是重現性良好的 representative anchor；input receipt 仍保留
@@ -602,12 +529,8 @@ def _compute_chart_locked(req: ChartRequest):
         "revision_source": None,
     }
     deployment_profile = _DEPLOYMENT_PROFILE_CONTEXT.get()
-    # Linux 的 pyswisseph source build 會讓 ephemeris path 隨目前 worker
-    # thread 初始化；只在 module import 的主執行緒設定一次，FastAPI threadpool
-    # 內的第一次計算會靜默退回 Moshier。此呼叫必須留在 _COMPUTE_LOCK 內，
-    # 並指向 entrypoint 已逐檔驗 hash 的同一個絕對路徑。
-    # 每條執行緒只實際設定一次，之後為 no-op；語意就是註解說的「每執行緒首次」，
-    # 而不是「每個請求」。
+    # Each worker thread must bind the verified ephemeris path while holding
+    # the Swiss-state lock; later calls on that thread are no-ops.
     ensure_ephemeris_initialized_for_thread()
     trace = Trace()
 
@@ -647,10 +570,8 @@ def _compute_chart_locked(req: ChartRequest):
     )
     bodies = compute_bodies(body_defs, jd_ut, ctx, req.atmosphere, trace, physical=True)
 
-    # CMP-A10（Sebastian 2026-08-04）：全域仍是 geocentric，只有 Moon 可明示
-    # 改採同一地點的 topocentric observer origin。兩個結果都保留；下游只讀
-    # effective Moon，避免同一模組內暗中混用兩個月亮。這是座標原點選擇，
-    # 不宣稱 topocentric 比 geocentric「更準」。
+    # Optional Moon-only topocentric mode retains the geocentric reference and
+    # makes the selected downstream origin explicit; it is not a precision claim.
     parallax_moon = None
     moon_ctx = None
     if req.options.moon_position_profile == "moon_only_topocentric_v1":
@@ -792,7 +713,7 @@ def _compute_chart_locked(req: ChartRequest):
                     nodes_by_key["true_node"],
                     key="true_south_node",
                     name="南交點(密切)",
-                    body_id=_BODY_ID_BY_KEY["true_node"],
+                    body_id=BODY_ID_BY_KEY["true_node"],
                     jd_ut=jd_ut,
                     ctx=ctx,
                     atmosphere=req.atmosphere,
@@ -802,7 +723,7 @@ def _compute_chart_locked(req: ChartRequest):
                     nodes_by_key["mean_node"],
                     key="mean_south_node",
                     name="南交點(平均)",
-                    body_id=_BODY_ID_BY_KEY["mean_node"],
+                    body_id=BODY_ID_BY_KEY["mean_node"],
                     jd_ut=jd_ut,
                     ctx=ctx,
                     atmosphere=req.atmosphere,
@@ -817,13 +738,24 @@ def _compute_chart_locked(req: ChartRequest):
     houses = None
     houses_for_placement = None
     latitude_regime = None
-    if req.options.include_houses:
+    # `ctx.horizon_meaningful` is the one premise that decides whether an
+    # Earth-relative frame exists at all.  Only the planet placement read it, so
+    # a heliocentric chart returned an applicable ascendant beside a refusal that
+    # named the same frame.  Every consumer of that frame now reads it here.
+    earth_frame = ctx.horizon_meaningful
+    if req.options.include_houses and earth_frame:
         houses = compute_houses(
             req.options.house_system, jd_ut, req.location, ctx, trace
         )
         latitude_regime = houses["latitude_regime"]
         asc = houses["asc"]
         angles = {
+            "requested": True,
+            "executed": True,
+            "applicable": True,
+            "available": True,
+            "reason_code": None,
+            "source": "Swiss Ephemeris houses_ex",
             "asc": houses["asc"],
             "mc": houses["mc"],
             "desc": houses["desc"],
@@ -851,14 +783,9 @@ def _compute_chart_locked(req: ChartRequest):
                     "source_vertex_longitude_degrees": vertex,
                     **EXTRA_ANGLE_PROVENANCE["anti_vertex"],
                 }
-            extra_angles = {
-                "semantics": "non_classical_technical_angles_opt_in",
-                "note": (
-                    "以下五個角點由 swe.houses_ex 附帶回傳，皆非古典占星的四角。"
-                    "本產品輸出其數值，不對其占星用途表示任何立場。"
-                ),
-                "angles": selected_extra_angles,
-            }
+            extra_angles = _extra_angles_container(
+                selected_extra_angles, applicable=True, reason_code=None
+            )
 
         house_division = {
             "method": "swiss_ephemeris_house_division_v1",
@@ -870,11 +797,7 @@ def _compute_chart_locked(req: ChartRequest):
             "cusps": houses["cusps"],
             "angles_source": "astronomical_data.angles",
         }
-        houses_for_placement = {
-            **houses,
-            "system_code": req.options.house_system,
-            "system_name": houses["system_name"],
-        }
+        houses_for_placement = houses
         planet_in_house = compute_planet_house_placements(
             bodies,
             houses_for_placement,
@@ -883,62 +806,95 @@ def _compute_chart_locked(req: ChartRequest):
         )
     else:
         asc = None
+        unavailable_reason = (
+            "non_earth_observer_center"
+            if req.options.include_houses
+            else "house_calculation_not_executed"
+        )
         angles = {
-            "status": "not_requested",
-            "requested": False,
-            "executed": False,
-            "applicable": False,
-            "available": False,
+            **_unavailable_state(
+                unavailable_reason, requested=req.options.include_houses
+            ),
+            "status": (
+                "not_applicable"
+                if req.options.include_houses
+                else "not_requested"
+            ),
             "source": None,
-            "reason_code": "house_calculation_disabled",
             "asc": None,
             "mc": None,
             "desc": None,
             "ic": None,
             "armc": None,
         }
-        extra_angles = (
-            {
+        # Fail closed by presence, the way the nodes already do: the requested
+        # angles stay in the response with a null longitude and the reason, so a
+        # consumer sees that the module answered rather than that it vanished.
+        if req.options.include_extra_angles or req.options.include_anti_vertex:
+            # Populated only when the dependency was requested: an angle that was
+            # asked for and could not be produced says so with a null longitude,
+            # while houses nobody asked for leave nothing behind.
+            unavailable_angles = {}
+            if req.options.include_extra_angles:
+                unavailable_angles.update({
+                    key: {
+                        "longitude": None,
+                        "reason_code": unavailable_reason,
+                        **EXTRA_ANGLE_PROVENANCE[key],
+                    }
+                    for key in EXTRA_ANGLE_PROVENANCE
+                    if key != "anti_vertex"
+                })
+            if req.options.include_anti_vertex:
+                unavailable_angles["anti_vertex"] = {
+                    "longitude": None,
+                    "source_vertex_longitude_degrees": None,
+                    "reason_code": unavailable_reason,
+                    **EXTRA_ANGLE_PROVENANCE["anti_vertex"],
+                }
+            extra_angles = {
+                **_extra_angles_container(
+                    unavailable_angles,
+                    applicable=False,
+                    reason_code=unavailable_reason,
+                ),
                 "status": "not_applicable",
-                "requested": True,
-                "executed": False,
-                "applicable": False,
-                "available": False,
-                "source": None,
-                "reason_code": "house_calculation_not_executed",
-                "semantics": "non_classical_technical_angles_opt_in",
-                "angles": {},
             }
-            if req.options.include_extra_angles or req.options.include_anti_vertex
-            else None
-        )
+        else:
+            extra_angles = None
         house_division = {
+            **_unavailable_state(
+                "house_calculation_disabled", requested=False
+            ),
             "method": None,
             "method_status": None,
             "method_authority": None,
             "execution_status": "not_requested",
-            "requested": False,
-            "executed": False,
-            "applicable": False,
-            "available": False,
-            "reason_code": "house_calculation_disabled",
             "requested_system_code": req.options.house_system,
             "system_code": None,
             "system_name": None,
             "cusps": [],
             "angles_source": None,
         }
-        planet_in_house = {
-            "method": None,
-            "method_status": None,
-            "method_authority": None,
-            "execution_status": "not_requested",
-            "reason_codes": ["house_calculation_not_executed"],
-            "house_system_code": None,
-            "house_system_name": None,
-            "interval_semantics": None,
-            "placements": [],
-        }
+        # The placement answers for itself rather than being told it was not
+        # requested: when houses were asked for and the observer has no horizon,
+        # the honest receipt is the module's own not_applicable with its own
+        # reason code, which is the same premise the angles above now read.
+        planet_in_house = (
+            compute_planet_house_placements(bodies, None, ctx, trace)
+            if req.options.include_houses
+            else {
+                "method": None,
+                "method_status": None,
+                "method_authority": None,
+                "execution_status": "not_requested",
+                "reason_codes": ["house_calculation_not_executed"],
+                "house_system_code": None,
+                "house_system_name": None,
+                "interval_semantics": None,
+                "placements": [],
+            }
+        )
         trace.add(
             "宮位與角點",
             inputs={"include_houses": False},
@@ -996,14 +952,60 @@ def _compute_chart_locked(req: ChartRequest):
             trace,
         )
 
+    return AstronomicalFacts(
+        angles=angles,
+        asc=asc,
+        bodies=bodies,
+        bodies_all=bodies_all,
+        bodies_by_key=bodies_by_key,
+        body_defs=body_defs,
+        build_identity=build_identity,
+        ctx=ctx,
+        deployment_profile=deployment_profile,
+        event_module_availability=event_module_availability,
+        extra_angles=extra_angles,
+        fixed_stars=fixed_stars,
+        horizon_events=horizon_events,
+        house_division=house_division,
+        houses_for_placement=houses_for_placement,
+        input_request=input_request,
+        jd_ut=jd_ut,
+        latitude_regime=latitude_regime,
+        longitude_at=longitude_at,
+        lunar_apsides=lunar_apsides,
+        lunar_events=lunar_events,
+        node_defs=node_defs,
+        nodes=nodes,
+        parallax_moon=parallax_moon,
+        planet_in_house=planet_in_house,
+        req=req,
+        representative_offset_seconds=representative_offset_seconds,
+        time_conv=time_conv,
+        trace=trace,
+    )
+
+
+def _derived_chart(facts: AstronomicalFacts) -> DerivedChart:
+    (angles, asc, bodies, bodies_all, bodies_by_key, ctx, input_request, jd_ut, longitude_at, lunar_apsides, req, time_conv, trace,) = (
+        facts.angles,
+        facts.asc,
+        facts.bodies,
+        facts.bodies_all,
+        facts.bodies_by_key,
+        facts.ctx,
+        facts.input_request,
+        facts.jd_ut,
+        facts.longitude_at,
+        facts.lunar_apsides,
+        facts.req,
+        facts.time_conv,
+        facts.trace,
+    )
+
     # --- derived_geometry：純幾何轉換，不做「是否成立」的判斷 ---
     antiscia = {}
     if req.options.include_antiscia:
-        # MTH-Q-008 乙裁決（2026-08-03）：反照點只算七政（必要）與交點（可選），
-        # **不算恆星，不算軸點**。恆星在黃道上幾乎不動，其「反照點」缺乏傳統來源
-        # 支持；恆星也是舊行為下 46 行輸出的主要來源。裁決表把交點列為「可選」，
-        # 故另給 antiscia_include_nodes 開關，預設關閉。三王星不在裁決表內，
-        # 一律不算——把未經裁決的對象加進來會是本程式自行擴張方法範圍。
+        # Adopted scope: classical seven, plus nodes only when explicitly requested.
         antiscia_keys = set(_CLASSICAL_KEYS)
         if req.options.antiscia_include_nodes:
             antiscia_keys |= set(_NODE_KEYS)
@@ -1044,29 +1046,25 @@ def _compute_chart_locked(req: ChartRequest):
         lots = compute_lots(asc, bodies_by_key["sun"]["longitude"], bodies_by_key["moon"]["longitude"], sect, trace)
     elif req.options.include_lots:
         sect = {
+            **_unavailable_state(
+                "house_calculation_not_executed", requested=True
+            ),
             "method": None,
             "method_status": None,
             "method_authority": None,
             "execution_status": "not_applicable",
-            "requested": True,
-            "executed": False,
-            "applicable": False,
-            "available": False,
             "source": None,
-            "reason_code": "house_calculation_not_executed",
             "is_day": None,
         }
         lots = {
+            **_unavailable_state(
+                "house_calculation_not_executed", requested=True
+            ),
             "method": None,
             "method_status": None,
             "method_authority": None,
             "execution_status": "not_applicable",
-            "requested": True,
-            "executed": False,
-            "applicable": False,
-            "available": False,
             "source": None,
-            "reason_code": "house_calculation_not_executed",
             "fortune": None,
             "spirit": None,
             "depends_on_sect": None,
@@ -1083,7 +1081,7 @@ def _compute_chart_locked(req: ChartRequest):
         if ctx.horizon_meaningful:
             classical_keys_no_moon = {b["key"] for b in CLASSICAL_BODIES if b["key"] != "moon"}
             other_bodies_for_voc = [
-                {**body, "body_id": _BODY_ID_BY_KEY[body["key"]]}
+                {**body, "body_id": BODY_ID_BY_KEY[body["key"]]}
                 for body in bodies_all
                 if body["key"] in classical_keys_no_moon
             ]
@@ -1093,7 +1091,7 @@ def _compute_chart_locked(req: ChartRequest):
                 trace,
                 jd_ut=jd_ut,
                 longitude_at=longitude_at,
-                moon_id=_BODY_ID_BY_KEY["moon"],
+                moon_id=BODY_ID_BY_KEY["moon"],
             )
             void_of_course = determine_void_of_course(voc_candidates, trace)
         else:
@@ -1109,7 +1107,10 @@ def _compute_chart_locked(req: ChartRequest):
     declination_aspects = {}
     if req.options.include_declination_aspects:
         declination_aspects = compute_declination_aspects(
-            bodies_all,
+            declination_participants(
+                bodies_all,
+                include_nodes=req.options.aspect_include_nodes,
+            ),
             req.options.declination_aspect_orb_degrees,
             trace,
             default_orb=DECLINATION_ASPECT_ORB,
@@ -1235,13 +1236,62 @@ def _compute_chart_locked(req: ChartRequest):
                 "not_evaluated_across_civil_day"
             )
 
+    return DerivedChart(
+        antiscia=antiscia,
+        aspects=aspects,
+        declination_aspects=declination_aspects,
+        essential_dignities=essential_dignities,
+        lots=lots,
+        sect=sect,
+        void_of_course=void_of_course,
+    )
+
+
+def _assemble_chart_response(
+    facts: AstronomicalFacts,
+    methods: DerivedChart,
+) -> dict[str, Any]:
+    (angles, bodies, body_defs, build_identity, ctx, deployment_profile, event_module_availability, extra_angles, fixed_stars, horizon_events, house_division, houses_for_placement, input_request, latitude_regime, lunar_apsides, lunar_events, node_defs, nodes, parallax_moon, planet_in_house, req, representative_offset_seconds, time_conv, trace,) = (
+        facts.angles,
+        facts.bodies,
+        facts.body_defs,
+        facts.build_identity,
+        facts.ctx,
+        facts.deployment_profile,
+        facts.event_module_availability,
+        facts.extra_angles,
+        facts.fixed_stars,
+        facts.horizon_events,
+        facts.house_division,
+        facts.houses_for_placement,
+        facts.input_request,
+        facts.latitude_regime,
+        facts.lunar_apsides,
+        facts.lunar_events,
+        facts.node_defs,
+        facts.nodes,
+        facts.parallax_moon,
+        facts.planet_in_house,
+        facts.req,
+        facts.representative_offset_seconds,
+        facts.time_conv,
+        facts.trace,
+    )
+
+    (antiscia, aspects, declination_aspects, essential_dignities, lots, sect, void_of_course,) = (
+        methods.antiscia,
+        methods.aspects,
+        methods.declination_aspects,
+        methods.essential_dignities,
+        methods.lots,
+        methods.sect,
+        methods.void_of_course,
+    )
+
     library_info = {
         "pyswisseph_distribution_version": _PYSWISSEPH_DISTRIBUTION_VERSION,
         "swiss_ephemeris_library_version": swe.version,
-        # 時區資料庫和星曆檔一樣是這次計算的**輸入**：本地時間→UTC 完全由它決定。
-        # IANA 每年釋出數次且經常修正歷史偏移，因此同一組輸入在不同版本下會得到
-        # 不同的 UTC、不同的上升點、不同的宮位。先前收據只記 Swiss 版本，
-        # 這個會靜默改變結果的輸入沒有留下任何痕跡。
+        # IANA database version is a calculation input and must be receipted.
         "tz_database": dict(TZ_DATABASE),
         "note": "兩者是不同的版本號：前者是 pip 安裝的 pyswisseph 套件版本，後者是其內建 "
                 "Swiss Ephemeris C 函式庫自報的版本，數字格式相近但並非同一個值。"
@@ -1295,6 +1345,7 @@ def _compute_chart_locked(req: ChartRequest):
             representative_sect=sect,
             representative_lots=lots,
             representative_void_of_course=void_of_course,
+            representative_offset_seconds=representative_offset_seconds,
         )
     elif input_request.birth_time_precision == "date_only":
         birth_time_sensitivity = build_date_only_sensitivity(
@@ -1304,10 +1355,6 @@ def _compute_chart_locked(req: ChartRequest):
             representative_bodies=bodies,
             representative_nodes=nodes,
         )
-        if req.options.include_lilith_priapus:
-            birth_time_sensitivity["not_evaluated_paths"].append(
-                "astronomical_data.lunar_apsides"
-            )
     else:
         birth_time_sensitivity = {
             "precision": "exact",
@@ -1356,6 +1403,12 @@ def _compute_chart_locked(req: ChartRequest):
     }
 
 
+def _compute_chart_locked(req: ChartRequest):
+    facts = _astronomical_facts(req)
+    methods = _derived_chart(facts)
+    return _assemble_chart_response(facts, methods)
+
+
 def create_app(
     settings: AppSettings | None = None,
     *,
@@ -1380,21 +1433,18 @@ def create_app(
         title="古典西洋占星天文計算 API",
         docs_url=None,
         redoc_url=None,
-        openapi_url=resolved_settings.live_openapi_url,
+        openapi_url=None,
     )
     application.state.settings = resolved_settings
     application.state.release_identity = release_identity
 
-    def profile_health_check():
-        return health_check(resolved_settings)
-
-    def profile_compute_chart(req: ChartRequest):
+    async def profile_compute_chart(req: ChartRequest, request: Request):
         token = _BUILD_IDENTITY_CONTEXT.set(runtime_build_identity)
         profile_token = _DEPLOYMENT_PROFILE_CONTEXT.set(
             resolved_settings.profile.value
         )
         try:
-            return compute_chart(req)
+            return await compute_chart_for_request(req, request)
         finally:
             _DEPLOYMENT_PROFILE_CONTEXT.reset(profile_token)
             _BUILD_IDENTITY_CONTEXT.reset(token)
@@ -1406,27 +1456,17 @@ def create_app(
             limit=request.limit,
         )
 
-    # FastAPI response specs: the values are heterogeneous by design —
-    # a single model, a union, extra keys. Typed from the first entry they
-    # all looked wrong.
+    # FastAPI response specs are heterogeneous by design.
     json_responses: dict[int | str, dict[str, Any]] = {
         400: {"model": HostedBoundaryErrorResponse},
         503: {"model": HostedBoundaryErrorResponse},
+        431: {"model": HostedBoundaryErrorResponse},
+        413: {"model": HostedBoundaryErrorResponse},
+        415: {"model": HostedBoundaryErrorResponse},
+        422: {
+            "model": HostedValidationResponse | HostedBoundaryErrorResponse
+        },
     }
-    if resolved_settings.is_private_alpha:
-        json_responses.update(
-            {
-                431: {"model": HostedBoundaryErrorResponse},
-                413: {"model": HostedBoundaryErrorResponse},
-                415: {"model": HostedBoundaryErrorResponse},
-                422: {
-                    "model": (
-                        HostedValidationResponse
-                        | HostedBoundaryErrorResponse
-                    )
-                },
-            }
-        )
 
     api_method_routes = {
         "/api/health": frozenset({"GET"}),
@@ -1434,14 +1474,15 @@ def create_app(
         "/api/chart": frozenset({"POST"}),
         "/api/places/search": frozenset({"POST"}),
     }
-    if resolved_settings.expose_runtime_health:
-        api_method_routes["/api/runtime-health"] = frozenset({"GET"})
-
     application.add_api_route(
         "/api/health",
-        profile_health_check,
+        health_check,
         methods=["GET"],
         name="health_check",
+        response_model=dict[str, object],
+        response_description=(
+            "Process-liveness response; this is not end-to-end calculation readiness."
+        ),
     )
     application.add_api_route(
         "/api/client-config",
@@ -1450,19 +1491,15 @@ def create_app(
         name="client_configuration",
         include_in_schema=False,
     )
-    if resolved_settings.expose_runtime_health:
-        application.add_api_route(
-            "/api/runtime-health",
-            authenticated_runtime_health,
-            methods=["GET"],
-            name="authenticated_runtime_health",
-            responses={503: {"model": HostedBoundaryErrorResponse}},
-        )
     application.add_api_route(
         "/api/chart",
         profile_compute_chart,
         methods=["POST"],
         name="compute_chart",
+        response_model=dict[str, Any],
+        response_description=(
+            "Versioned chart response; see output_contract and deploy/frontend-contract.json."
+        ),
         responses=json_responses,
     )
     application.add_api_route(
@@ -1470,43 +1507,26 @@ def create_app(
         search_places,
         methods=["POST"],
         name="search_places",
+        response_model=dict[str, Any],
+        response_description=(
+            "Bundled-catalog search response with query and execution receipts."
+        ),
         responses=json_responses,
     )
 
-    application.add_exception_handler(
-        NonexistentLocalTimeError,
-        _handle_nonexistent_local_time,  # type: ignore[arg-type]
-    )
-    application.add_exception_handler(
-        AmbiguousLocalTimeChoiceRequiredError,
-        _handle_ambiguous_local_time_choice,  # type: ignore[arg-type]
-    )
-    application.add_exception_handler(
-        FullEphemerisRequiredError,
-        _handle_full_ephemeris_required,  # type: ignore[arg-type]
-    )
-    application.add_exception_handler(
-        HouseSystemUnavailableError,
-        _handle_house_system_unavailable,  # type: ignore[arg-type]
-    )
-    application.add_exception_handler(
-        PlaceCatalogUnavailableError,
-        _handle_place_catalog_unavailable,  # type: ignore[arg-type]
-    )
-    # Validation errors can contain the rejected value, including exact birth
-    # coordinates.  The privacy boundary applies to every profile: local mode
-    # is still routinely observed by browser tooling, proxies and test logs.
-    # Sanitising globally also prevents non-standard JSON NaN/Infinity values
-    # from making FastAPI's default error serializer fail with a secondary 500.
-    application.add_exception_handler(
-        RequestValidationError,
-        _handle_request_validation,  # type: ignore[arg-type]
-    )
-    application.add_exception_handler(
-        ComputeCapacityExhaustedError,
-        _handle_compute_capacity_exhausted,  # type: ignore[arg-type]
-    )
-    application.add_exception_handler(swe.Error, _handle_swisseph_error)
+    # Validation output never echoes rejected birth values in any profile.
+    for error_type, handler in (
+        (NonexistentLocalTimeError, _handle_domain_error),
+        (AmbiguousLocalTimeChoiceRequiredError, _handle_domain_error),
+        (FullEphemerisRequiredError, _handle_domain_error),
+        (HouseSystemUnavailableError, _handle_domain_error),
+        (PlaceCatalogUnavailableError, _handle_domain_error),
+        (RequestValidationError, _handle_request_validation),
+        (ComputeCapacityExhaustedError, _handle_domain_error),
+        (swe.Error, _handle_domain_error),
+        (StarletteHTTPException, _handle_http_exception),
+    ):
+        application.add_exception_handler(error_type, handler)  # type: ignore[arg-type]
 
     frontend_dir = str(
         release_frontend_root
@@ -1539,9 +1559,16 @@ def create_app(
         route_methods=api_method_routes,
     )
 
-    if resolved_settings.is_private_alpha:
-        application.add_middleware(ChartRequestBoundary)
-        application.add_middleware(RequestCapacityBoundary)
+    # Buffer and validate bounded JSON before route execution. Middleware order
+    # is inside-out: the last one added runs first.
+    application.add_middleware(ChartRequestBoundary)
+    application.add_middleware(RequestCapacityBoundary)
+    # Outermost after privacy: a request for a host this deployment does not
+    # answer for is refused before any budget is spent on it.
+    application.add_middleware(
+        DeclaredHostBoundary,
+        expected_host=resolved_settings.expected_host,
+    )
 
     # Privacy remains the outer user middleware so it can contain downstream
     # response-lifecycle failures and apply headers to request-boundary errors.
@@ -1552,9 +1579,10 @@ def create_app(
         event_emitter=emitter,
         additional_response_headers=(
             {"X-Robots-Tag": "noindex, nofollow, noarchive"}
-            if resolved_settings.is_private_alpha
+            if resolved_settings.capabilities.emit_noindex
             else None
         ),
+        cache_policy=resolved_settings.capabilities.cache_policy,
     )
     return application
 

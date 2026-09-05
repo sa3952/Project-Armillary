@@ -63,12 +63,12 @@ def protected_semantic_mismatches(
 ) -> list[dict[str, str | None]]:
     expected_values = protected_semantic_values(expected)
     actual_values = protected_semantic_values(actual)
-    mismatches = []
-    for path in sorted(set(expected_values) | set(actual_values)):
-        if expected_values.get(path) != actual_values.get(path):
-            mismatches.append({
+    return [
+        {
                 "path": path,
                 "expected": expected_values.get(path),
                 "actual": actual_values.get(path),
-            })
-    return mismatches
+        }
+        for path in sorted(set(expected_values) | set(actual_values))
+        if expected_values.get(path) != actual_values.get(path)
+    ]

@@ -7,10 +7,21 @@ body{
   font-family:var(--sans); font-size:16px; line-height:1.8;
   font-feature-settings:"palt" 1;
 }
-.skip-link{position:fixed;z-index:1000;top:var(--s2);left:var(--s2);padding:.55rem .75rem;background:var(--paper);color:var(--ink);border:2px solid var(--accent);border-radius:var(--radius);transform:translateY(-180%)}
+.skip-link{position:fixed;z-index:1000;top:var(--s2);left:var(--s2);padding:.55rem .75rem;background:var(--paper);color:var(--ink);border:2px solid var(--accent);border-radius:var(--radius);transform:translateY(-180%);text-decoration:none}
 .skip-link:focus{transform:translateY(0)}
+main{display:block}
 .wrap{max-width:var(--wrap); margin:0 auto; padding:0 var(--pad)}
 .mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+/* 內文連結：與 page.css 同一條規則。計算頁目前沒有內文連結，寫在這裡是為了
+   讓兩份樣式表對「裸 a」的答案一致，之後加連結時不會突然冒出瀏覽器預設藍。 */
+a{
+  color:var(--accent); text-decoration:underline;
+  text-decoration-style:dotted; text-decoration-thickness:1px;
+  text-underline-offset:.22em;
+}
+a:hover{text-decoration-style:solid}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 [hidden]{display:none !important}
 
 .eyebrow{
@@ -20,18 +31,23 @@ body{
 
 /* ── 頁首：黑底招牌 ─────────────────────────────── */
 header{background:var(--plate); color:var(--plate-fg); border-bottom:1px solid var(--plate-hair)}
-header .wrap{display:flex; align-items:baseline; gap:var(--s3); min-height:70px; flex-wrap:wrap}
-.brand{font-family:var(--serif); font-size:1.35rem; letter-spacing:.18em; text-decoration:none; color:inherit}
-.brand small{font-family:var(--serif); font-size:.78rem; letter-spacing:.3em; color:var(--plate-dim); margin-left:.6rem}
-.profile-chip{
-  margin-left:auto; font-family:var(--mono); font-size:.68rem; letter-spacing:.16em;
-  color:var(--plate-dim); border:1px solid var(--plate-hair); padding:.2rem .7rem;
+/* 頁首一列。三件事都必須寫在這裡，缺一個就會壞：
+   · align-items:center。原本是 baseline，它讓招牌與導覽各自對齊自己的文字
+     基線，而招牌含一個 2rem 的環組標記、導覽是 .88rem 的字，兩個盒子的高度
+     差很多。實測 754px 時招牌盒的垂直中心比頁首中心高 17px，導覽低 2.5px，
+     看起來就是「商標莫名其妙靠齊上方」。改置中之後兩者共用同一條中線。
+   · gap。招牌與導覽之間原本沒有任何間距，只靠 .site-nav 的 margin-left:auto
+     推開。而 900px 以下那個 auto 被歸零（見下），於是導覽直接黏在
+     「ARMILLARY」右邊，實測間距 0px。gap 讓它們在任何寬度都推不到一起。
+   · flex-wrap 與 min-height。固定 height:78px 在裝不下時不會讓路，只會擠。
+     改成最小高度，裝不下就換行。 */
+header .wrap{
+  display:flex; align-items:center; flex-wrap:wrap;
+  gap:.6rem var(--s3); min-height:78px;
 }
-.profile-chip[data-state="resolving"]{color:var(--plate-dim)}
-.profile-chip[data-state="failed"]{color:var(--accent-rev); border-color:var(--accent-rev)}
-
+.brand{font-family:var(--serif); font-size:1.45rem; letter-spacing:.18em; text-decoration:none; color:inherit}
+.brand small{font-family:var(--serif); font-size:.82rem; letter-spacing:.3em; color:var(--plate-dim); margin-left:.7rem}
 /* ── 表單 ───────────────────────────────────────── */
-.compose{padding:var(--s4) 0 var(--s5)}
 h1{
   font-family:var(--serif); font-weight:400; letter-spacing:.02em;
   font-size:clamp(1.9rem,4vw,3rem); line-height:1.35; margin:var(--s2) 0 var(--s2);
@@ -106,7 +122,7 @@ button.ghost:hover:not(:disabled){background:var(--ink); color:var(--paper)}
 button.small{font-size:.82rem; padding:.45rem 1rem}
 
 .status-line{font-size:.88rem; color:var(--ink-dim); overflow-wrap:anywhere}
-/* FPI-2026-08-06-E-010：按鈕旁的短訊，與 #status-line 同文。 */
+/* 按鈕旁的短訊，與 #status-line 同文。 */
 .inline-status{font-size:.82rem; color:var(--ink-dim); margin-left:.5rem; overflow-wrap:anywhere}
 .inline-status[data-tone="error"]{color:var(--accent)}
 .status-line[data-tone="error"]{color:var(--accent)}
@@ -125,7 +141,6 @@ button.small{font-size:.82rem; padding:.45rem 1rem}
 .error-panel ul{margin:.6rem 0 0 1.1rem; font-size:.88rem; color:var(--ink-dim)}
 
 /* ── 結果 ───────────────────────────────────────── */
-.results{padding:0 0 var(--s6)}
 .result-head{border-top:1px solid var(--ink); padding:var(--s3) 0; display:flex; flex-wrap:wrap; gap:var(--s2) var(--s3); align-items:baseline}
 .result-head h2{font-family:var(--serif); font-weight:400; font-size:1.6rem}
 .versions{margin-left:auto; font-family:var(--mono); font-size:.7rem; color:var(--ink-faint); letter-spacing:.1em; overflow-wrap:anywhere}
@@ -165,56 +180,72 @@ td:first-child{color:var(--ink)}
 
 footer{border-top:1px solid var(--ink); padding:var(--s3) 0 var(--s5)}
 footer .wrap{display:flex; gap:var(--s3); flex-wrap:wrap}
-footer span{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); letter-spacing:.1em}
+footer span{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); letter-spacing:.12em}
 
 @media (max-width:900px){
   :root{--pad:1.4rem; --s4:2.2rem; --s5:3rem; --s6:4rem}
   .grid,.grid.three{grid-template-columns:1fr}
   .versions{margin-left:0; flex-basis:100%}
   header .wrap{padding-top:.8rem; padding-bottom:.8rem}
-  .profile-chip{margin-left:0}
 }
 
-/* 窄螢幕：導覽換行後，min-height 與 baseline 對齊會讓頁首吃掉近三成視窗高度。
-   改為置中對齊、收緊字級，把空間還給表單。與 page.css 的同段規則對應。 */
+/* 窄螢幕：導覽換行後，固定高度反而讓頁首裝不下自己的導覽列。
+   本段與 page.css 的同名規則逐條相同，改一邊必須改兩邊——兩份樣式表現在
+   由同一個殼產生同一份 header markup，長得不一樣就是缺陷。
+   `height:auto` 不可省：上面的基準規則是 `height:78px`，光寫 `min-height:0`
+   蓋不掉它。2026-08-27 實測，只寫 min-height 時導覽列會溢出頁首 18px。 */
 @media (max-width:640px){
-  header .wrap{min-height:0; align-items:center; row-gap:.6rem}
+  header .wrap{
+    min-height:0; padding-top:.9rem; padding-bottom:.9rem;
+  }
   .brand{font-size:1.2rem; letter-spacing:.12em}
   .brand small{font-size:.7rem; letter-spacing:.22em; margin-left:.5rem}
   .mark{width:1.6rem; height:1.6rem}
-  .site-nav{width:100%; gap:.85rem}
+  .site-nav{width:100%; margin-left:0; gap:.85rem}
   .site-nav a{font-size:.8rem}
 }
 
 @media print{
-  /* Sebastian 2026-08-05：「列印／PDF 只要列印出使用者要的占星結果和相關
-     receipt 就好了」。原本只藏 header/form/toolbar/button——但 .clear-zone
-     的按鈕被藏掉後，它的標題「清除 · CLEAR」與說明文字仍會印出來，變成一段
-     指向不存在按鈕的孤兒文字；區塊索引與地名查詢結果同理，都是互動用的。 */
+  /* 列印只留占星結果與收據。互動區塊要整塊藏起來，不只藏它的按鈕：只藏
+     按鈕會留下一段指向不存在控制項的孤兒文字。 */
   header,form,.toolbar,.actions,button,
   .clear-zone,.section-index-wrap,#place-results,footer{display:none !important}
   body{background:var(--print-bg); color:var(--print-fg)}
   section.result-section{break-inside:avoid}
 }
 
-/* ═══ L 層分區（憲法子-3.2：混合介面明示各區歸屬）═════════ */
-.layer-region{padding:var(--s4) 0 var(--s5)}
-.layer-region + .layer-region{border-top:2px solid var(--ink)}
-.layer-badge{
-  font-family:var(--mono); font-size:.7rem; letter-spacing:.12em;
-  color:var(--ink-faint); border-left:3px solid var(--ink-faint);
-  padding:.15rem 0 .15rem .7rem; margin-bottom:var(--s3); max-width:none;
-}
-.layer-region[data-layer="L1"] .layer-badge{border-left-color:var(--accent); color:var(--accent)}
-.layer-badge b{font-weight:400; letter-spacing:.2em; margin-right:.5rem}
+/* ═══ 兩個區：填表與結果 ═══════════════════════════════
+   分層標示不出現在畫面上：L1／L2／L3 是工程端的詞彙，使用者看不懂。
+   這兩個區塊只承擔間距與分隔線。 */
+.compose{padding:var(--s4) 0 var(--s5)}
+.results{padding:var(--s4) 0 var(--s5)}
+.compose + .results{border-top:2px solid var(--ink)}
 
-/* 中文術語旁的英文技術詞（PRODUCT_CHARTER 競爭楔子第 6 條）*/
+/* 中文術語旁的英文技術詞 */
 .en{font-family:var(--mono); font-size:.7em; letter-spacing:.08em; color:var(--ink-faint); margin-left:.5em}
 
 .row{display:flex; gap:var(--s1); align-items:center}
 .row.wrap-row{flex-wrap:wrap}
 .field.grow{flex:1}
 .note{font-size:.82rem; color:var(--ink-faint); line-height:1.7; max-width:var(--measure)}
+
+/* 重複的民用小時（SD-32）。這一區只在所填時刻真的在該時區出現兩次時才出現，
+   而它問的問題會改變上升點落在哪個星座——所以它不能長得像一段普通內文。
+   之前 .fold-choice 與 .fold-choice-title 完全沒有規則：容器 border、
+   background、padding、margin 全是 0，標題是 16px 一般內文，視覺重量低於
+   旁邊的 .consequence。這裡把它做成與 .error-panel 同一套的「需要你回答」語彙，
+   但用 accent 而不是錯誤色——它不是錯誤，是未決。 */
+.fold-choice{
+  margin-top:var(--s3); padding:var(--s2) var(--s3);
+  border:1px solid var(--accent); border-left-width:3px;
+  background:var(--paper-2);
+}
+.fold-choice-title{
+  font-family:var(--serif); font-size:1.02rem; color:var(--ink);
+  max-width:var(--measure);
+}
+.fold-choice .choice{margin-top:var(--s2)}
+.fold-choice .note{margin-top:var(--s2)}
 
 /* ═══ 地點查詢 ═════════════════════════════════════════ */
 .place-search{margin-top:var(--s2)}
@@ -238,14 +269,7 @@ footer span{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); l
 .manual-place[open] summary{margin-bottom:var(--s2)}
 
 /* ═══ 選項：層 → 群組摺疊 → 相依子項 ═══════════════════ */
-/* 這裡原本有兩個宣告區塊與一個選擇器，但它們自 a80c6aa 建檔起就是壞的：
-   兩個區塊沒有選擇器，第三行的選擇器沒有 `{`。CSS 解析器遇到沒有 `{` 的
-   選擇器會一直往後吃到下一個 `{`，因此它把下面的 `.section-copy{margin-left:auto}`
-   當成自己的區塊，整條規則隨著這個無效選擇器一起被丟棄——實測 1280px 下
-   `.section-copy` 的 margin-left 是 0px 而不是 auto。
-   已移除無效構造以停止連帶損害。**兩個孤兒區塊原本要套用到哪個選擇器已無法
-   從原始碼判定**（看起來像群組摺疊標題列與計數徽章），需要前端設計裁決後補回；
-   在那之前它們本來也從未生效，移除不改變任何已呈現的樣式。 */
+/* 群組摺疊標題列與計數徽章的樣式待前端設計裁決後補上。 */
 /* ═══ section copy 與清除 ══════════════════════════════ */
 .section-copy{margin-left:auto}
 .clear-zone{border-top:1px solid var(--ink); margin-top:var(--s3); padding-top:var(--s3)}
@@ -254,12 +278,7 @@ button.danger{background:var(--accent); border-color:var(--accent); color:var(--
 button.danger:hover{background:var(--ink); border-color:var(--ink)}
 
 @media (max-width:900px){
-  /* 這個區塊原本的兩條規則都已移除：
-     一條是 `select.option-control,input[type="number"]  .place-receipt dl`——
-     `input[type="number"] .place-receipt dl` 是後代選擇器，而 input 是空元素，
-     永遠選不到任何東西；其中真正需要的 `.place-receipt dl{grid-template-columns:1fr}`
-     在本檔後段的同一個中斷點已有一條正確的規則，故不重複。
-     另一條 `.presets` 對應的是已移除的 presets 死碼。 */
+  /* `.place-receipt dl` 在本檔後段的同一個中斷點已有一條規則，不重複宣告。 */
 }
 
 /* ═══ 進階選項：單層摺疊，內部全部攤平 ═══════════════════ */
@@ -273,6 +292,16 @@ button.danger:hover{background:var(--ink); border-color:var(--ink)}
 .advanced[open] summary::before{content:"−　"}
 .advanced[open] summary{border-bottom:1px solid var(--hair); background:var(--paper-2)}
 #advanced-summary[data-state="changed"]{color:var(--accent)}
+/* 計算口徑沿用進階選項的收合外觀，但語氣不同：它的摘要不是「改了幾項」，
+   而是「現在生效的是哪一套」。使用者不必打開就知道自己拿到什麼。 */
+.mode{margin-top:.2rem}
+#mode-summary{color:var(--ink)}
+/* 選項群組的引導句。把握程度併進日期時間之後，那三個選項需要一個標題，
+   否則它們會看起來像在描述下面的日期欄位。 */
+.choice-lead{
+  font-size:.85rem; color:var(--ink-dim); margin-bottom:.5rem;
+}
+.choice-lead .en{color:var(--ink-faint)}
 .advanced-body{padding:var(--s2) 1rem var(--s3)}
 .options-actions{display:flex; justify-content:flex-end; padding-bottom:var(--s1)}
 
@@ -516,7 +545,8 @@ table[data-section="fixed_stars"] td:first-child{
 .long-section,
 .advanced-body,
 .option-block,
-main.wrap{min-width:0}
+main,
+.calc-body{min-width:0}
 .table-wrap{ margin-top:var(--s2);border:1px solid var(--hair-soft); border-radius:var(--radius);max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch}
 .long-section > *{min-width:0}
 
@@ -532,9 +562,25 @@ a.brand:hover .mark circle,a.brand:hover .mark ellipse,a.brand:hover .mark line{
     var(--ring-3) 50% 75%, var(--ring-v) 75% 100%)}
 
 /* ═══ 導覽與網站地圖：十三個介面都要到得了 ═══════════════ */
-.site-nav{margin-left:auto; display:flex; gap:1.25rem; flex-wrap:wrap}
+/* align-items:center 不可省。預設的 stretch 會把每個連結的盒子拉到最高那一個
+   （帶內距的 CTA）的高度，而連結的文字是貼在那個被拉高的盒子頂端的。
+   816px 實測：五個純連結的文字中線在 30.8，CTA 的在 38.8，導覽列自己的中線
+   是 39.0——連結整排高了 8.2px，而 CTA 是唯一對齊的那一個，於是它看起來
+   像是浮在旁邊，跟誰都沒有關係。置中之後六個項目共用同一條文字中線。 */
+.site-nav{margin-left:auto; display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap}
 .site-nav a{color:var(--plate-dim); text-decoration:none; font-size:.88rem; white-space:nowrap}
 .site-nav a:hover{color:var(--plate-fg)}
+/* 導覽列常駐入口，與 page.css 同一條規則。本頁自己就是它的目的地，產生器因此
+   在這一頁替它加上 aria-current="page"。 */
+.site-nav a.nav-cta{
+  background:var(--paper); color:var(--plate);
+  padding:.5rem 1.15rem; margin-left:.6rem;
+}
+.site-nav a.nav-cta:hover{background:var(--accent-rev); color:var(--paper)}
+.site-nav a.nav-cta[aria-current="page"]{
+  background:transparent; color:var(--plate-fg);
+  box-shadow:inset 0 0 0 1px var(--plate-hair);
+}
 .sitemap{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
   gap:var(--s3); padding-top:var(--s4); padding-bottom:var(--s3)}
 .sitemap-col{display:flex; flex-direction:column; gap:.4rem}
@@ -543,7 +589,7 @@ a.brand:hover .mark circle,a.brand:hover .mark ellipse,a.brand:hover .mark line{
 .sitemap-col a{color:var(--ink-dim); text-decoration:none; font-size:.9rem}
 .sitemap-col a:hover{color:var(--accent)}
 @media (max-width:900px){
-  .site-nav{margin-left:0; gap:.9rem}
+  .site-nav{gap:.9rem}
   .site-nav a{font-size:.82rem}
   .sitemap{grid-template-columns:1fr 1fr}
 }

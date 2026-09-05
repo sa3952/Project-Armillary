@@ -1,39 +1,70 @@
 {
-  "artifacts": {
-    "amd64": {
-      "/opt/venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.cpython-313-x86_64-linux-gnu.so": "a0deadb438e838e9cba60fdf964ba88751d344f337d0dee92f6d759bfd681325",
-      "/opt/venv/lib/python3.13/site-packages/swisseph.cpython-313-x86_64-linux-gnu.so": "3a4de44e0382fa9a0776ca3052838042ecbb3728b40da6ee90b55de98e8e2d9b"
-    },
-    "arm64": {
-      "/opt/venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.cpython-313-aarch64-linux-gnu.so": "fd471937b539c445cbcee5846ba2d7e1c1410fda7b5df0ddf20133a48783efc5",
-      "/opt/venv/lib/python3.13/site-packages/swisseph.cpython-313-aarch64-linux-gnu.so": "a92c5044854ffe8dda2416cfe2fa3a7f54ee642f6a9355576f1ce9f752c73c0d"
-    }
+ "_note": "reviewed_normalized_runtime_sha256 is the attested value: allocated sections only, without the linker's build-id, which two hosted builds of one source showed to be identical while the whole file was not. reviewed_whole_file_sha256 stays for the artifacts that are byte-stable and is reported as an observation, never as a blocker.",
+ "architectures": {
+  "amd64": {
+   "abi_tag": "cpython-314",
+   "elf_e_machine": 62,
+   "python_path_fragment": "/python3.14/",
+   "required_modules": [
+    "pydantic_core/_pydantic_core.cpython-314-x86_64-linux-gnu.so",
+    "swisseph.cpython-314-x86_64-linux-gnu.so"
+   ],
+   "reviewed_normalized_runtime_sha256": {
+    "pydantic_core/_pydantic_core.cpython-314-x86_64-linux-gnu.so": "d5eb3b3e8aa743acb05d16ee62fa0d34ba185105031262b906eb9403a62e4436",
+    "swisseph.cpython-314-x86_64-linux-gnu.so": "3079d0d217f99009989e4c098ac6a3af67c32f3b8966e3d46aaf82fb0f983d92"
+   },
+   "reviewed_whole_file_sha256": {}
   },
-  "provenance": {
-    "history": [
-      {
-        "amd64_swisseph": "e7ba7626c228150e0b09f968b335e94abf56abeeac8645fa1768fb52d1a442c6",
-        "base_image_digest": "sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91",
-        "note": "Two builds minutes apart produced identical bytes, so the extension is reproducible within one toolchain.",
-        "revision": "99aa989"
-      },
-      {
-        "amd64_swisseph": "3a4de44e0382fa9a0776ca3052838042ecbb3728b40da6ee90b55de98e8e2d9b",
-        "base_image_digest": "sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251",
-        "note": "Observed after the DEP-SEC-E-001 base bump with the same Python version and pyswisseph source archive. This correlation does not prove compiler causation: without matching build-time toolchain receipts and a same-input second build, the cause is unclassified. Numeric parity answers a separate behavior question.",
-        "revision": "18391de"
-      },
-      {
-        "architecture": "arm64",
-        "arm64_swisseph": "a92c5044854ffe8dda2416cfe2fa3a7f54ee642f6a9355576f1ce9f752c73c0d",
-        "base_image_digest": "sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251",
-        "note": "Also moved after the base bump. The byte-change cause is unclassified without matching build-time toolchain receipts and a same-input comparison build. Parity against the previous baseline showed zero angular change, which is scoped numeric evidence and not compiler attribution.",
-        "previous": "dd49e29f6e7f22612b51527854bb889e9b6fc82c893b446880b2c6a11628c02d",
-        "revision": "18391de"
-      }
-    ],
-    "not_covered": "ELF files originating in the base image. Their identity rests on the base digest pinned in deploy/Dockerfile, not on this manifest.",
-    "scope": "Only extensions this application build installs into /opt/venv.",
-    "semantics": "Hashes of the extensions this build compiles, per architecture. A change here is not automatically a defect; it is a fact that must be explained."
+  "arm64": {
+   "abi_tag": "cpython-314",
+   "elf_e_machine": 183,
+   "python_path_fragment": "/python3.14/",
+   "required_modules": [
+    "pydantic_core/_pydantic_core.cpython-314-aarch64-linux-gnu.so",
+    "swisseph.cpython-314-aarch64-linux-gnu.so"
+   ],
+   "reviewed_normalized_runtime_sha256": {},
+   "reviewed_whole_file_sha256": {}
   }
+ },
+ "historical_v2_artifacts": {
+  "amd64": {
+   "/opt/venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.cpython-313-x86_64-linux-gnu.so": "a0deadb438e838e9cba60fdf964ba88751d344f337d0dee92f6d759bfd681325",
+   "/opt/venv/lib/python3.13/site-packages/swisseph.cpython-313-x86_64-linux-gnu.so": "3a4de44e0382fa9a0776ca3052838042ecbb3728b40da6ee90b55de98e8e2d9b"
+  },
+  "arm64": {
+   "/opt/venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.cpython-313-aarch64-linux-gnu.so": "fd471937b539c445cbcee5846ba2d7e1c1410fda7b5df0ddf20133a48783efc5",
+   "/opt/venv/lib/python3.13/site-packages/swisseph.cpython-313-aarch64-linux-gnu.so": "a92c5044854ffe8dda2416cfe2fa3a7f54ee642f6a9355576f1ce9f752c73c0d"
+  }
+ },
+ "provenance": {
+  "active_semantics": "Current source owns Python ABI, module and ELF architecture. Gate D separately binds installed bytes to the embedded builder receipt and remains blocked until normalized runtime identities are reviewed for the matching architecture; whole-file drift remains an observation.",
+  "current_hash_state": "pending_exact_image_review_not_auto_adopted",
+  "history": [
+   {
+    "amd64_swisseph": "e7ba7626c228150e0b09f968b335e94abf56abeeac8645fa1768fb52d1a442c6",
+    "base_image_digest": "sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91",
+    "note": "Two builds minutes apart under one observed toolchain produced identical bytes. This observation does not establish future same-toolchain reproducibility.",
+    "revision": "99aa989"
+   },
+   {
+    "amd64_swisseph": "3a4de44e0382fa9a0776ca3052838042ecbb3728b40da6ee90b55de98e8e2d9b",
+    "base_image_digest": "sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251",
+    "note": "Observed after the DEP-SEC-E-001 base bump with the same Python version and pyswisseph source archive. This correlation does not prove compiler causation: without matching build-time toolchain receipts and a same-input second build, the cause is unclassified. Numeric parity answers a separate behavior question.",
+    "revision": "18391de"
+   },
+   {
+    "architecture": "arm64",
+    "arm64_swisseph": "a92c5044854ffe8dda2416cfe2fa3a7f54ee642f6a9355576f1ce9f752c73c0d",
+    "base_image_digest": "sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251",
+    "note": "Also moved after the base bump. The byte-change cause is unclassified without matching build-time toolchain receipts and a same-input comparison build. Parity against the previous baseline showed zero angular change, which is scoped numeric evidence and not compiler attribution.",
+    "previous": "dd49e29f6e7f22612b51527854bb889e9b6fc82c893b446880b2c6a11628c02d",
+    "revision": "18391de"
+   }
+  ],
+  "not_covered": "ELF files originating in the base image. Their identity rests on the base digest pinned in deploy/Dockerfile, not on this manifest.",
+  "scope": "Only extensions this application build installs into /opt/venv.",
+  "semantics": "Hashes of the extensions this build compiles, per architecture. A change here is not automatically a defect; it is a fact that must be explained."
+ },
+ "schema_version": "image-app-built-extensions-v4"
 }

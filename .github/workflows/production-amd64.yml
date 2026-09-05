@@ -7,7 +7,6 @@ on:
       - ".github/workflows/production-amd64.yml"
       - "backend/**"
       - "deploy/**"
-      - "frontend/**"
       - "scripts/**"
       - "third_party/**"
   push:
@@ -16,7 +15,6 @@ on:
       - ".github/workflows/production-amd64.yml"
       - "backend/**"
       - "deploy/**"
-      - "frontend/**"
       - "scripts/**"
       - "third_party/**"
 
@@ -40,7 +38,7 @@ jobs:
       PYTHONPYCACHEPREFIX: /tmp/classical-astrology-pycache
     steps:
       - name: Checkout tested revision
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
@@ -58,12 +56,11 @@ jobs:
             --purpose diagnostic \
             --evidence-dir /tmp/classical-astrology-build-evidence \
             --require-clean
+          # Every flag below is one the module's parser declares; an
+          # undeclared flag exits 2 before any runtime check runs.
           python3 -m scripts.verification.verify_container_runtime \
             --image classical-astrology-data:ci-amd64 \
             --platform linux/amd64 \
-            --container-only \
-            --worker-resilience \
-            --soak-requests 250 \
             --quiet
 
       - name: Publication boundary after hosted writers

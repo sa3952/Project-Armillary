@@ -5,13 +5,14 @@ geocentric apparent tropical-of-date contract rather than inheriting research
 display modes such as heliocentric, sidereal, J2000, or true position.
 """
 
-import datetime as dt
 import math
 
 import swisseph as swe
 
 from ..ephemeris import require_full_ephemeris
+from .root_finding import find_crossings_detailed
 from .trace import Trace
+from .time_utils import jd_ut_to_iso_utc
 
 
 PHASES = {
@@ -45,29 +46,50 @@ def _phase_state(jd_ut: float) -> tuple[float, float, int, int]:
     return elongation, relative_speed, moon_retflag, sun_retflag
 
 
+# `root_finding` states plainly that Newton and secant are deliberately not used:
+# they need a derivative and are not stable.  This module then wrote its own
+# unguarded Newton iteration anyway, whose two failure paths both raised
+# `swe.Error` — which the API maps to 500, so an oscillation in one lunar phase
+# would have destroyed the whole chart request.  It brackets and bisects now,
+# through the same solver every other root in this product goes through.
+_PHASE_BRACKET_DAYS = 1.5
+_PHASE_COARSE_STEP_DAYS = 0.05
+# The elongation moves about 12.2 degrees a day, so a tolerance in days has to
+# be an order of magnitude tighter than the residual the caller checks in
+# degrees.  1e-9 days is under a millisecond and about 1.2e-8 degrees.
+_PHASE_TOLERANCE_DAYS = 1e-9
+
+
 def _refine_phase(guess_jd_ut: float, target_degrees: float) -> tuple[float, float, int, int]:
-    jd_ut = guess_jd_ut
-    for _ in range(20):
-        elongation, relative_speed, moon_retflag, sun_retflag = _phase_state(jd_ut)
+    state: dict[str, tuple[int, int]] = {}
+
+    def separation_at(offset_days: float) -> float:
+        elongation, _speed, moon_retflag, sun_retflag = _phase_state(
+            guess_jd_ut - _PHASE_BRACKET_DAYS + offset_days
+        )
+        state["retflags"] = (moon_retflag, sun_retflag)
+        return _signed_degrees(elongation - target_degrees)
+
+    roots = find_crossings_detailed(
+        separation_at,
+        window_days=2 * _PHASE_BRACKET_DAYS,
+        coarse_step_days=_PHASE_COARSE_STEP_DAYS,
+        tolerance_days=_PHASE_TOLERANCE_DAYS,
+    )
+    if roots:
+        nearest = min(roots, key=lambda root: abs(root["t"] - _PHASE_BRACKET_DAYS))
+        jd_ut = guess_jd_ut - _PHASE_BRACKET_DAYS + nearest["t"]
+        elongation, _speed, moon_retflag, sun_retflag = _phase_state(jd_ut)
         residual = _signed_degrees(elongation - target_degrees)
-        if abs(residual) < 1e-10:
-            return jd_ut, residual, moon_retflag, sun_retflag
-        if abs(relative_speed) < 1e-8:
-            raise swe.Error("Moon-Sun relative speed too small during phase root search")
-        jd_ut -= residual / relative_speed
+        return jd_ut, residual, moon_retflag, sun_retflag
+
+    jd_ut = guess_jd_ut
 
     elongation, _relative_speed, moon_retflag, sun_retflag = _phase_state(jd_ut)
     residual = _signed_degrees(elongation - target_degrees)
     if abs(residual) > 1e-7:
         raise swe.Error(f"Lunar phase root did not converge; residual={residual} degrees")
     return jd_ut, residual, moon_retflag, sun_retflag
-
-
-def _jd_ut_to_iso_utc(jd_ut: float) -> str:
-    year, month, day, hour, minute, second = swe.jdut1_to_utc(jd_ut, swe.GREG_CAL)
-    value = dt.datetime(year, month, day, hour, minute, tzinfo=dt.timezone.utc)
-    value += dt.timedelta(seconds=second)
-    return value.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def _phase_event(reference_jd_ut: float, phase: str, direction: str) -> dict:
@@ -92,7 +114,7 @@ def _phase_event(reference_jd_ut: float, phase: str, direction: str) -> dict:
         "target_elongation_degrees": target,
         "direction": direction,
         "jd_ut": jd_ut,
-        "utc_time": _jd_ut_to_iso_utc(jd_ut),
+        "utc_time": jd_ut_to_iso_utc(jd_ut),
         "angular_residual_degrees": residual,
         "calculation": "Moon-Sun apparent geocentric tropical longitude root",
         "ephemeris_source": "Swiss Ephemeris files",
@@ -120,7 +142,10 @@ def compute_primary_phases(reference_jd_ut: float, trace: Trace) -> dict:
 
     trace.add(
         "前後朔望弦與出生前朔望",
-        formula="以 Moon-Sun 視地心回歸黃經差對 0°/90°/180°/270° 作 Newton root search",
+        formula=(
+            "以 Moon-Sun 視地心回歸黃經差對 0°/90°/180°/270° "
+            "作粗掃描、分割根區間與二分求根"
+        ),
         inputs={
             "reference_JD_UT": reference_jd_ut,
             "flags": PHASE_FLAGS,
@@ -168,7 +193,7 @@ def _contacts(tret: tuple[float, ...]) -> dict:
     return {
         label: {
             "jd_ut": tret[index],
-            "utc_time": _jd_ut_to_iso_utc(tret[index]),
+            "utc_time": jd_ut_to_iso_utc(tret[index]),
         }
         for index, label in labels.items()
         if tret[index] > 0
@@ -204,7 +229,7 @@ def _eclipse_result(kind: str, retflag: int, tret: tuple[float, ...]) -> dict:
         "retflag_moon": moon_retflag,
         "ephemeris_source": "Swiss Ephemeris files",
         "jd_ut_maximum": tret[0],
-        "utc_time_maximum": _jd_ut_to_iso_utc(tret[0]),
+        "utc_time_maximum": jd_ut_to_iso_utc(tret[0]),
         "contacts": _contacts(tret),
         "calculation": (
             "swe.lun_eclipse_when(backwards=True)"

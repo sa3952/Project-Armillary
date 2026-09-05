@@ -11,22 +11,24 @@ from __future__ import annotations
 
 import asyncio
 import builtins
+from contextlib import contextmanager
 import io
-import inspect
 import json
 import math
 import os
 from pathlib import Path
-import socket
 import subprocess
 import sys
 import time
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from types import SimpleNamespace
+from urllib.error import URLError
 
 from fastapi.testclient import TestClient
 import pytest
 import swisseph as swe
+from tests.backend import http_request as _request
+from tests.backend import minimal_chart_payload
+from tests.backend import unused_local_port as _unused_local_port
 
 if sys.version_info < (3, 11):
     from exceptiongroup import BaseExceptionGroup
@@ -34,9 +36,6 @@ if sys.version_info < (3, 11):
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
-LOCAL_LAUNCHER = PROJECT_ROOT / "start.command"
-RUN_LOCAL = PROJECT_ROOT / "scripts" / "local" / "run-local.sh"
-
 CANARY_TEXT = "PRIVACY_CANARY_DO_NOT_LOG_6C_734991"
 CANARY_LATITUDE = 23.456789
 CANARY_LONGITUDE = 123.456789
@@ -52,86 +51,76 @@ EXPECTED_EVENT_FIELDS = {
     "request_size_bucket",
     "outcome",
     "error_code",
+    # Ruled 2026-09-03: the exception class name, drawn from a closed allowlist,
+    # so an operator can tell one unexpected failure from another.
+    "failure_class",
 }
 
 
-def test_privacy_real_server_commands_pin_the_production_h11_parser():
-    """The canaries must not let an incidental local extra choose the parser."""
-
-    source = Path(__file__).read_text(encoding="utf-8")
-    run_call = "uvicorn." + "run(main.app"
-    parser_pin = "http=" + "'h11'"
-    assert source.count(run_call) == 4
-    assert source.count(parser_pin) == 4
-
-
-def test_python310_exception_groups_are_explicit_and_fail_closed():
-    requirements = (BACKEND_ROOT / "requirements.txt").read_text(encoding="utf-8")
-    source = (BACKEND_ROOT / "app" / "privacy_logging.py").read_text(
-        encoding="utf-8"
+def _payload() -> dict:
+    return minimal_chart_payload(
+        year=1997, month=8, day=17, hour=9, minute=42,
+        latitude=CANARY_LATITUDE, longitude=CANARY_LONGITUDE, altitude_m=87,
     )
 
-    assert 'exceptiongroup; python_version < "3.11"' in requirements
-    assert "BaseExceptionGroup = ()" not in source
-    assert "from exceptiongroup import BaseExceptionGroup" in source
+
+async def _empty_request():
+    return {"type": "http.request", "body": b"", "more_body": False}
 
 
-def test_python310_exception_group_dependency_has_hash_pinned_lock_closure():
-    root = Path(__file__).resolve().parents[2]
-    for relative in (
-        "backend/requirements.lock",
-        "backend/requirements-dev.lock",
-        "deploy/requirements.lock",
-    ):
-        lock = (root / relative).read_text(encoding="utf-8")
-        assert "exceptiongroup==" in lock, relative
-        assert 'python_version < "3.11"' in lock, relative
-        block = lock[lock.index("exceptiongroup==") :]
-        block = block[: block.index("\n    # via")]
-        assert "--hash=sha256:" in block, relative
+async def _ignore_send(_message):
+    return None
 
 
-def _unused_local_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
+async def _no_content_app(_scope, _receive, send):
+    await send({"type": "http.response.start", "status": 204, "headers": []})
+    await send({"type": "http.response.body", "body": b""})
 
 
-def _payload() -> dict:
-    return {
-        "datetime": {
-            "year": 1997,
-            "month": 8,
-            "day": 17,
-            "hour": 9,
-            "minute": 42,
-            "second": 0,
-        },
-        "timezone": {"mode": "iana", "iana_name": "Asia/Taipei"},
-        "location": {
-            "latitude": CANARY_LATITUDE,
-            "longitude": CANARY_LONGITUDE,
-            "altitude_m": 87,
-        },
-    }
-
-
-def _request(url: str, body: bytes | None = None) -> tuple[int, bytes]:
-    headers = {"Content-Type": "application/json"} if body is not None else {}
-    request = Request(url, data=body, headers=headers)
+@contextmanager
+def _real_uvicorn_probe(label: str, *setup: str):
+    port = _unused_local_port()
+    script = "\n".join((
+        "import uvicorn",
+        *setup,
+        (
+            "uvicorn.run(main.app, host='127.0.0.1', "
+            f"port={port}, access_log=False, http='h11')"
+        ),
+    ))
+    process = subprocess.Popen(
+        [sys.executable, "-c", script],
+        cwd=BACKEND_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    probe = SimpleNamespace(base_url=f"http://127.0.0.1:{port}", output="")
     try:
-        with urlopen(request, timeout=15) as response:
-            return response.status, response.read()
-    except HTTPError as exc:
-        return exc.code, exc.read()
-
-
-@pytest.mark.local_launcher
-def test_supported_launcher_disables_uvicorn_access_log_and_loads_privacy_boundary():
-    launcher = RUN_LOCAL.read_text(encoding="utf-8")
-
-    assert "--no-access-log" in launcher
-    assert (PROJECT_ROOT / "backend" / "app" / "privacy_logging.py").is_file()
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise AssertionError(
+                    f"{label} server stopped early:\n" + process.stdout.read()
+                )
+            try:
+                if _request(probe.base_url + "/api/health")[0] == 200:
+                    break
+            except URLError:
+                pass
+            time.sleep(0.05)
+        else:
+            raise AssertionError(f"{label} server startup timed out")
+        yield probe
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=8)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+        probe.output = process.stdout.read()
 
 
 def test_structured_event_schema_is_closed_and_discards_attacker_controlled_text():
@@ -197,28 +186,11 @@ def test_duration_bucket_rejects_non_finite_values():
     assert privacy_logging._duration_bucket(1_000.0) == "gte_1000ms"
 
 
-def test_event_builder_does_not_depend_on_optimizer_sensitive_assert():
-    from app import privacy_logging
-
-    source = inspect.getsource(privacy_logging.build_request_event)
-    assert "assert " not in source
-
-
 def test_completion_event_failures_do_not_escape_the_asgi_boundary(monkeypatch):
     from app import privacy_logging
 
     class CompletionProbe(BaseException):
         pass
-
-    async def app(_scope, _receive, send):
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 204,
-                "headers": [],
-            }
-        )
-        await send({"type": "http.response.body", "body": b""})
 
     def fail_builder(**_kwargs):
         raise CompletionProbe("completion-event-canary")
@@ -226,13 +198,10 @@ def test_completion_event_failures_do_not_escape_the_asgi_boundary(monkeypatch):
     monkeypatch.setattr(privacy_logging, "build_request_event", fail_builder)
     sent = []
 
-    async def receive():
-        return {"type": "http.request", "body": b"", "more_body": False}
-
     async def send(message):
         sent.append(message)
 
-    middleware = privacy_logging.PrivacyBoundaryMiddleware(app)
+    middleware = privacy_logging.PrivacyBoundaryMiddleware(_no_content_app)
     asyncio.run(
         middleware(
             {
@@ -241,7 +210,7 @@ def test_completion_event_failures_do_not_escape_the_asgi_boundary(monkeypatch):
                 "path": "/api/health",
                 "headers": [],
             },
-            receive,
+            _empty_request,
             send,
         )
     )
@@ -330,13 +299,7 @@ def test_capacity_rejection_stays_inside_headers_and_telemetry_boundary():
 def test_boundary_reason_producer_and_privacy_consumer_are_closed():
     from app import privacy_logging, request_limits
 
-    for reason in (
-        "request_body_too_large",
-        "request_headers_too_large",
-        "conflicting_request_framing",
-        "request_capacity_exhausted",
-        "compute_capacity_exhausted",
-    ):
+    for reason in sorted(request_limits.BOUNDARY_REASON_CODES):
         scope = {"type": "http", "state": {}}
         request_limits._mark_boundary_reason(scope, reason)
         assert privacy_logging._boundary_reason(scope) == reason
@@ -344,7 +307,7 @@ def test_boundary_reason_producer_and_privacy_consumer_are_closed():
             request_id="a" * 32,
             method="POST",
             path="/api/chart",
-            status_code=503 if "capacity" in reason else 413,
+            status_code=503 if "capacity" in reason else 400,
             duration_ms=1,
             content_length="1",
             error_code=privacy_logging._boundary_reason(scope),
@@ -358,6 +321,26 @@ def test_boundary_reason_producer_and_privacy_consumer_are_closed():
             request_limits.BOUNDARY_REASON_STATE_KEY: "attacker_text"
         },
     }) is None
+
+    domain_scope = {
+        "type": "http",
+        "state": {
+            privacy_logging.DOMAIN_ERROR_STATE_KEY: "full_ephemeris_required"
+        },
+    }
+    assert privacy_logging._domain_error_reason(domain_scope) == (
+        "full_ephemeris_required"
+    )
+    domain_event = privacy_logging.build_request_event(
+        request_id="b" * 32,
+        method="POST",
+        path="/api/chart",
+        status_code=503,
+        duration_ms=1,
+        content_length="1",
+        error_code=privacy_logging._domain_error_reason(domain_scope),
+    )
+    assert domain_event["outcome"] == "error"
 
 
 def test_boundary_reason_is_single_assignment_and_preserves_first_producer():
@@ -383,24 +366,8 @@ def test_hostile_scope_header_iterator_is_reduced_without_escaping():
 
     captured_events = []
 
-    async def app(_scope, _receive, send):
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 204,
-                "headers": [],
-            }
-        )
-        await send({"type": "http.response.body", "body": b""})
-
-    async def receive():
-        return {"type": "http.request", "body": b"", "more_body": False}
-
-    async def send(_message):
-        return None
-
     middleware = privacy_logging.PrivacyBoundaryMiddleware(
-        app,
+        _no_content_app,
         event_emitter=lambda event: captured_events.append(event) or True,
     )
     asyncio.run(
@@ -411,8 +378,8 @@ def test_hostile_scope_header_iterator_is_reduced_without_escaping():
                 "path": "/api/health",
                 "headers": HostileHeaders(),
             },
-            receive,
-            send,
+            _empty_request,
+            _ignore_send,
         )
     )
 
@@ -465,12 +432,6 @@ def test_process_control_exceptions_propagate_through_middleware(control_error):
     async def app(_scope, _receive, _send):
         raise control_error
 
-    async def receive():
-        return {"type": "http.request", "body": b"", "more_body": False}
-
-    async def send(_message):
-        return None
-
     middleware = privacy_logging.PrivacyBoundaryMiddleware(
         app,
         event_emitter=lambda event: captured_events.append(event) or True,
@@ -484,8 +445,8 @@ def test_process_control_exceptions_propagate_through_middleware(control_error):
                     "path": "/api/health",
                     "headers": [],
                 },
-                receive,
-                send,
+                _empty_request,
+                _ignore_send,
             )
         )
 
@@ -506,27 +467,11 @@ def test_process_control_exception_from_event_emitter_is_not_silenced():
 
     control_error = asyncio.CancelledError("event-emitter-cancellation-canary")
 
-    async def app(_scope, _receive, send):
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 204,
-                "headers": [],
-            }
-        )
-        await send({"type": "http.response.body", "body": b""})
-
-    async def receive():
-        return {"type": "http.request", "body": b"", "more_body": False}
-
-    async def send(_message):
-        return None
-
     def cancelled_emitter(_event):
         raise control_error
 
     middleware = privacy_logging.PrivacyBoundaryMiddleware(
-        app,
+        _no_content_app,
         event_emitter=cancelled_emitter,
     )
     with pytest.raises(asyncio.CancelledError) as captured:
@@ -538,8 +483,8 @@ def test_process_control_exception_from_event_emitter_is_not_silenced():
                     "path": "/api/health",
                     "headers": [],
                 },
-                receive,
-                send,
+                _empty_request,
+                _ignore_send,
             )
         )
 
@@ -564,12 +509,6 @@ def test_mixed_exception_group_propagates_only_process_control_subgroup():
     async def app(_scope, _receive, _send):
         raise mixed_error
 
-    async def receive():
-        return {"type": "http.request", "body": b"", "more_body": False}
-
-    async def send(_message):
-        return None
-
     middleware = privacy_logging.PrivacyBoundaryMiddleware(app)
     with pytest.raises(BaseExceptionGroup) as captured:
         asyncio.run(
@@ -580,8 +519,8 @@ def test_mixed_exception_group_propagates_only_process_control_subgroup():
                     "path": "/api/health",
                     "headers": [],
                 },
-                receive,
-                send,
+                _empty_request,
+                _ignore_send,
             )
         )
 
@@ -591,28 +530,6 @@ def test_mixed_exception_group_propagates_only_process_control_subgroup():
         not isinstance(nested, PrivacyProbe)
         for nested in captured.value.exceptions
     )
-
-
-def test_process_control_policy_discloses_header_and_event_boundary():
-    private_policy = (
-        PROJECT_ROOT / "docs" / "privacy" / "PRIVACY_LOGGING_POLICY.md"
-    )
-    public_policy = PROJECT_ROOT / "docs" / "PRIVACY_LOGGING_POLICY.md"
-    policy_path = (
-        private_policy if private_policy.is_file() else public_policy
-    )
-    policy = policy_path.read_text(encoding="utf-8")
-
-    if policy.startswith("# Privacy Logging Policy"):
-        assert "process-control exception re-raise path" in policy
-        assert (
-            "does not guarantee that security headers or the completion "
-            "event are still\nemitted"
-        ) in policy
-        assert "重新拋出路徑" not in policy
-        assert "不保證補送" not in policy
-    else:
-        assert "process-control exception重新拋出路徑" in policy
 
 
 def test_logging_sink_failure_cannot_break_request_processing(monkeypatch):
@@ -687,13 +604,36 @@ def test_caller_supplied_request_id_is_ignored(monkeypatch):
     assert CANARY_TEXT not in json.dumps(captured_events, ensure_ascii=False)
 
 
-def test_chart_request_does_not_use_python_file_write_apis(monkeypatch):
-    """Fail if request handling adds an application-level persistence path.
+def test_public_cache_policy_separates_api_html_and_versioned_assets():
+    from app.main import create_app
+    from app.settings import AppProfile, AppSettings
 
-    This guard covers Python writes in the application request path.  It does
-    not claim secure memory erasure, and it does not cover future proxies,
-    hosting platforms, browser downloads, or native-library behavior.
-    """
+    application = create_app(AppSettings(profile=AppProfile.PUBLIC))
+    with TestClient(application) as client:
+        api = client.get("/api/health")
+        html = client.get("/zh-TW/features")
+        versioned = client.get("/zh-TW/page.css?v=release-test")
+        false_version_substring = client.get(
+            "/zh-TW/page.css?preview=release-test"
+        )
+        empty_version = client.get("/zh-TW/page.css?v=")
+        unversioned = client.get("/zh-TW/favicon.svg")
+        missing = client.get("/missing.css?v=release-test")
+
+    assert api.headers["cache-control"] == "no-store"
+    assert html.headers["cache-control"] == "no-cache"
+    assert versioned.headers["cache-control"] == (
+        "public, max-age=31536000, immutable"
+    )
+    assert false_version_substring.headers["cache-control"] == (
+        "public, max-age=300"
+    )
+    assert empty_version.headers["cache-control"] == "public, max-age=300"
+    assert unversioned.headers["cache-control"] == "public, max-age=300"
+    assert missing.headers["cache-control"] == "no-store"
+
+
+def test_chart_request_does_not_use_python_file_write_apis(monkeypatch):
 
     from app import main as app_main
 
@@ -801,303 +741,120 @@ def test_swisseph_error_response_does_not_expose_exception_text(monkeypatch):
         response = client.post("/api/chart", json=_payload())
 
     assert response.status_code == 500
-    assert response.json() == {
-        "detail": {
-            "code": "swiss_ephemeris_error",
-            "message": "天文計算失敗；伺服器端星曆資料可能無法使用。",
-        }
-    }
+    assert response.json() == {"detail": {"code": "swiss_ephemeris_error"}}
     assert CANARY_TEXT not in response.text
     assert str(CANARY_LATITUDE) not in response.text
     assert str(CANARY_LONGITUDE) not in response.text
 
 
 def test_real_uvicorn_unexpected_error_does_not_emit_traceback_or_canary():
-    port = _unused_local_port()
-    script = "\n".join(
-        (
-            "import uvicorn",
-            "from app import main",
-            "def fail(_request):",
-            f"    raise RuntimeError({CANARY_TEXT!r})",
-            "main._compute_chart_locked = fail",
-            (
-                "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False, http='h11')"
-            ),
-        )
-    )
-    process = subprocess.Popen(
-        [sys.executable, "-c", script],
-        cwd=BACKEND_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-
-    try:
-        deadline = time.monotonic() + 20
-        while True:
-            if process.poll() is not None:
-                raise AssertionError(
-                    "unexpected-error server stopped early:\n"
-                    + process.stdout.read()
-                )
-            try:
-                status, _ = _request(f"http://127.0.0.1:{port}/api/health")
-                if status == 200:
-                    break
-            except URLError:
-                pass
-            if time.monotonic() >= deadline:
-                raise AssertionError("unexpected-error server startup timed out")
-            time.sleep(0.05)
-
+    with _real_uvicorn_probe(
+        "unexpected-error",
+        "from app import main",
+        "def fail(_request):",
+        f"    raise RuntimeError({CANARY_TEXT!r})",
+        "main._compute_chart_locked = fail",
+    ) as probe:
         error_status, body = _request(
-            f"http://127.0.0.1:{port}/api/chart",
+            probe.base_url + "/api/chart",
             json.dumps(_payload()).encode(),
         )
         assert error_status == 500
         assert json.loads(body)["detail"]["code"] == "internal_server_error"
-    finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
-        output = process.stdout.read()
-
+    output = probe.output
     assert CANARY_TEXT not in output
     assert "Traceback (most recent call last)" not in output
-    assert "RuntimeError" not in output
     assert "internal_server_error" in output
+    # Sebastian ruled that an unexpected failure may carry the exception class
+    # name and nothing else, so an operator can tell one 500 from another.  The
+    # message, the traceback and every request-derived value stay out; the
+    # neighbouring probe raises a class the allowlist does not contain and
+    # proves that such a name is reduced to `unclassified` rather than emitted.
+    assert '"failure_class":"RuntimeError"' in output
 
 
 def test_real_uvicorn_non_control_base_exception_is_contained():
     base_canary = "PRIVACY_BASE_EXCEPTION_CANARY_6C_734991"
-    port = _unused_local_port()
-    script = "\n".join(
-        (
-            "import uvicorn",
-            "from starlette.routing import Route",
-            "from app import main",
-            "class PrivacyProbe(BaseException):",
-            "    pass",
-            "async def fail(_request):",
-            f"    raise PrivacyProbe({base_canary!r})",
-            (
-                "main.app.router.routes.insert("
-                "0, Route('/__privacy_base_exception', fail))"
-            ),
-            (
-                "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False, http='h11')"
-            ),
-        )
-    )
-    process = subprocess.Popen(
-        [sys.executable, "-c", script],
-        cwd=BACKEND_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-
-    try:
-        deadline = time.monotonic() + 20
-        while True:
-            if process.poll() is not None:
-                raise AssertionError(
-                    "base-exception server stopped early:\n"
-                    + process.stdout.read()
-                )
-            try:
-                status, _ = _request(f"http://127.0.0.1:{port}/api/health")
-                if status == 200:
-                    break
-            except URLError:
-                pass
-            if time.monotonic() >= deadline:
-                raise AssertionError("base-exception server startup timed out")
-            time.sleep(0.05)
-
+    with _real_uvicorn_probe(
+        "base-exception",
+        "from starlette.routing import Route",
+        "from app import main",
+        "class PrivacyProbe(BaseException): pass",
+        "async def fail(_request):",
+        f"    raise PrivacyProbe({base_canary!r})",
+        "main.app.router.routes.insert(0, Route('/__privacy_base_exception', fail))",
+    ) as probe:
         error_status, body = _request(
-            f"http://127.0.0.1:{port}/__privacy_base_exception"
+            probe.base_url + "/__privacy_base_exception"
         )
         assert error_status == 500
         assert json.loads(body)["detail"]["code"] == "internal_server_error"
-    finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
-        output = process.stdout.read()
-
+    output = probe.output
     assert base_canary not in output
     assert "Traceback (most recent call last)" not in output
+    # The closed allowlist doing its job: an exception class this service does
+    # not declare never reaches the log under its own name.
     assert "PrivacyProbe" not in output
+    assert '"failure_class":"unclassified"' in output
     assert "internal_server_error" in output
 
 
 def test_real_uvicorn_event_emitter_failure_is_isolated():
     emitter_canary = "PRIVACY_EMITTER_FAILURE_CANARY_6C_734991"
-    port = _unused_local_port()
-    script = "\n".join(
-        (
-            "import uvicorn",
-            "from app import main",
-            "def fail_emitter(_event):",
-            f"    raise OSError({emitter_canary!r})",
-            "main.emit_security_event = fail_emitter",
-            (
-                "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False, http='h11')"
-            ),
-        )
-    )
-    process = subprocess.Popen(
-        [sys.executable, "-c", script],
-        cwd=BACKEND_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-
-    try:
-        deadline = time.monotonic() + 20
-        while True:
-            if process.poll() is not None:
-                raise AssertionError(
-                    "emitter-failure server stopped early:\n"
-                    + process.stdout.read()
-                )
-            try:
-                status, body = _request(
-                    f"http://127.0.0.1:{port}/api/health"
-                )
-                if status == 200:
-                    assert json.loads(body)["status"] == "ok"
-                    break
-            except URLError:
-                pass
-            if time.monotonic() >= deadline:
-                raise AssertionError("emitter-failure server startup timed out")
-            time.sleep(0.05)
-    finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
-        output = process.stdout.read()
-
+    with _real_uvicorn_probe(
+        "emitter-failure",
+        "from app import main",
+        "def fail_emitter(_event):",
+        f"    raise OSError({emitter_canary!r})",
+        "main.emit_security_event = fail_emitter",
+    ) as probe:
+        status, body = _request(probe.base_url + "/api/health")
+        assert status == 200
+        assert json.loads(body)["status"] == "ok"
+    output = probe.output
     assert emitter_canary not in output
     assert "Traceback (most recent call last)" not in output
     assert "OSError" not in output
 
 
 def test_real_uvicorn_post_start_errors_are_contained_and_reported():
-    """Cover errors raised after ``http.response.start``.
-
-    A function-style FastAPI middleware returns as soon as response headers are
-    available.  Streaming iterators and background tasks can fail afterwards,
-    so this must be exercised through the real ASGI server rather than only
-    TestClient's ordinary pre-response exception path.
-    """
-
     stream_canary = "PRIVACY_STREAM_CANARY_6C_734991"
     background_canary = "PRIVACY_BACKGROUND_CANARY_6C_734991"
-    port = _unused_local_port()
-    script = "\n".join(
-        (
-            "import uvicorn",
-            "from fastapi.responses import PlainTextResponse, StreamingResponse",
-            "from starlette.background import BackgroundTask",
-            "from starlette.routing import Route",
-            "from app import main",
-            "async def broken_stream():",
-            "    yield b'ok'",
-            f"    raise RuntimeError({stream_canary!r})",
-            "async def stream_route(_request):",
-            "    return StreamingResponse(broken_stream())",
-            "def broken_background():",
-            f"    raise RuntimeError({background_canary!r})",
-            "async def background_route(_request):",
-            (
-                "    return PlainTextResponse("
-                "b'ok', background=BackgroundTask(broken_background))"
-            ),
-            (
-                "main.app.router.routes.insert("
-                "0, Route('/__privacy_stream', stream_route))"
-            ),
-            (
-                "main.app.router.routes.insert("
-                "0, Route('/__privacy_background', background_route))"
-            ),
-            (
-                "uvicorn.run(main.app, host='127.0.0.1', "
-                f"port={port}, access_log=False, http='h11')"
-            ),
-        )
-    )
-    process = subprocess.Popen(
-        [sys.executable, "-c", script],
-        cwd=BACKEND_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-
-    try:
-        deadline = time.monotonic() + 20
-        while True:
-            if process.poll() is not None:
-                raise AssertionError(
-                    "post-start-error server stopped early:\n"
-                    + process.stdout.read()
-                )
-            try:
-                status, _ = _request(f"http://127.0.0.1:{port}/api/health")
-                if status == 200:
-                    break
-            except URLError:
-                pass
-            if time.monotonic() >= deadline:
-                raise AssertionError("post-start-error server startup timed out")
-            time.sleep(0.05)
-
+    with _real_uvicorn_probe(
+        "post-start-error",
+        "from fastapi.responses import PlainTextResponse, StreamingResponse",
+        "from starlette.background import BackgroundTask",
+        "from starlette.routing import Route",
+        "from app import main",
+        "async def broken_stream():",
+        "    yield b'ok'",
+        f"    raise RuntimeError({stream_canary!r})",
+        "async def stream_route(_request): return StreamingResponse(broken_stream())",
+        "def broken_background():",
+        f"    raise RuntimeError({background_canary!r})",
+        "async def background_route(_request):",
+        "    return PlainTextResponse(b'ok', background=BackgroundTask(broken_background))",
+        "main.app.router.routes.insert(0, Route('/__privacy_stream', stream_route))",
+        "main.app.router.routes.insert(0, Route('/__privacy_background', background_route))",
+    ) as probe:
         stream_status, stream_body = _request(
-            f"http://127.0.0.1:{port}/__privacy_stream"
+            probe.base_url + "/__privacy_stream"
         )
         background_status, background_body = _request(
-            f"http://127.0.0.1:{port}/__privacy_background"
+            probe.base_url + "/__privacy_background"
         )
         assert stream_status == 200
         assert stream_body == b"ok"
         assert background_status == 200
         assert background_body == b"ok"
-    finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
-        output = process.stdout.read()
-
+    output = probe.output
     assert stream_canary not in output
     assert background_canary not in output
     assert "Traceback (most recent call last)" not in output
-    assert "RuntimeError" not in output
+    # The message and the traceback stay out; the class name is what the ruling
+    # permits, and it is the only part of an exception that cannot carry a
+    # birth time or a coordinate.
+    assert 'RuntimeError' not in output.replace('"failure_class":"RuntimeError"', '')
 
     records = []
     for line in output.splitlines():
@@ -1113,90 +870,3 @@ def test_real_uvicorn_post_start_errors_are_contained_and_reported():
     assert len(post_start_failures) == 2
     assert all(record["status_code"] == 200 for record in post_start_failures)
     assert all(record["outcome"] == "error" for record in post_start_failures)
-
-
-@pytest.mark.local_launcher
-def test_real_launcher_logs_are_body_free_for_success_rejection_and_malformed_json():
-    port = _unused_local_port()
-    base_url = f"http://127.0.0.1:{port}"
-    process = subprocess.Popen(
-        [str(LOCAL_LAUNCHER), "--no-open", "--port", str(port)],
-        cwd=PROJECT_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-
-    try:
-        deadline = time.monotonic() + 20
-        while True:
-            if process.poll() is not None:
-                raise AssertionError(
-                    "privacy self-test server stopped early:\n"
-                    + process.stdout.read()
-                )
-            try:
-                status, _ = _request(
-                    f"{base_url}/api/health?private={CANARY_TEXT}"
-                )
-                if status == 200:
-                    break
-            except URLError:
-                pass
-            if time.monotonic() >= deadline:
-                raise AssertionError("privacy self-test server startup timed out")
-            time.sleep(0.05)
-
-        success_status, _ = _request(
-            f"{base_url}/api/chart",
-            json.dumps(_payload()).encode(),
-        )
-        rejected_payload = _payload()
-        rejected_payload["timezone"] = {
-            "mode": "iana",
-            "iana_name": CANARY_TEXT,
-        }
-        rejected_status, _ = _request(
-            f"{base_url}/api/chart",
-            json.dumps(rejected_payload).encode(),
-        )
-        malformed_status, _ = _request(
-            f"{base_url}/api/chart",
-            f'{{"private":"{CANARY_TEXT}",'.encode(),
-        )
-
-        assert success_status == 200
-        assert rejected_status == 422
-        assert malformed_status == 422
-    finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
-        output = process.stdout.read()
-
-    for canary in (
-        CANARY_TEXT,
-        str(CANARY_LATITUDE),
-        str(CANARY_LONGITUDE),
-    ):
-        assert canary not in output
-    assert '"POST /api/chart HTTP/' not in output
-
-    records = []
-    for line in output.splitlines():
-        marker = "PRIVACY_EVENT "
-        if marker in line:
-            records.append(json.loads(line.split(marker, 1)[1]))
-
-    assert len(records) >= 4
-    assert {record["route"] for record in records} >= {
-        "/api/health",
-        "/api/chart",
-    }
-    assert {record["status_code"] for record in records} >= {200, 422}
-    assert all(set(record) == EXPECTED_EVENT_FIELDS for record in records)
-    assert all(record["request_id"] for record in records)

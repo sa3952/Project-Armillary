@@ -121,7 +121,7 @@ function main() {
   <p class="dossier-lede"><strong>這是範例，不是任何人的真實出生資料。</strong>
   底下每一個數值都由後端實際計算產生，不是手寫的；使用的是一組標示為範例的輸入。</p>
   <p class="dossier-lede">本次請求<strong>明示指定</strong>了界表、面、三分性與容許度表。
-  這不是預設行為——不指定時那幾節會留空並說明原因，因為選一套表就是替你做方法裁決。</p>
+  這不是預設行為。不指定時那幾節會留空並說明原因，因為選一套表就是替你做方法決定。</p>
   <dl class="legal-terms dossier-meta">
     <dt>匯出契約版本</dt><dd class="mono">${esc(tree.header.export_contract_version)}</dd>
     <dt>API schema 版本</dt><dd class="mono">${esc(tree.header.api_schema_version)}</dd>

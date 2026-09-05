@@ -57,13 +57,17 @@ def _inapplicable_reason_codes(context) -> list[str]:
 
 def compute_planet_house_placements(
     bodies: list[dict],
-    houses: dict,
+    houses: dict | None,
     context,
     trace: Trace,
 ) -> dict:
     """Place physical planets only; lunar nodes remain separate non-planet points."""
 
     reasons = _inapplicable_reason_codes(context)
+    # A refusal must not depend on the thing it is refusing about: when the
+    # observer has no horizon the caller has no houses to hand over, and this
+    # function still has to answer.
+    placements: list[dict] = []
     receipt = {
         "method": METHOD_NAME,
         "method_status": "provisional_pending_method_audit",
@@ -72,10 +76,10 @@ def compute_planet_house_placements(
             "not_applicable" if reasons else "computed"
         ),
         "reason_codes": reasons,
-        "house_system_code": houses["system_code"],
-        "house_system_name": houses["system_name"],
+        "house_system_code": houses["system_code"] if houses else None,
+        "house_system_name": houses["system_name"] if houses else None,
         "interval_semantics": "[cusp_n,cusp_n_plus_1)",
-        "placements": [],
+        "placements": placements,
     }
     if reasons:
         trace.add(
@@ -87,6 +91,7 @@ def compute_planet_house_placements(
         )
         return receipt
 
+    assert houses is not None  # the refusal above is the only path without them
     cusps = houses["cusps"]
     for body in bodies:
         longitude = body.get("longitude")
@@ -97,7 +102,7 @@ def compute_planet_house_placements(
         end = cusps[house % 12] % 360.0
         distance_from_start = _forward_distance(start, longitude)
         distance_to_end = _forward_distance(longitude, end)
-        receipt["placements"].append(
+        placements.append(
             {
                 "key": body["key"],
                 "name": body["name"],
@@ -124,11 +129,11 @@ def compute_planet_house_placements(
         inputs={
             "house_system": houses["system_code"],
             "cusps": cusps,
-            "planet_count": len(receipt["placements"]),
+            "planet_count": len(placements),
         },
         result={
             item["key"]: item["house"]
-            for item in receipt["placements"]
+            for item in placements
         },
         note=(
             "宮頭使用半開區間；精確落在宮頭時歸入從該宮頭開始的新宮。"

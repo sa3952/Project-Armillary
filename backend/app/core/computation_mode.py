@@ -76,7 +76,7 @@ class ComputationContext:
     def ayanamsa_value(self, jd_ut: float):
         """回傳**本次計算實際套用**的 ayanamsa，供收據、houses.py 與 antiscia.py 使用。
 
-        `FPI-2026-08-06-E-003`。這裡原本呼叫 `get_ayanamsa_ut()`，而那是相對**平**
+        這裡回傳的必須是實際套用值，不是 `get_ayanamsa_ut()`：後者是相對**平**
         春分點定義的傳統數值；`calc_ut(FLG_SIDEREAL)` 在章動開啟時輸出的恆星黃經卻是
         相對**真**春分點。兩者相差恰為當下的黃經章動（實測 ±17.4 角秒內）。
 

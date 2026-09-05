@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Public source delivery gate without private launcher or handoff dependencies."""
+"""Public source delivery gate for the closed publication tree."""
 
 from __future__ import annotations
 
 import os
-import hashlib
 import json
 import subprocess
 import sys
@@ -12,23 +11,20 @@ import argparse
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
+# Keep the documented ``python scripts/verify_delivery.py`` entry portable and
+# self-clean: direct execution otherwise exposes only ``scripts/`` on sys.path
+# and can write bytecode before the gate creates its child-process sandbox.
+if __name__ == "__main__":
+    sys.dont_write_bytecode = True
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.tools.source_tree_identity import observe_source_tree
+
 
 # The public command is documented and tested from the candidate root.  Its
 # source path differs before/after export, so deriving the root from __file__
 # would bind the private overlay location rather than the candidate checkout.
 SOURCE_ROOT = Path.cwd().resolve()
-
-
-# These tests assert private-repository layout that is not part of the exported
-# Corresponding Source candidate.  The same nodes remain mandatory in the
-# private delivery gate; public delivery excludes only the explicitly named
-# nodes instead of suppressing the whole module.
-PRIVATE_REPOSITORY_TEST_NODES = (
-    "tests/deployment/test_production_runtime_contract.py::"
-    "test_image_carries_licence_notices_and_both_dataset_verifiers",
-    "tests/deployment/test_production_runtime_contract.py::"
-    "test_staging_site_bounds_place_search_and_hides_the_upstream_server_header",
-)
 
 
 COMMANDS = (
@@ -50,15 +46,17 @@ COMMANDS = (
         sys.executable,
         "-m",
         "pytest",
-        "tests",
-        "-q",
         "-p",
         "no:cacheprovider",
-        *[
-            argument
-            for node in PRIVATE_REPOSITORY_TEST_NODES
-            for argument in ("--deselect", node)
-        ],
+        "-p",
+        "anyio.pytest_plugin",
+        "-p",
+        "_hypothesis_pytestplugin",
+        # Every published test runs.  There is no exclusion list: pytest ignores
+        # a --deselect for a node that does not exist, so such a list fails open
+        # and stops describing the tree the moment a test is renamed.
+        "tests",
+        "-q",
     ],
     [
         "node",
@@ -94,34 +92,21 @@ def _external_output_path(path: Path) -> Path:
 
 
 def _source_identity() -> tuple[tuple[str, ...], str, str]:
-    status = subprocess.run(
-        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
-        cwd=SOURCE_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    if status:
-        raise SystemExit("PUBLIC DELIVERY FAILED: source tree is not clean")
-    paths_raw = subprocess.run(
-        ["git", "ls-files", "-z"],
-        cwd=SOURCE_ROOT,
-        check=True,
-        capture_output=True,
-    ).stdout
-    paths = tuple(sorted(raw.decode() for raw in paths_raw.split(b"\0") if raw))
-    content = hashlib.sha256()
-    for relative in paths:
-        content.update(relative.encode())
-        content.update(b"\0")
-        content.update(hashlib.sha256((SOURCE_ROOT / relative).read_bytes()).digest())
-    index = subprocess.run(
-        ["git", "ls-files", "-s", "-z"],
-        cwd=SOURCE_ROOT,
-        check=True,
-        capture_output=True,
-    ).stdout
-    return paths, content.hexdigest(), hashlib.sha256(index).hexdigest()
+    try:
+        if (SOURCE_ROOT / ".git").exists():
+            status = subprocess.run(
+                ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+                cwd=SOURCE_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+            if status:
+                raise RuntimeError("source tree is not clean")
+        observed = observe_source_tree(SOURCE_ROOT)
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+        raise SystemExit(f"PUBLIC DELIVERY FAILED: {error}") from None
+    return observed.paths, observed.content_sha256, observed.index_sha256
 
 
 def _frontend_tests() -> list[str]:
@@ -191,7 +176,7 @@ def _run_release_artifact_gates(
     commands = (
         [
             sys.executable, "-m", "scripts.verification.verify_container_runtime",
-            "--image", image, "--container-only",
+            "--image", image,
             "--receipt", str(output_dir / "container-runtime.json"),
         ],
         [
@@ -229,6 +214,7 @@ def main() -> int:
         child_environment = os.environ.copy()
         child_environment["PYTHONPYCACHEPREFIX"] = pycache
         child_environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        child_environment["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
         for command in COMMANDS:
             if command[:2] == ["node", "--test"]:
                 command = ["node", "--test", *frontend_tests]
@@ -241,13 +227,13 @@ def main() -> int:
             if result.returncode != 0:
                 return result.returncode
     if all(release_values):
-        result = _run_release_artifact_gates(
+        exit_code = _run_release_artifact_gates(
             image=args.release_image,
             build_evidence_dir=args.release_build_evidence_dir,
             output_dir=args.release_output_dir,
         )
-        if result:
-            return result
+        if exit_code:
+            return exit_code
     if _source_identity() != source_identity_before:
         raise SystemExit(
             "PUBLIC DELIVERY FAILED: source identity changed during delivery"

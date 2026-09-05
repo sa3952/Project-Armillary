@@ -1,14 +1,22 @@
 # syntax=docker/dockerfile:1.7
 
-FROM python:3.13.14-slim-trixie@sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251 AS builder
+FROM python:3.14.7-slim-trixie@sha256:cae66f2ef0ec51a9891263eeee7f987dacf0a9879e8aa9353d5606e0530619a5 AS builder
 
 ARG VCS_REF
 ARG PUBLICATION_STATUS
 ARG TARGETPLATFORM
 
-ENV PIP_DISABLE_PIP_VERSION_CHECK="1" \
+# Keep compiler-produced archives independent of wall-clock time.
+ENV SOURCE_DATE_EPOCH="0" \
+    PIP_DISABLE_PIP_VERSION_CHECK="1" \
     PIP_NO_CACHE_DIR="1" \
     PYTHONDONTWRITEBYTECODE="1"
+
+# pyswisseph includes C++ translation units. Pin both compilation and shared
+# linking, then read the resulting ELF dependencies back in the build verifier.
+ENV CXX="g++" \
+    LDSHARED="g++ -shared" \
+    LDCXXSHARED="g++ -shared"
 
 WORKDIR /build
 
@@ -35,10 +43,12 @@ RUN python -m venv /opt/venv \
         --no-build-isolation \
         --no-binary=pyswisseph \
         --wheel-dir /wheels \
+        'file:///source/pyswisseph-2.10.3.2.tar.gz#sha256=c54c305e83dbd5d2b71e58d8a69d8ee41de24c4d3328ce09e2af860a3537624d' \
         --requirement /build/requirements.lock \
     && python /build/verify_linux_source_build.py \
         --source-dir /source \
         --wheel-dir /wheels \
+        --source-requirement 'file:///source/pyswisseph-2.10.3.2.tar.gz#sha256=c54c305e83dbd5d2b71e58d8a69d8ee41de24c4d3328ce09e2af860a3537624d' \
         --receipt /release/pyswisseph-linux-source-build.json \
     && find /wheels -type f -name '*.whl' -exec \
         /opt/venv/bin/python -m pip install \
@@ -47,7 +57,17 @@ RUN python -m venv /opt/venv \
         --no-deps \
         {} + \
     && /opt/venv/bin/python -c \
-        'import platform,sys,swisseph; ok=platform.python_version()=="3.13.14" and swisseph.version=="2.10.03"; sys.exit(0 if ok else "Python or Swiss Ephemeris version mismatch")' \
+        'import platform,sys,swisseph; ok=platform.python_version()=="3.14.7" and swisseph.version=="2.10.03"; sys.exit(0 if ok else "Python or Swiss Ephemeris version mismatch")' \
+    && /opt/venv/bin/python -O -c \
+        'import platform,sys,swisseph; ok=platform.python_version()=="3.14.7" and swisseph.version=="2.10.03"; sys.exit(0 if ok else "Python or Swiss Ephemeris version mismatch")' \
+    && ! /opt/venv/bin/python -c \
+        'import platform,sys,swisseph; ok=platform.python_version()=="0.0.0" and swisseph.version=="2.10.03"; sys.exit(0 if ok else 1)' \
+    && ! /opt/venv/bin/python -O -c \
+        'import platform,sys,swisseph; ok=platform.python_version()=="0.0.0" and swisseph.version=="2.10.03"; sys.exit(0 if ok else 1)' \
+    && ! /opt/venv/bin/python -c \
+        'import platform,sys,swisseph; ok=platform.python_version()=="3.14.7" and swisseph.version=="0.0.0"; sys.exit(0 if ok else 1)' \
+    && ! /opt/venv/bin/python -O -c \
+        'import platform,sys,swisseph; ok=platform.python_version()=="3.14.7" and swisseph.version=="0.0.0"; sys.exit(0 if ok else 1)' \
     && /opt/venv/bin/python -m pip uninstall --yes pip
 
 RUN --mount=type=secret,id=private_alpha_probe,required=true \
@@ -62,13 +82,13 @@ RUN --mount=type=bind,target=/build-context,readonly \
         --target-platform "${TARGETPLATFORM}" \
         --venv-root /opt/venv
 
-FROM python:3.13.14-slim-trixie@sha256:bf503bb2243c5aad0aa951544dd60d165f992646441d35dea90893703fc26251
+FROM python:3.14.7-slim-trixie@sha256:cae66f2ef0ec51a9891263eeee7f987dacf0a9879e8aa9353d5606e0530619a5
 
 ARG VCS_REF
 ARG PUBLICATION_STATUS
 RUN case "${VCS_REF}" in \
       ????????????????????????????????????????) \
-        printf '%s' "${VCS_REF}" | grep -Eq '^[0-9a-f]{40}$' ;; \
+        case "${VCS_REF}" in *[!0-9a-f]*) false ;; *) true ;; esac ;; \
       *) false ;; \
     esac \
     && case "${PUBLICATION_STATUS}" in \
@@ -92,7 +112,17 @@ ENV CLASSICAL_ASTROLOGY_PROFILE="private_alpha" \
 
 WORKDIR /app
 
-RUN python -m pip uninstall --yes pip \
+RUN set -eux; \
+    removable="$(dpkg-query -W -f='${binary:Package}\t${Essential}\n' \
+        | awk '$2 != "yes" && ($1 == "perl" || $1 ~ /^perl-/ || $1 ~ /^libperl/ || $1 ~ /-perl(:[^:]+)?$/) { print $1 }')"; \
+    if [ -n "$removable" ]; then \
+        apt-get purge --yes $removable; \
+    fi; \
+    dpkg-query -W -f='${db:Status-Abbrev} ${Essential}\n' perl-base \
+        | grep -q '^ii  yes$'; \
+    ! dpkg-query -W -f='${binary:Package}\t${Essential}\n' \
+        | awk '$2 != "yes" && ($1 == "perl" || $1 ~ /^perl-/ || $1 ~ /^libperl/ || $1 ~ /-perl(:[^:]+)?$/) { found=1 } END { exit !found }'; \
+    python -m pip uninstall --yes pip \
     && groupadd --gid 10001 astrology \
     && useradd \
         --uid 10001 \
@@ -105,6 +135,14 @@ RUN python -m pip uninstall --yes pip \
     && find / -xdev -type f -perm /6000 -exec chmod a-s {} +
 
 COPY --from=builder /opt/venv /opt/venv
+
+# The extension records libstdc++.so.6 as needed, so the runtime layer must
+# carry it.  Read back from the installed package database rather than assumed
+# from the base image's reputation, and placed before the application so a
+# missing runtime fails the build instead of the first request.
+RUN dpkg-query -W -f='${db:Status-Abbrev}\n' libstdc++6 | grep -q '^ii ' \
+    && /opt/venv/bin/python -c 'import swisseph; print(swisseph.version)'
+
 COPY backend/app /app/backend/app
 COPY backend/ephe /app/backend/ephe
 COPY backend/place_data /app/backend/place_data

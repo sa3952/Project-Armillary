@@ -8,10 +8,11 @@ schema 層驗證，而非留給下游計算時才失敗：這樣所有輸入錯�
 
 import datetime as _dt
 import unicodedata
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic_core import PydanticCustomError
 
 
 # Dates whose final UTC minute contains a positive leap second in the bundled
@@ -28,7 +29,11 @@ KNOWN_UTC_LEAP_SECOND_DATES = frozenset({
     (2012, 6, 30), (2015, 6, 30), (2016, 12, 31),
 })
 
-from .config import AYANAMSA_OPTIONS, PRODUCT_YEAR_RANGE
+from .config import (
+    AYANAMSA_OPTIONS,
+    DEFAULT_ATMOSPHERE_TEMPERATURE_C,
+    PRODUCT_YEAR_RANGE,
+)
 
 
 _PORTABLE_IANA_TIMEZONE_KEYS = frozenset(available_timezones())
@@ -92,6 +97,19 @@ class StrictInputModel(BaseModel):
         allow_inf_nan=False,
     )
 
+    @model_validator(mode="after")
+    def canonicalize_signed_zero(self):
+        # JSON distinguishes the spelling -0.0 even though IEEE comparison
+        # does not.  Keeping that sign leaked impossible civil times such as
+        # ``12:00:-0.00`` and made semantically equal coordinates produce
+        # different receipts.  Normalize only direct float fields at the
+        # request boundary; bools and nonzero values remain untouched.
+        for name in type(self).model_fields:
+            value = getattr(self, name)
+            if type(value) is float and value == 0.0:
+                setattr(self, name, 0.0)
+        return self
+
 
 class DateTimeInput(StrictInputModel):
     # The public request boundary is owned by PRODUCT_YEAR_RANGE. Bundled Swiss
@@ -113,46 +131,41 @@ class DateTimeInput(StrictInputModel):
         return self
 
 
+def _conditional_rules(
+    field: str, rules: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    return {
+        "allOf": [
+            {
+                "if": {
+                    "properties": {field: {"const": value}},
+                    "required": [field],
+                },
+                "then": rule,
+            }
+            for value, rule in rules.items()
+        ]
+    }
+
+
+_TIMEZONE_SCHEMA_RULES: dict[str, dict[str, Any]] = {
+    "iana": {
+        "properties": {"iana_name": {"minLength": 1, "type": "string"}},
+        "required": ["iana_name"],
+    },
+    "fixed_offset": {
+        "properties": {
+            "utc_offset_hours": {"maximum": 14.0, "minimum": -14.0, "type": "number"},
+            "fold": {"const": 0},
+        },
+        "required": ["utc_offset_hours"],
+    },
+}
+
+
 class TimezoneInput(StrictInputModel):
     model_config = ConfigDict(
-        json_schema_extra={
-            "allOf": [
-                {
-                    "if": {
-                        "properties": {"mode": {"const": "iana"}},
-                        "required": ["mode"],
-                    },
-                    "then": {
-                        "properties": {
-                            "iana_name": {
-                                "minLength": 1,
-                                "type": "string",
-                            }
-                        },
-                        "required": ["iana_name"],
-                    },
-                },
-                {
-                    "if": {
-                        "properties": {
-                            "mode": {"const": "fixed_offset"}
-                        },
-                        "required": ["mode"],
-                    },
-                    "then": {
-                        "properties": {
-                            "utc_offset_hours": {
-                                "maximum": 14.0,
-                                "minimum": -14.0,
-                                "type": "number",
-                            },
-                            "fold": {"const": 0},
-                        },
-                        "required": ["utc_offset_hours"],
-                    },
-                },
-            ]
-        }
+        json_schema_extra=_conditional_rules("mode", _TIMEZONE_SCHEMA_RULES)
     )
     mode: Literal["iana", "fixed_offset"]
     iana_name: Optional[str] = None
@@ -161,8 +174,22 @@ class TimezoneInput(StrictInputModel):
     # 0=較早/夏令的那一次(預設)，1=較晚/標準時間的那一次。只在 mode='iana' 時有意義。
     fold: int = Field(default=0, ge=0, le=1)
 
+    # Derive inert-field rejection from the same declaration that owns each
+    # mode's meaningful fields.
+    _MODE_FIELDS = {"iana": "iana_name", "fixed_offset": "utc_offset_hours"}
+
     @model_validator(mode="after")
     def check_fields(self):
+        inert = [
+            field
+            for mode, field in self._MODE_FIELDS.items()
+            if mode != self.mode and getattr(self, field) is not None
+        ]
+        if inert:
+            raise ValueError(
+                f"mode='{self.mode}' 時這些欄位沒有作用，不得提供："
+                + "、".join(sorted(inert))
+            )
         if self.mode == "iana":
             if not self.iana_name:
                 raise ValueError("mode='iana' 時必須提供 iana_name，例如 'Asia/Taipei'")
@@ -197,111 +224,55 @@ class TimezoneInput(StrictInputModel):
         return self
 
 
+_LOCATION_PRECISIONS = {
+    "manual": ("user_supplied_coordinates", "unknown"),
+    "geonames_cities500": ("place_representative_point",),
+    "taiwan_moi_place_names": (
+        "settlement_representative_point",
+        "administrative_area_representative_point",
+    ),
+}
+
+
+def _precision_schema(source: str) -> dict[str, Any]:
+    values = _LOCATION_PRECISIONS[source]
+    return {"const": values[0]} if len(values) == 1 else {"enum": list(values)}
+
+
+_MANUAL_LOCATION_SCHEMA = {
+    "properties": {
+        "source_record_id": {"type": "null"},
+        "location_precision": _precision_schema("manual"),
+    }
+}
+_LOCATION_SCHEMA_RULES: dict[str, dict[str, Any]] = {
+    "manual": _MANUAL_LOCATION_SCHEMA,
+    "geonames_cities500": {
+        "properties": {
+            "place_label": {"type": "string", "minLength": 1},
+            "source_record_id": {"type": "string", "minLength": 1},
+            "location_precision": _precision_schema("geonames_cities500"),
+        },
+        "required": ["place_label", "source_record_id", "location_precision"],
+    },
+    "taiwan_moi_place_names": {
+        "properties": {
+            "place_label": {"type": "string", "minLength": 1},
+            "source_record_id": {"type": "string", "minLength": 1},
+            "location_precision": _precision_schema("taiwan_moi_place_names"),
+        },
+        "required": ["place_label", "source_record_id", "location_precision"],
+    },
+}
+_LOCATION_SCHEMA = _conditional_rules("location_source", _LOCATION_SCHEMA_RULES)
+_LOCATION_SCHEMA["allOf"].insert(0, {
+    "if": {"not": {"required": ["location_source"]}},
+    "then": _MANUAL_LOCATION_SCHEMA,
+})
+
+
 class LocationInput(StrictInputModel):
-    model_config = ConfigDict(
-        json_schema_extra={
-            "allOf": [
-                {
-                    "if": {
-                        "not": {"required": ["location_source"]}
-                    },
-                    "then": {
-                        "properties": {
-                            "source_record_id": {"type": "null"},
-                            "location_precision": {
-                                "enum": [
-                                    "user_supplied_coordinates",
-                                    "unknown",
-                                ]
-                            },
-                        }
-                    },
-                },
-                {
-                    "if": {
-                        "properties": {
-                            "location_source": {"const": "manual"}
-                        },
-                        "required": ["location_source"],
-                    },
-                    "then": {
-                        "properties": {
-                            "source_record_id": {"type": "null"},
-                            "location_precision": {
-                                "enum": [
-                                    "user_supplied_coordinates",
-                                    "unknown",
-                                ]
-                            },
-                        }
-                    },
-                },
-                {
-                    "if": {
-                        "properties": {
-                            "location_source": {
-                                "const": "geonames_cities500"
-                            }
-                        },
-                        "required": ["location_source"],
-                    },
-                    "then": {
-                        "properties": {
-                            "place_label": {
-                                "type": "string",
-                                "minLength": 1,
-                            },
-                            "source_record_id": {
-                                "type": "string",
-                                "minLength": 1,
-                            },
-                            "location_precision": {
-                                "const": "place_representative_point"
-                            }
-                        },
-                        "required": [
-                            "place_label",
-                            "source_record_id",
-                            "location_precision",
-                        ],
-                    },
-                },
-                {
-                    "if": {
-                        "properties": {
-                            "location_source": {
-                                "const": "taiwan_moi_place_names"
-                            }
-                        },
-                        "required": ["location_source"],
-                    },
-                    "then": {
-                        "properties": {
-                            "place_label": {
-                                "type": "string",
-                                "minLength": 1,
-                            },
-                            "source_record_id": {
-                                "type": "string",
-                                "minLength": 1,
-                            },
-                            "location_precision": {
-                                "enum": [
-                                    "settlement_representative_point",
-                                    "administrative_area_representative_point",
-                                ]
-                            }
-                        },
-                        "required": [
-                            "place_label",
-                            "source_record_id",
-                            "location_precision",
-                        ],
-                    },
-                },
-            ]
-        }
-    )
+    model_config = ConfigDict(json_schema_extra=_LOCATION_SCHEMA)
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     altitude_m: float = Field(default=0.0, ge=-500, le=10000)
@@ -343,46 +314,22 @@ class LocationInput(StrictInputModel):
 
     @model_validator(mode="after")
     def check_location_resolution_receipt(self):
+        if self.location_precision not in _LOCATION_PRECISIONS[
+            self.location_source
+        ]:
+            raise ValueError(
+                f"location_source='{self.location_source}' 不接受此 location_precision"
+            )
         if self.location_source == "manual":
             if self.source_record_id is not None:
                 raise ValueError(
                     "location_source='manual' 不得提供 source_record_id"
-                )
-            if self.location_precision not in {
-                "user_supplied_coordinates",
-                "unknown",
-            }:
-                raise ValueError(
-                    "手動座標不得冒充資料集代表點 precision"
                 )
             return self
 
         if not self.place_label or not self.source_record_id:
             raise ValueError(
                 "使用離線地名資料時必須同時提供 place_label 與 source_record_id"
-            )
-        if self.location_precision == "user_supplied_coordinates":
-            raise ValueError(
-                "資料集解析結果不得標為 user_supplied_coordinates；"
-                "請提供代表點的 location_precision"
-            )
-        if (
-            self.location_source == "geonames_cities500"
-            and self.location_precision != "place_representative_point"
-        ):
-            raise ValueError(
-                "GeoNames cities500 必須標為 place_representative_point"
-            )
-        if (
-            self.location_source == "taiwan_moi_place_names"
-            and self.location_precision
-            not in {
-                "settlement_representative_point",
-                "administrative_area_representative_point",
-            }
-        ):
-            raise ValueError(
-                "台灣內政部地名必須標為聚落或行政區代表點"
             )
         return self
 
@@ -391,7 +338,9 @@ class AtmosphereInput(StrictInputModel):
     """Swiss refracted-altitude inputs; None pressure means Swiss estimates it from altitude."""
 
     pressure_hpa: Optional[float] = Field(default=None, gt=0, le=1100)
-    temperature_c: float = Field(default=0.0, ge=-100, le=60)
+    temperature_c: float = Field(
+        default=DEFAULT_ATMOSPHERE_TEMPERATURE_C, ge=-100, le=60
+    )
 
 
 class ComputationModeInput(StrictInputModel):
@@ -453,10 +402,8 @@ class OptionsInput(StrictInputModel):
     #
     # **MTH-Q-016 已裁決（Sebastian 2026-08-03）：預設開啟，但可 opt-out。**
     #
-    # 沿革：初版預設 True 是實作者自行決定的，紅隊據
-    # 「待審閱的方法項目不得默默成為預設的使用者可見計算」提出異議
-    # （RT-BACKEND-9-E-001），因此一度改回 opt-in 以恢復裁決前狀態。
-    # 現由 Sebastian 正式裁決為預設開啟。
+    # 預設值是裁決事項，不是實作事項：待審閱的方法項目不得默默成為預設的
+    # 使用者可見計算。此項由 Sebastian 正式裁決為預設開啟。
     #
     # 這是本檔唯一預設開啟的判斷類選項。它與其餘項目的差別在於：預設輸出的
     # 整宮配置與角距離都是算術，未選 orb_profile 時 `in_orb` 一律為 null，
@@ -486,7 +433,7 @@ class OptionsInput(StrictInputModel):
     )
     # Partile 慣例（MTH-Q-012 / E-012 裁決：做成 profile）。三種慣例並存，
     # 其中兩種都出自 Lilly 本人且互相矛盾。與 orb 表不同，這一項有預設值：
-    # 「同一整數度」是最通行者，也是本模組原本的行為。
+    # 「同一整數度」是最通行者。
     partile_profile: Literal[
         "same_degree_number_v1",
         "within_one_degree_v1",
@@ -520,7 +467,7 @@ class OptionsInput(StrictInputModel):
     # --- 具名古典尊貴元件；只回傳規則／表格結果，不打分、不解讀 ---
     # 傳統七政的 domicile/exaltation 星座層級是基礎 profile，預設計算但可明示
     # 關閉。精確擢升度數、失勢／陷落、互容與總分均不在此開關範圍。
-    include_domicile_exaltation: bool = True
+    include_domicile_exaltation: bool = False
     bounds_profile: Optional[
         Literal[
             "egyptian_bounds_robbins_1940_v1",
@@ -559,9 +506,9 @@ class OptionsInput(StrictInputModel):
             if getattr(self, name)
         ]
         if incompatible:
-            raise ValueError(
-                "classical_seven_v1 與下列非古典星體選項衝突: "
-                + ", ".join(incompatible)
+            raise PydanticCustomError(
+                "body_selection_conflict",
+                "classical_seven_v1 conflicts with selected non-classical bodies",
             )
         return self
 
@@ -571,22 +518,25 @@ class OptionsInput(StrictInputModel):
             self.aspect_orb_scale_percent is not None
             and self.aspect_orb_profile is None
         ):
-            raise ValueError(
-                "aspect_orb_scale_percent requires aspect_orb_profile"
+            raise PydanticCustomError(
+                "aspect_orb_scale_requires_profile",
+                "aspect_orb_scale_percent requires aspect_orb_profile",
             )
         if (
             self.aspect_fixed_orb_degrees is not None
             and self.aspect_orb_profile is not None
         ):
-            raise ValueError(
-                "aspect_fixed_orb_degrees and aspect_orb_profile are mutually exclusive"
+            raise PydanticCustomError(
+                "aspect_orb_sources_conflict",
+                "aspect_fixed_orb_degrees and aspect_orb_profile are mutually exclusive",
             )
         if (
             self.aspect_angle_orb_degrees is not None
             and not self.aspect_include_angles
         ):
-            raise ValueError(
-                "aspect_angle_orb_degrees requires aspect_include_angles=true"
+            raise PydanticCustomError(
+                "aspect_angle_orb_requires_angles",
+                "aspect_angle_orb_degrees requires aspect_include_angles=true",
             )
         return self
 
@@ -632,16 +582,16 @@ class ChartRequest(StrictInputModel):
             == "moon_only_topocentric_v1"
             and self.computation_mode.center != "geocentric"
         ):
-            raise ValueError(
-                "moon_only_topocentric_v1 requires geocentric global center; "
-                "topocentric/heliocentric/barycentric cannot be silently mixed"
+            raise PydanticCustomError(
+                "moon_profile_center_conflict",
+                "moon_only_topocentric_v1 requires geocentric global center",
             )
         if self.birth_time_precision == "approximate_hour" and (
             self.datetime.minute != 0 or self.datetime.second != 0
         ):
-            raise ValueError(
-                "approximate_hour 只接受已知民用小時；minute 與 second 必須為 0，"
-                "系統會自行建立一小時敏感度取樣。"
+            raise PydanticCustomError(
+                "approximate_hour_requires_zero_subhour",
+                "approximate_hour requires zero minute and second",
             )
         if self.birth_time_precision == "date_only":
             if (
@@ -649,9 +599,9 @@ class ChartRequest(StrictInputModel):
                 or self.datetime.minute != 0
                 or self.datetime.second != 0
             ):
-                raise ValueError(
-                    "date_only 只接受日期；datetime 的 hour、minute、second "
-                    "必須全為 0。這些零值只是 API 日期容器，不代表午夜出生。"
+                raise PydanticCustomError(
+                    "date_only_requires_zero_time",
+                    "date_only requires zero hour, minute and second",
                 )
             # Unknown time 本身即是不請求 houses。正規化在 request boundary 完成，
             # 讓 requested_options、Dossier input receipt 與實際執行一致；不保留一個

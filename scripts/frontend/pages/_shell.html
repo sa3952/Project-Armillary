@@ -3,11 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title>{{title}}｜渾儀 Armillary</title>
+<meta name="robots" content="{{robots}}">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{canonical}}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{canonical}}">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{{json_ld}}</script>
 <link rel="icon" href="/zh-TW/favicon.svg">
 <link rel="stylesheet" href="/zh-TW/tokens.css?v={{assets}}">
-<link rel="stylesheet" href="/zh-TW/page.css?v={{assets}}">
+{{stylesheets}}
 </head>
 <body>
 
@@ -27,9 +35,10 @@
     </a>
     <nav class="site-nav" aria-label="主要導覽">
       <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
-      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/blog">文章</a>
       <a href="/zh-TW/about">關於</a>
       <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
@@ -71,7 +80,6 @@
   <div class="wrap">
     <span>渾儀 ARMILLARY</span>
     <span>只計算，不解盤，不預測</span>
-    <span>{{surface}}</span>
   </div>
 </footer>
 

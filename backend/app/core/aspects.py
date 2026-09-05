@@ -13,7 +13,7 @@
 「差幾度」是算術；**「容許度是幾度」則是一個尚未裁決的方法選擇**，
 而且歷史上的數字彼此不一致。因此本模組不設預設容許度表：
 未明確指定具名 `orb_profile` 或使用者固定配對門檻時，`in_orb` 一律回傳 null 並附 reason_code，
-角距離等純幾何量照常輸出。憲法 0.1 條：AI 不得自行創設裁決。
+角距離等純幾何量照常輸出。未經裁決的方法選擇不得由實作代為決定。
 
 **第二批擴展（Sebastian 2026-08-03，MTH-Q-014／019／020）：** 逐度層可改選
 現代小相位具名集合、縮放具名七政 orb 表、或使用明示固定配對門檻；ASC／MC 可 opt-in，
@@ -28,7 +28,7 @@
 ## 容許度表的來源（皆為 moiety 制：兩星各有自己的 orb，相位成立條件為
    「距離精確相位的差 ≤ 兩星 orb 的一半之和」）
 
-### ⚠ 關於證據強度的更正（RT-BACKEND-9-E-011）
+### ⚠ 關於證據強度的更正
 
 本模組初版把 `abu_mashar_consensus_v1`（現已更名為 `abu_mashar_lineage_v1`）的來源標為
 「**五個彼此獨立**的前現代來源一致」。**該陳述無法成立，已撤回。** 兩個理由：
@@ -75,7 +75,7 @@ Experience」。同頁的 moiety 規則與實例亦出自此處：
 > 土星的 moiety 為 5、金星為 4，而兩者距離精確相位為 8 度。」
 
 （5 + 4 = 9 ≥ 8，故成立。此式實作於本模組的逐對門檻 `(orb_a + orb_b) / 2`，
-並以此例入測試——見 `tests/backend/test_aspects.py` 的 Lilly p.107 案例。）
+並以此例入測試（Lilly p.107 案例）。）
 
 **未實作的第三欄。** Lilly 同頁另列一欄註明「According to others / All consent」
 （Saturn 9、Jupiter 9、Mars 7、Sun 15、Venus 8→7、Mercury 7、Moon 12）。
@@ -92,6 +92,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 
+from ..ephemeris import FullEphemerisRequiredError
 from .root_finding import SOLVER_NAME, find_crossings_detailed, wrap_to_signed_180
 from .trace import Trace
 
@@ -103,7 +104,7 @@ APPLYING_METHOD_NAME = "relative_longitude_speed_sign_v1"
 METHOD_STATUS = "provisional_pending_method_audit"
 
 # Partile 的預設慣例。與 orb 表不同，這一項有預設值：三種慣例中「同一整數度」
-# 是 Houlding 記為最通行者，也是本模組原本的行為，故沿用為預設而非留空。
+# 是 Houlding 記為最通行者，故沿用為預設而非留空。
 # 使用者可經 `partile_profile` 改選；Sebastian 可另行裁決改預設。
 DEFAULT_PARTILE_PROFILE_KEY = "same_degree_number_v1"
 
@@ -176,7 +177,7 @@ _SIGN_DISTANCE_TO_ASPECT = {
 
 ORB_PROFILES: dict[str, dict] = {
     # 舊名 `abu_mashar_consensus_v1`。「consensus」一詞本身就是在說「各方一致同意」，
-    # 正是 RT-BACKEND-9-E-011 撤回的那個宣稱——只改 provenance 而留著這個鍵值，
+    # 正是上面撤回的那個宣稱——只改 provenance 而留著這個鍵值，
     # 等於把被撤回的宣稱留在識別碼裡。Sebastian 2026-08-03 裁決一併更名。
     "abu_mashar_lineage_v1": {
         "display_name": "Abu Ma'shar 一系傳承的重複數值",
@@ -323,8 +324,8 @@ def _nearest_aspect(
     「最近的相位唯一」這句話有兩個例外：角距離恰為 30 度時，距合與距六分
     都是 30；恰為 150 度時，距拱與距沖都是 30。
 
-    這兩點的取捨過去由 `PTOLEMAIC_ASPECTS` 的排列順序默默決定
-    （RT-BACKEND-9-E-002）。行為本身是確定的，但沒有寫出來就等於沒有政策。
+    這兩點的取捨過去由 `PTOLEMAIC_ASPECTS` 的排列順序默默決定。行為本身是
+    確定的，但沒有寫出來就等於沒有政策。
     現在明確回傳 `tie` 旗標，讓輸出說出「這裡有並列，我取了角度較小的那個」。
     兩個並列點都距離精確相位 30 度，遠在任何具名來源的容許度之外，
     因此取哪一個都不會改變 `in_orb`；差別只在顯示哪個名稱。
@@ -360,8 +361,8 @@ def _signed_target(delta: float, angle: float) -> float:
 
 # Partile 的三種具名慣例（Sebastian 2026-08-03 裁決 E-012：做成 profile）。
 #
-# 初版只實作「同一整數度」並在 docstring 裡寫成「這是傳統定義」，屬過度宣稱
-# （RT-BACKEND-9-E-012）。三種用法真的並存，且**其中兩種都出自 Lilly 本人**——
+# 初版只實作「同一整數度」並在 docstring 裡寫成「這是傳統定義」，屬過度宣稱。
+# 三種用法真的並存，且**其中兩種都出自 Lilly 本人**——
 # 他在相隔三十年的兩本書裡給了互相矛盾的定義：
 #
 #   Christian Astrology (1647) p.107：
@@ -459,7 +460,7 @@ def _partile_reason_code(
 ) -> str | None:
     """說明本組 partile 判定的性質，只在需要提醒時才給碼。
 
-    `FPI-2026-08-06-E-006`：同度慣例在互不見的組合上也會回 True，而消費端會把它
+    同度慣例在互不見的組合上也會回 True，而消費端會把它
     讀成「精確相位」。回一個具名的理由碼，比讓對方自己去比對 `whole_sign` 可靠。
     """
 
@@ -778,6 +779,11 @@ def compute_aspects(
         },
         "perfection": {
             "requested": include_perfection,
+            "executed": include_perfection,
+            "applicable": include_perfection,
+            "available": include_perfection,
+            "status": "computed" if include_perfection else "not_requested",
+            "reason_code": None if include_perfection else "option_not_requested",
             "solver": SOLVER_NAME if include_perfection else None,
             "search_window_days": (
                 perfection_window_days if include_perfection else None
@@ -828,6 +834,20 @@ def compute_aspects(
                     perfection_window_days=perfection_window_days,
                 )
             )
+
+    unavailable = any(
+        pair.get("perfection", {}).get("status") == "not_applicable"
+        for pair in receipt["pairs"]
+        if isinstance(pair.get("perfection"), dict)
+    )
+    if unavailable:
+        receipt["perfection"].update({
+            "executed": True,
+            "applicable": False,
+            "available": False,
+            "status": "not_applicable",
+            "reason_code": "full_ephemeris_unavailable_for_search_window",
+        })
 
     _trace_summary(receipt, trace, orb_profile_key=orb_profile_key)
     return receipt
@@ -952,13 +972,13 @@ def _pair_record(
         },
         "partile": partile,
         "partile_rule": None if is_modern_minor else partile_profile["rule"],
-        # `FPI-2026-08-06-E-006`。同度慣例只看兩星是否落在各自星座的同一個整數度，
+        # 同度慣例只看兩星是否落在各自星座的同一個整數度，
         # **與角距離無關**，所以任兩個同整數度的星體（約 1/12 機率）都會被標記，
         # 包括教義上互不見的組合——例如牡羊 10 度與金牛 10 度，整宮上是不合意。
         # 消費端把 `partile: true` 讀成「精確相位」是很自然的誤讀。
         #
         # 「partile 是否應以成相為前置條件」是古典方法定義問題，不是工程問題
-        # （`AGENTS.md` §7）。這裡不改判定，只讓輸出說出它到底宣稱了什麼：
+        # 這裡不改判定，只讓輸出說出它到底宣稱了什麼：
         # 兩個門檻制 profile 由「距最近精確相位的偏差」導出，蘊含相位；
         # 同度制不蘊含。若 Sebastian 日後裁決加上前置條件，改的是 `_partile`，
         # 本欄仍然成立。
@@ -991,16 +1011,33 @@ def _pair_record(
         and applying is True
         and in_orb is not False
     ):
-        crossings = _perfection_times(
-            participant_a=participant_a,
-            participant_b=participant_b,
-            signed_target=signed_target,
-            jd_ut=jd_ut,
-            longitude_at=longitude_at,
-            window_days=perfection_window_days,
-        )
+        try:
+            crossings = _perfection_times(
+                participant_a=participant_a,
+                participant_b=participant_b,
+                signed_target=signed_target,
+                jd_ut=jd_ut,
+                longitude_at=longitude_at,
+                window_days=perfection_window_days,
+            )
+        except FullEphemerisRequiredError:
+            record["perfection"] = {
+                "status": "not_applicable",
+                "reason_code": "full_ephemeris_unavailable_for_search_window",
+                "solver": SOLVER_NAME,
+                "search_window_days": perfection_window_days,
+                "crossing_count": 0,
+                "days_from_chart_moment": [],
+                "hours_from_chart_moment": [],
+                "julian_day_ut": [],
+                "solver_evidence": [],
+                "not_found_reason_code": "full_ephemeris_unavailable_for_search_window",
+            }
+            return record
         times = [crossing["t"] for crossing in crossings]
         record["perfection"] = {
+            "status": "computed",
+            "reason_code": None,
             "solver": SOLVER_NAME,
             "search_window_days": perfection_window_days,
             "crossing_count": len(times),

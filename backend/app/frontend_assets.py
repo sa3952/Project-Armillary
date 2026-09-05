@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path, PurePosixPath
+import re
 import stat
 
 
@@ -20,6 +21,7 @@ EXCLUDED_SOURCE_BASENAMES = frozenset({
     "eslint.config.mjs",
     "package-lock.json",
     "package.json",
+    "surfaces.json",
 })
 IGNORED_PLATFORM_METADATA = frozenset({".DS_Store"})
 EXCLUDED_SOURCE_DIRECTORIES = frozenset({"tests", "node_modules"})
@@ -38,10 +40,31 @@ RUNTIME_SUFFIXES = frozenset({
     ".png",
     ".svg",
     ".ttf",
+    ".txt",
     ".webp",
     ".woff",
     ".woff2",
+    ".xml",
 })
+_INDEXNOW_KEY = re.compile(r"^[A-Za-z0-9-]{8,128}$")
+
+
+def _discovery_asset_is_allowed(entry: Path, *, at_root: bool) -> bool:
+    suffix = entry.suffix.casefold()
+    if suffix not in {".txt", ".xml"}:
+        return True
+    if not at_root:
+        return False
+    if entry.name == "robots.txt":
+        return True
+    if entry.name == "sitemap.xml":
+        return True
+    if suffix == ".txt" and _INDEXNOW_KEY.fullmatch(entry.stem):
+        try:
+            return entry.read_text(encoding="ascii").strip() == entry.stem
+        except (OSError, UnicodeError):
+            return False
+    return False
 
 
 def validate_asset_name(name: object) -> str:
@@ -93,6 +116,11 @@ def discover_source_assets(frontend_directory: Path) -> frozenset[str]:
             name = validate_asset_name(relative.as_posix())
             if entry.suffix.casefold() not in RUNTIME_SUFFIXES:
                 raise ValueError(f"unsupported frontend asset: {name}")
+            if not _discovery_asset_is_allowed(
+                entry,
+                at_root=relative_parent is None,
+            ):
+                raise ValueError(f"unsupported frontend discovery asset: {name}")
             assets.add(name)
     collect(frontend)
     if DEFAULT_LOCALE_ENTRYPOINT not in assets:

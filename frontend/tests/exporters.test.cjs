@@ -4,6 +4,18 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const Exporters = require("../zh-TW/exporters.js");
+
+// 這個值曾經在這裡被手寫成 "1.2.0"，而生產者在 37 天後升到 "1.3.0"；匯出器只是
+// 透傳，所以測試永遠不會紅。fixture 不得記得生產者的值——它要去讀。
+const ATTESTATION_VERSION = (
+  fs.readFileSync(
+    path.join(__dirname, "..", "..", "backend", "app", "privacy_receipt.py"),
+    "utf8"
+  ).match(/"privacy_attestation_version":\s*"([^"]+)"/) || []
+)[1];
+if (!ATTESTATION_VERSION) {
+  throw new Error("privacy_receipt.py no longer declares an attestation version");
+}
 const compatibilityFixture = JSON.parse(
   fs.readFileSync(
     path.join(__dirname, "fixtures", "response-compatibility.json"),
@@ -27,7 +39,7 @@ function fixture() {
       time_conversion: { utc_iso_8601: "1997-08-17T01:42:00.000Z" },
       warnings: [{ code: "TEST_WARNING", message: "保留, 逗號與 \"引號\"" }],
       privacy: {
-        privacy_attestation_version: "1.2.0",
+        privacy_attestation_version: ATTESTATION_VERSION,
         attestation_status: "provisional_pending_external_review",
         claims: [{
           id: "application_chart_path_no_persistence",
@@ -131,9 +143,18 @@ test("compatibility fixture accepts only the supported API and Dossier pair", ()
       rejectedResponse.calculation_dossier.dossier_version =
         entry.dossier_version;
     }
+    // A single alternation over every guard's message would let one guard
+    // cover for another: a rejected case can throw from a neighbouring guard
+    // and still satisfy the assertion, leaving the intended guard untested.
+    // Each rejected case therefore names the one guard that must reject it,
+    // and the fixture owns that name.
+    const expected = entry.expected_error_contains;
+    assert.ok(expected, `rejected case ${entry.name} names no expected guard`);
     assert.throws(
       () => Exporters.createDocument(rejectedResponse, sections),
-      /不相容|缺少.*版本/
+      (error) =>
+        error instanceof Error && error.message.includes(expected),
+      `${entry.name} must be rejected by the guard that reports ${expected}`
     );
   });
 });
@@ -214,6 +235,15 @@ test("CSV neutralizes spreadsheet formulas without corrupting numeric literals",
         ["negative number", "-2.5"],
         ["positive number", "+123"],
         ["scientific number", "1e-6"],
+        // 前導不可見字元原本是手列的；零寬字元在 Unicode 裡不歸在空白，
+        // 於是 U+200B／U+200C／U+2060 整組落在防護之外。
+        ["leading zero width space", "\u200b=1+1"],
+        ["leading zero width non joiner", "\u200c=1+1"],
+        ["leading word joiner", "\u2060@SUM(A1:A2)"],
+        // 反向：帶單位的量測值不是公式。一份普通星盤匯出曾有九格被加上單引號，
+        // 南緯、南赤緯與負偏移全中，讀起來像資料壞了。
+        ["south declination", "-23\u00b003\u203230.38\u2033"],
+        ["negative celsius", "-4.5 \u2103"],
       ],
     }],
     blocks: [],
@@ -231,6 +261,13 @@ test("CSV neutralizes spreadsheet formulas without corrupting numeric literals",
   assert.match(csv, /,-2\.5/);
   assert.match(csv, /,\+123/);
   assert.match(csv, /,1e-6/);
+  assert.ok(csv.includes("'\u200b=1+1"), "zero width space slipped past the guard");
+  assert.ok(csv.includes("'\u200c=1+1"), "zero width non-joiner slipped past the guard");
+  assert.ok(csv.includes("'\u2060@SUM(A1:A2)"), "word joiner slipped past the guard");
+  assert.ok(csv.includes(",-23\u00b003\u203230.38\u2033"),
+    "a measured value carrying a unit was treated as a formula");
+  assert.ok(csv.includes(",-4.5 \u2103"),
+    "a measured value carrying a unit was treated as a formula");
 });
 
 test("JSON is lossless and Markdown is labelled as data rather than interpretation", () => {
@@ -301,7 +338,7 @@ test("download action returns an explicit failure instead of claiming success", 
   });
 });
 
-// ── PIA-2026-08-06-002 ───────────────────────────────────────
+// ── Markdown 匯出的自由文字必須逐點 escape ───────────────────
 // Markdown 允許 raw HTML，所以未經處理的自由文字在支援 HTML 的 renderer
 // 裡就是 active content。匯出物是 L1、會脫離脈絡流傳，因此 escaping 是
 // serializer 自己的契約責任，不能倚賴「目前 schema 剛好沒有自由文字」。
@@ -350,6 +387,15 @@ test("markdown escaping does not double-encode an ampersand", () => {
   assert.ok(!markdown.includes("&amp;lt;"), "重複編碼");
 });
 
+test("markdown table cells are escaped exactly once across line endings", () => {
+  const markdown = Exporters.renderMarkdown(
+    hostileDocument("alpha|beta\\gamma\rnext")
+  );
+  assert.ok(markdown.includes("alpha\\|beta\\\\gamma<br>next"), markdown);
+  assert.ok(!markdown.includes("alpha\\\\\\|"), "pipe escape was escaped twice");
+  assert.ok(!markdown.includes("\r"), "bare CR escaped the table boundary");
+});
+
 test("markdown keeps legitimate text and table structure intact", () => {
   // 反向控制：一個把所有東西都吃掉的 escaper 也會讓上面兩個測試通過。
   const markdown = Exporters.renderMarkdown(hostileDocument("台中 24.1469"));
@@ -367,15 +413,14 @@ test("json and csv are unchanged by the markdown escaping", () => {
     "CSV 的守衛是 formula hardening，不是 HTML escaping");
 });
 
-// ══ FPI-2026-08-06 盲審 findings ═══════════════════════════════════════
+// ══ Serializer 邊界中和 ══════════════════════════════════════════════
 //
-// E-008 與 E-009 目前都**不可觸發**：`authority` 是後端硬編碼字串，
-// 進入儲存格的自由文字也不含 tab 或換行。列為 finding 而非略過，是因為
-// `AGENTS.md` §3A 明文禁止「因為目前 schema 沒有自由文字就假設未來安全」
-// 這條推理——而那正是這兩處原本依賴的推理。測試以合成的敵意輸入證明
-// serializer 自己就守得住，不依賴上游剛好乾淨。
+// 這兩組在目前的 schema 下都**不可觸發**：`authority` 是後端硬編碼字串，
+// 進入儲存格的自由文字也不含 tab 或換行。仍然測，是因為「目前 schema 沒有
+// 自由文字」不是未來也安全的理由。測試以
+// 合成的敵意輸入證明 serializer 自己就守得住，不依賴上游剛好乾淨。
 
-test("E-008：Markdown 的 authority 與 UTC 兩個插值點都經過 escape", () => {
+test("Markdown 的 authority 與 UTC 兩個插值點都經過 escape", () => {
   const { response } = fixture();
   response.calculation_dossier.authority = "<script>alert(1)</script> & more";
   response.calculation_dossier.time_conversion.utc_iso_8601 = "1997`x`Z";
@@ -406,7 +451,7 @@ test("E-008：Markdown 的 authority 與 UTC 兩個插值點都經過 escape", (
   );
 });
 
-test("E-008：blocks 的 fence 依內容加長，內容撐不破它", () => {
+test("blocks 的 fence 依內容加長，內容撐不破它", () => {
   const { response } = fixture();
   const document = Exporters.createDocument(response, [
     {
@@ -425,7 +470,7 @@ test("E-008：blocks 的 fence 依內容加長，內容撐不破它", () => {
   );
 });
 
-test("E-008：一般內容仍使用三個反引號（相鄰控制）", () => {
+test("一般內容仍使用三個反引號（相鄰控制）", () => {
   const document = Exporters.createDocument(fixture().response, [
     {
       id: "plain",
@@ -437,7 +482,7 @@ test("E-008：一般內容仍使用三個反引號（相鄰控制）", () => {
   assert.ok(markdown.includes("```text\n沒有反引號的內容\n```"));
 });
 
-test("E-009：TSV 在儲存格邊界中和 tab 與換行", () => {
+test("TSV 在儲存格邊界中和 tab 與換行", () => {
   const section = {
     id: "tsv",
     title: "測試表",
@@ -467,7 +512,7 @@ test("E-009：TSV 在儲存格邊界中和 tab 與換行", () => {
   );
 });
 
-test("E-009：不含這些字元的表格逐字不變（相鄰控制）", () => {
+test("不含這些字元的表格逐字不變（相鄰控制）", () => {
   const section = {
     id: "clean",
     title: "測試表",
@@ -484,12 +529,12 @@ test("E-009：不含這些字元的表格逐字不變（相鄰控制）", () => 
   assert.ok(text.includes("太陽\t23°26′31.79″"));
 });
 
-// ══ Codex 複審打回的兩項 ═══════════════════════════════════════════════
+// ══ 部分覆蓋不算覆蓋 ═══════════════════════════════════════════════════
 //
-// 兩項都是我上一輪修得**不完整**，不是判準嚴苛：E-008 我 escape 了三個插值點
-// 漏掉第四個，E-009 我處理了 `\r\n` 卻漏掉單獨的 `\r`。
+// 兩組都在守同一件事：一個逐點套用的中和規則，只要漏掉任何一個插值點或
+// 任何一個控制字元，剩下的覆蓋率不會讓輸出變安全。
 
-test("E-008：reason_code 的 code span 不會被內容裡的反引號提前關閉", () => {
+test("reason_code 的 code span 不會被內容裡的反引號提前關閉", () => {
   const { response } = fixture();
   const document = Exporters.createDocument(response, [
     {
@@ -520,7 +565,7 @@ test("E-008：reason_code 的 code span 不會被內容裡的反引號提前關�
     /``+/.test(line), `分隔沒有加長：${line}`);
 });
 
-test("E-008：一般 reason_code 仍使用單一反引號（相鄰控制）", () => {
+test("一般 reason_code 仍使用單一反引號（相鄰控制）", () => {
   const { response } = fixture();
   const document = Exporters.createDocument(response, [
     {
@@ -538,7 +583,7 @@ test("E-008：一般 reason_code 仍使用單一反引號（相鄰控制）", ()
   assert.ok(line.includes("`house_not_requested`"), line);
 });
 
-test("E-009：單獨的 CR 也在儲存格邊界被中和", () => {
+test("單獨的 CR 也在儲存格邊界被中和", () => {
   const { response } = fixture();
   const document = Exporters.createDocument(response, [
     {
@@ -557,7 +602,7 @@ test("E-009：單獨的 CR 也在儲存格邊界被中和", () => {
   assert.equal(dataLine.split("\t").length, 2, dataLine);
 });
 
-test("E-009：CRLF 與 LF 仍如既有行為被折成空白（相鄰控制）", () => {
+test("CRLF 與 LF 仍如既有行為被折成空白（相鄰控制）", () => {
   const { response } = fixture();
   const document = Exporters.createDocument(response, [
     {

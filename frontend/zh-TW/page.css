@@ -10,10 +10,26 @@ body{
   font-family:var(--sans); font-size:16px; line-height:1.9;
   font-feature-settings:"palt" 1;
 }
-.skip-link{position:fixed;z-index:1000;top:var(--s2);left:var(--s2);padding:.55rem .75rem;background:var(--paper);color:var(--ink);border:2px solid var(--accent);border-radius:var(--radius);transform:translateY(-180%)}
+.skip-link{position:fixed;z-index:1000;top:var(--s2);left:var(--s2);padding:.55rem .75rem;background:var(--paper);color:var(--ink);border:2px solid var(--accent);border-radius:var(--radius);transform:translateY(-180%);text-decoration:none}
 .skip-link:focus{transform:translateY(0)}
 .wrap{max-width:var(--wrap); margin:0 auto; padding:0 var(--pad)}
 .mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+/* ─── 內文連結 ───────────────────────────────────────────
+   在這之前全站沒有基礎 a 規則，於是每一個內文連結都吃到瀏覽器預設的
+   #0000EE 加實線底線——在這套紙面配色裡它是畫面上唯一的藍，比正文還響。
+   導覽、頁尾網站地圖與說明書目錄各自都寫了 color 與 text-decoration:none，
+   選擇器權重都比裸 a 高，因此不受這條影響。
+   樣式沿用頁內既有的行內連結語彙（見 .sd-flipcap）：赭色、點線底線，
+   hover 才轉實線。用 text-decoration 而非 border-bottom，是因為前述三處
+   已經以 text-decoration:none 覆寫，border 它們擋不掉。 */
+a{
+  color:var(--accent); text-decoration:underline;
+  text-decoration-style:dotted; text-decoration-thickness:1px;
+  text-underline-offset:.22em;
+}
+a:hover{text-decoration-style:solid}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 
 /* ─── 銘牌 ─── */
 .eyebrow{
@@ -26,7 +42,20 @@ body{
 
 /* ─── 頁首：黑底招牌段的一部分 ─── */
 header{background:var(--plate); color:var(--plate-fg); border-bottom:1px solid var(--plate-hair)}
-header .wrap{display:flex; align-items:baseline; height:78px}
+/* 頁首一列。三件事都必須寫在這裡，缺一個就會壞：
+   · align-items:center。原本是 baseline，它讓招牌與導覽各自對齊自己的文字
+     基線，而招牌含一個 2rem 的環組標記、導覽是 .88rem 的字，兩個盒子的高度
+     差很多。實測 754px 時招牌盒的垂直中心比頁首中心高 17px，導覽低 2.5px，
+     看起來就是「商標莫名其妙靠齊上方」。改置中之後兩者共用同一條中線。
+   · gap。招牌與導覽之間原本沒有任何間距，只靠 .site-nav 的 margin-left:auto
+     推開。而 900px 以下那個 auto 被歸零（見下），於是導覽直接黏在
+     「ARMILLARY」右邊，實測間距 0px。gap 讓它們在任何寬度都推不到一起。
+   · flex-wrap 與 min-height。固定 height:78px 在裝不下時不會讓路，只會擠。
+     改成最小高度，裝不下就換行。 */
+header .wrap{
+  display:flex; align-items:center; flex-wrap:wrap;
+  gap:.6rem var(--s3); min-height:78px;
+}
 .brand{font-family:var(--serif); font-size:1.45rem; letter-spacing:.18em}
 .brand small{
   font-family:var(--serif); font-size:.82rem; letter-spacing:.3em;
@@ -51,9 +80,8 @@ header .wrap{display:flex; align-items:baseline; height:78px}
 .hero .lede{max-width:var(--measure); color:var(--plate-dim); font-size:1.02rem}
 
 /* ─── 首屏行動列 ───
-   計算入口先前只在頁尾，位於第 6702px。陌生訪客不會捲到那裡。
-   次要按鈕指向範例卷宗：不交出生資料也能看到完整輸出，是本產品與
-   需要登入才給結果的工具之間最直接的差別，值得在首屏就講。 */
+   計算入口留在首屏，不放頁尾。次要按鈕指向範例卷宗：不交出生資料也能看到
+   完整輸出，是本產品與需要登入才給結果的工具之間最直接的差別。 */
 .hero-act{display:flex; flex-wrap:wrap; align-items:center; gap:var(--s3); margin-top:var(--s3)}
 .btn.rev{background:var(--paper); color:var(--plate)}
 .btn.rev:hover{background:var(--accent-rev); color:var(--paper)}
@@ -251,27 +279,91 @@ p{max-width:var(--measure); color:var(--ink-dim)}
 .sd[data-phase="after"] .sd-state{color:var(--accent)}
 .sd[data-phase="unknown"] .sd-state{color:var(--state-unavailable)}
 
+/* 這條軌道原本是一條 2px 髮絲線加一個 14×24 的深色方塊。對已經知道它是
+   拉桿的人沒問題，對第一次看到的人不是：那個方塊在視覺上跟軌道上的五個
+   取樣刻度、跨界那條線是同一族的圖表記號，沒有任何地方說「我可以被抓住」。
+   實測 handle 14×24，而觸控目標建議至少 24×24。
+   改法分三層，缺一層都還是猜得到但看不出來：
+   · 軌道畫成凹槽（有底色、有邊、圓角），而不是一條線。線是圖表，槽是控制項。
+   · 把手放大到 22×34，加抓握紋與投影，讓它從平面圖記號變成一個可以捏的東西。
+   · 進入視窗後輕推三下（見 .sd[data-seen]）。動作是最強的可操作訊號，
+     但只在使用者真的看得到的時候放，而且一旦碰過就停。
+   幾何全部對齊同一條中線 19px：槽 15–23、刻度 15–23、跨界線 7–31、把手 2–36。 */
 .sd-track{
-  position:relative; height:34px; margin:var(--s2) 0 .4rem;
+  position:relative; height:38px; margin:var(--s2) 0 .4rem;
   cursor:ew-resize; touch-action:none;
 }
 .sd-track::before{
-  content:""; position:absolute; top:16px; left:0; right:0;
-  height:2px; background:var(--hair);
+  content:""; position:absolute; top:15px; left:0; right:0;
+  height:8px; border-radius:4px;
+  background:var(--paper-2); border:1px solid var(--hair);
 }
-.sd-fill{position:absolute; top:16px; left:0; height:2px; width:0; background:var(--ink-faint)}
+.sd-fill{
+  position:absolute; top:16px; left:1px; height:6px; width:0;
+  border-radius:3px; background:var(--ink-faint);
+}
 .sd[data-phase="after"] .sd-fill{background:var(--accent)}
-.sd-flip{position:absolute; top:6px; height:22px; width:1px; background:var(--accent); left:38.3%}
+.sd-flip{position:absolute; top:7px; height:24px; width:1px; background:var(--accent); left:38.3%}
 .sd-probe{
-  position:absolute; top:13px; width:8px; height:8px; margin-left:-4px;
+  position:absolute; top:15px; width:8px; height:8px; margin-left:-4px;
   border-radius:50%; background:var(--paper); border:1px solid var(--ink-faint);
 }
+/* 位置以樣式表擁有的 class 表示，不寫成行內 style 屬性，元件才能在 release
+   CSP 下維持功能。同一條軌道上的 .sd-flip 也是這樣寫的。 */
+.sd-probe.sd-at-0{left:0%}
+.sd-probe.sd-at-25{left:25%}
+.sd-probe.sd-at-50{left:50%}
+.sd-probe.sd-at-75{left:75%}
+.sd-probe.sd-at-100{left:100%}
+/* 抓握紋用三段 1px 的漸層畫在底色上，不另外加元素：多一個空 <span> 只是為了
+   三條線並不划算。 */
 .sd-handle{
-  position:absolute; top:5px; left:0; width:14px; height:24px; margin-left:-7px;
-  background:var(--ink); border-radius:2px; cursor:grab;
+  position:absolute; top:2px; left:0; width:22px; height:34px; margin-left:-11px;
+  background-color:var(--ink); border-radius:3px; cursor:grab;
+  box-shadow:0 1px 3px rgba(28,25,19,.34);
+  background-image:
+    linear-gradient(var(--paper),var(--paper)),
+    linear-gradient(var(--paper),var(--paper)),
+    linear-gradient(var(--paper),var(--paper));
+  background-repeat:no-repeat;
+  background-size:1px 12px;
+  background-position:8px 11px, 11px 11px, 14px 11px;
 }
-.sd-handle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
-.sd[data-phase="after"] .sd-handle{background:var(--accent)}
+.sd-track:hover .sd-handle{box-shadow:0 0 0 4px rgba(160,58,34,.16), 0 1px 3px rgba(28,25,19,.34)}
+.sd-handle:active{cursor:grabbing}
+.sd-handle:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+.sd[data-phase="after"] .sd-handle{background-color:var(--accent)}
+
+/* 輕推：只在捲到看得見（data-seen，由 sensitivity.js 用 IntersectionObserver 設）
+   而且還沒被碰過（data-touched）的時候放三次。碰過就停，不再打擾。 */
+@keyframes sd-nudge{
+  0%,100%{transform:translateX(0)}
+  28%{transform:translateX(9px)}
+  64%{transform:translateX(-5px)}
+}
+.sd[data-seen]:not([data-touched]) .sd-handle{animation:sd-nudge 1.5s ease-in-out .35s 3}
+@media (prefers-reduced-motion:reduce){
+  .sd .sd-handle{animation:none}
+}
+
+/* 操作提示搬到軌道上方：原本它在整份落宮清單之後、.75rem 的最淡灰，
+   讀者要先滑過十一列才會讀到「原來可以拖」。裡面那個小方塊是把手的縮小複製，
+   讓文字說的東西跟畫面上的東西可以直接對上，不必靠猜。 */
+.sd-cue{
+  display:flex; align-items:center; gap:.55rem;
+  margin-top:var(--s2); font-size:.9rem; color:var(--ink-dim);
+}
+.sd-cue-grip{
+  flex:none; width:14px; height:22px; border-radius:2px;
+  background-color:var(--ink);
+  background-image:
+    linear-gradient(var(--paper),var(--paper)),
+    linear-gradient(var(--paper),var(--paper)),
+    linear-gradient(var(--paper),var(--paper));
+  background-repeat:no-repeat;
+  background-size:1px 8px;
+  background-position:4.5px 7px, 6.5px 7px, 8.5px 7px;
+}
 
 .sd-scale{
   display:flex; justify-content:space-between; gap:var(--s2);
@@ -406,10 +498,8 @@ main{display:block}
 .page-body p{margin-bottom:var(--s2)}
 .page-body section{padding:var(--s4) 0; border-top:1px solid var(--hair-soft)}
 .lede{font-size:1.05rem; color:var(--ink-dim); max-width:var(--measure)}
-/* 2026-08-06：這兩條原本是無範圍的 `.cta`，而首頁上方已經有一個 `.cta`
-   版面容器（第 236 行的 grid）。同名、同分數、後者在後 —— 於是首頁那個
-   容器被塗成墨底，裡面的 `.btn.ghost`（color: var(--ink)）變成墨底墨字，
-   完全看不見。加上 `.page-body` 限定範圍即可，兩邊都不必改 class。 */
+/* `.cta` 在本檔另有一個同名的版面容器，因此這兩條必須以 `.page-body` 限定
+   範圍，否則同名同分數的後者會覆蓋前者。 */
 .page-body .cta{display:inline-block; background:var(--ink); color:var(--paper);
   padding:.95rem 2.4rem; text-decoration:none; margin-top:var(--s2)}
 .page-body .cta:hover{background:var(--accent)}
@@ -439,7 +529,6 @@ code{font-family:var(--mono); font-size:.88em}
 @media (max-width:900px){
   .legal-terms{grid-template-columns:1fr; gap:.3rem var(--s2)}
   .legal-terms dd{margin-bottom:.7rem}
-  .site-nav{margin-left:0}
 }
 
 /* 外殼把品牌字做成連結，而候選稿裡它是 div；不還原顏色會變成預設的藍色底線。 */
@@ -463,7 +552,12 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
 }
 
 /* ═══ 導覽與網站地圖：十四個介面都要到得了 ═══════════════ */
-.site-nav{margin-left:auto; display:flex; gap:1.25rem; flex-wrap:wrap}
+/* align-items:center 不可省。預設的 stretch 會把每個連結的盒子拉到最高那一個
+   （帶內距的 CTA）的高度，而連結的文字是貼在那個被拉高的盒子頂端的。
+   816px 實測：五個純連結的文字中線在 30.8，CTA 的在 38.8，導覽列自己的中線
+   是 39.0——連結整排高了 8.2px，而 CTA 是唯一對齊的那一個，於是它看起來
+   像是浮在旁邊，跟誰都沒有關係。置中之後六個項目共用同一條文字中線。 */
+.site-nav{margin-left:auto; display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap}
 .site-nav a{color:var(--plate-dim); text-decoration:none; font-size:.88rem; white-space:nowrap}
 .site-nav a:hover{color:var(--plate-fg)}
 /* 導覽列常駐入口：捲到哪一段都看得到。深底上用實心紙色，
@@ -481,7 +575,9 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
 .sitemap-col a{color:var(--ink-dim); text-decoration:none; font-size:.9rem}
 .sitemap-col a:hover{color:var(--accent)}
 @media (max-width:900px){
-  .site-nav{margin-left:0; gap:.9rem}
+  /* margin-left:auto 要留著。先前這裡（以及 .legal-terms 那一段裡誤放的
+     另一條）把它歸零，導覽因此不再被推到右邊，而是緊接在招牌後面。 */
+  .site-nav{gap:.9rem}
   .site-nav a{font-size:.82rem}
   .sitemap{grid-template-columns:1fr 1fr}
 }
@@ -489,13 +585,12 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
    反而讓頁首吃掉三成視窗高度。改為由內容決定，並收緊行距。 */
 @media (max-width:640px){
   header .wrap{
-    height:auto; min-height:auto; flex-wrap:wrap; align-items:center;
-    padding-top:.9rem; padding-bottom:.9rem; row-gap:.6rem;
+    min-height:0; padding-top:.9rem; padding-bottom:.9rem;
   }
   .brand{font-size:1.2rem; letter-spacing:.12em}
   .brand small{font-size:.7rem; letter-spacing:.22em; margin-left:.5rem}
   .mark{width:1.6rem; height:1.6rem}
-  .site-nav{width:100%; gap:.85rem}
+  .site-nav{width:100%; margin-left:0; gap:.85rem}
   .site-nav a{font-size:.8rem}
   .dossier-table{font-size:.66rem}
   .dossier-section{padding-left:.7rem}
@@ -560,8 +655,8 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
   color:var(--ink-faint);
 }
 .manual .note{margin-top:.7rem; font-size:.8rem; color:var(--ink-faint)}
-/* 每一節末尾的邊界。憲法要求界線被陳述；拆進每一節，
-   讀到哪一項就在那裡看到那一項的邊界，而不是另闢一段說教。 */
+/* 每一節末尾的邊界。界線必須被陳述，而且拆進每一節：讀到哪一項就在那裡
+   看到那一項的邊界，而不是另闢一段說教。 */
 .manual .limit{margin-top:var(--s3)}
 .manual .log th{white-space:nowrap}
 
@@ -665,6 +760,17 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
 .more summary:hover{color:var(--accent)}
 .more[open] summary{border-bottom:1px solid var(--hair-soft); margin-bottom:var(--s2)}
 .more > *:last-child{margin-bottom:var(--s2)}
+
+/* 範例卷宗的表格容器。`.dossier-table-wrap` 是 render_example_dossier.cjs
+   產生的容器，但在這之前沒有任何 CSS 規則——名字宣告了捲動包覆，行為卻是
+   overflow-x:visible。實測：〈逐步計算軌跡〉那張表 98 列、6 欄，其中「輸入」
+   欄是攤平的 key=value，撐到 4932px，於是整頁被撐出 5064px 的水平捲動
+   （視窗 1280）。表格自己捲，頁面就不會捲。
+   規則沿用同檔 .spec-scroll 的既有做法，不另立一套。 */
+.dossier-table-wrap{
+  width:100%; max-width:100%; min-width:0; box-sizing:border-box;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
 
 /* ─── 表格：可讀性優先 ─── */
 .spec-scroll{
@@ -1108,6 +1214,31 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
 }
 .apparatus .rail b{color:var(--accent-rev); font-weight:400}
 
+/* 本頁各節索引。加它的理由不只是導覽：這一頁把「界」「三分性」「相位」
+   「阿拉伯點」等幾個彼此獨立的主題放進同一份長文件，在這之前連錨點都沒有
+   （九個 h2，id 數量 0），所以既不能從站外深連結到某一節，站內也只能靠捲。
+   id 用語意 slug 而不是 01–08 的編號：編號會隨增刪位移，slug 不會，
+   而且之後拆主題頁時可以原樣當成路徑重用。
+   頁首不是 sticky，所以 scroll-margin 只需要一點呼吸空間，不必補償高度。 */
+.ap-index{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+  margin:var(--s4) 0 var(--s2); border-top:1px solid var(--hair);
+}
+@media (max-width:820px){ .ap-index{grid-template-columns:repeat(2,1fr)} }
+.ap-index a{
+  display:block; padding:var(--s2) var(--s2) var(--s2) 0;
+  border-bottom:1px solid var(--hair-soft);
+  text-decoration:none; color:var(--ink);
+}
+.ap-index a:hover{background:var(--paper-2)}
+.ap-index b{
+  display:block; font-family:var(--mono); font-weight:400;
+  font-size:.72rem; letter-spacing:.16em; color:var(--ink-faint);
+}
+.ap-index span{display:block; margin-top:.2rem; font-size:.95rem; line-height:1.5}
+
+.apparatus [id]{scroll-margin-top:var(--s3)}
+
 /* ─── 條目：編號改為實心方塊（借候選 I 的厚規線）─────────────── */
 .ap-entry{
   display:grid; grid-template-columns:4.5rem 1fr; gap:0 var(--s2);
@@ -1299,9 +1430,7 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
 .strata .tr-sub{max-width:40rem; font-size:1.02rem; line-height:1.9; margin-top:var(--s2)}
 
 /* ─── 檢測名冊 ───────────────────────────────────────────────
-   原本這裡放的是「還有幾個未關閉的發現」。那個數字 24 小時內就會過期，
-   而且它把最傷的一句話放在讀者注意力最集中的位置。改列**跑過哪些檢測**：
-   名字不會過期，而內行的一看就知道分量。 */
+   列的是**跑過哪些檢測**，不是任何會過期的計數：名字不會過期。 */
 .audit{
   margin:var(--s4) 0 0; padding:var(--s3);
   background:var(--plate); color:var(--plate-fg);
@@ -1463,8 +1592,7 @@ a.brand:hover .mark line{stroke:var(--plate-fg)}
 }
 
 /* ─── /trust 首屏事實條 ─────────────────────────────────────
-   四個硬數字，取代原本首屏那段只講「我們不打勾」的後設論證。
-   數字本身是重點，說明文字壓小；與 /methods 的 .slabs 刻意不同：
+   四個硬數字。數字本身是重點，說明文字壓小；與 /methods 的 .slabs 刻意不同：
    那裡是八格封閉方陣（在比較選項），這裡是一條開放的橫列（在陳述事實）。 */
 .facts{
   display:grid; grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));

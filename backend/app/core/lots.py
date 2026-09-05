@@ -85,6 +85,10 @@ def compute_lots(asc: float, sun_lon: float, moon_lon: float, sect: dict, trace:
             "fortune": None,
             "spirit": None,
             "depends_on_sect": is_day,
+            "sect_near_critical": sect.get("near_critical"),
+            "sect_near_critical_tolerance_degrees": sect.get(
+                "near_critical_tolerance_degrees"
+            ),
         }
 
     if is_day:
@@ -118,4 +122,11 @@ def compute_lots(asc: float, sun_lon: float, moon_lon: float, sect: dict, trace:
         "fortune": fortune,
         "spirit": spirit,
         "depends_on_sect": is_day,
+        # The formula was chosen by the sect.  Passing only the boolean dropped
+        # the uncertainty the sect had already computed, and these longitudes
+        # move by up to 2*(Moon-Sun) across that window.
+        "sect_near_critical": sect.get("near_critical"),
+        "sect_near_critical_tolerance_degrees": sect.get(
+            "near_critical_tolerance_degrees"
+        ),
     }

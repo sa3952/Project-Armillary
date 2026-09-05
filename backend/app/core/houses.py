@@ -40,31 +40,35 @@ QUADRANT_HOUSE_SYSTEM_CODES = frozenset({"P", "R", "B"})
 # 非古典角點的定義來源，隨值一起輸出，避免使用者把它們誤認為古典四角。
 EXTRA_ANGLE_PROVENANCE = {
     "vertex": {
+        "calculation_source": "swiss_ephemeris_houses_ex",
         "zh": "宿命點",
-        # 初版誤寫成「黃道與地平大圓在西方的交點」——那是**下降點**的定義，
-        # 不是 Vertex（RT-BACKEND-9-E-010）。Vertex 用的是卯酉圈
-        # (prime vertical)：通過天頂、正東與正西的大圓，與地平圈垂直。
-        # 數值計算本身取自 swe.houses_ex，未受此文字錯誤影響。
+        # 「黃道與地平大圓在西方的交點」是**下降點**的定義，不是 Vertex。
+        # Vertex 用的是卯酉圈 (prime vertical)：通過天頂、正東與正西的大圓，
+        # 與地平圈垂直。數值本身取自 swe.houses_ex。
         "definition": "黃道與卯酉圈（prime vertical，過天頂與正東西的大圓）在西方的交點",
         "not_to_be_confused_with": "下降點（黃道與地平圈在西方的交點）",
         "provenance": "modern_20th_century_l_edward_johndro_and_charles_jayne",
     },
     "equatorial_ascendant": {
+        "calculation_source": "swiss_ephemeris_houses_ex",
         "zh": "赤道上升點",
         "definition": "地理緯度視為 0 時的上升點（East Point）",
         "provenance": "technical_construction_not_a_classical_angle",
     },
     "co_ascendant_koch": {
+        "calculation_source": "swiss_ephemeris_houses_ex",
         "zh": "共同上升點(Koch)",
         "definition": "Walter Koch 定義的共同上升點",
         "provenance": "modern_20th_century_walter_koch",
     },
     "co_ascendant_munkasey": {
+        "calculation_source": "swiss_ephemeris_houses_ex",
         "zh": "共同上升點(Munkasey)",
         "definition": "Michael Munkasey 定義的共同上升點",
         "provenance": "modern_20th_century_michael_munkasey",
     },
     "polar_ascendant": {
+        "calculation_source": "swiss_ephemeris_houses_ex",
         "zh": "極地上升點",
         "definition": "Munkasey 定義的極地上升點",
         "provenance": "modern_20th_century_michael_munkasey",
@@ -253,6 +257,10 @@ def compute_houses(house_system_code: str, jd_ut: float, location, ctx, trace: T
     }
 
     return {
+        # `compute_planet_house_placements` reads this key.  It used to be
+        # supplied by the web layer on the one path that runs, so the two core
+        # modules could not compose outside it.
+        "system_code": code,
         "system_name": name,
         "cusps": cusps_shifted,
         "asc": asc,

@@ -22,6 +22,12 @@ EXPECTED_PATHS = frozenset(
     }
 )
 SHA256_RE = re.compile(r"[0-9a-f]{64}")
+# This verifier runs both inside the image, where the ephemeris directory is
+# materialized from `git archive` and cannot contain an untracked file, and
+# against a developer working tree, where the operating system writes its own
+# artifacts alongside the datasets.  Skipping this closed set of names keeps
+# the in-image check exactly as strict: none of them can be present there.
+IGNORABLE_LOCAL_ARTIFACT_NAMES = frozenset({".DS_Store"})
 
 
 def _digest(path: Path) -> str:
@@ -74,6 +80,7 @@ def verify(manifest_path: Path) -> list[str]:
         actual_inputs = {
             path.relative_to(PROJECT_ROOT).as_posix()
             for path in ephemeris_dir.iterdir()
+            if path.name not in IGNORABLE_LOCAL_ARTIFACT_NAMES
         }
     except OSError as exc:
         errors.append(

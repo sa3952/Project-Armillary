@@ -20,7 +20,9 @@
   var root = document.getElementById("sens-demo");
   if (!root) return;
 
-  var HOUR = 3600;
+  var Time = window.SensitivityTime;
+  if (!Time) throw new Error("SensitivityTime is required");
+  var LAST_SECOND = Time.LAST_SECOND;
 
   // 後端回傳的五個取樣點（birth_time_sensitivity.angles.asc.sampled_values）
   var PROBES = [
@@ -51,14 +53,10 @@
   var noteEl = root.querySelector(".sd-note");
   var listEl = root.querySelector(".sd-bodies");
 
-  function pad(n) { return n < 10 ? "0" + n : String(n); }
-
-  function clockOf(sec) {
-    return "14:" + pad(Math.floor(sec / 60)) + ":" + pad(Math.floor(sec % 60));
-  }
+  var clockOf = Time.clockOf;
 
   /* 上升點度數：只在取樣點上斷言，其餘給區間。
-     回傳兩段文字分別寫入兩個元素，不組 HTML 字串——本 repository 的前端契約
+     回傳兩段文字分別寫入兩個元素，不組 HTML 字串，本 repository 的前端契約
      規定 innerHTML 只能指派空字串（tests/integration/test_frontend_contract.py）。 */
   function ascParts(sec) {
     for (var i = 0; i < PROBES.length; i++) {
@@ -83,7 +81,7 @@
   }
 
   function render(sec) {
-    var pct = (sec / HOUR) * 100;
+    var pct = (sec / LAST_SECOND) * 100;
     handle.style.left = pct + "%";
     fill.style.width = pct + "%";
     handle.setAttribute("aria-valuenow", String(sec));
@@ -124,11 +122,33 @@
     var box = track.getBoundingClientRect();
     var ratio = (clientX - box.left) / box.width;
     ratio = Math.max(0, Math.min(1, ratio));
-    return Math.round(ratio * HOUR);
+    return Time.secondFromRatio(ratio);
   }
 
   var dragging = false;
   var current = 0;
+
+  /* 把手的「輕推」動畫由兩個 data 屬性一起決定（規則寫在 page.css）：
+     data-seen 表示它已經捲進視窗，data-touched 表示使用者已經動過它。
+     動畫在看不到的地方播放等於沒播，碰過之後還在動則是干擾，兩者都要避免。 */
+  function markTouched() {
+    root.setAttribute("data-touched", "yes");
+  }
+
+  if (typeof IntersectionObserver === "function") {
+    var seen = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) {
+          root.setAttribute("data-seen", "yes");
+          seen.disconnect();
+          return;
+        }
+      }
+    }, { threshold: 0.35 });
+    seen.observe(root);
+  } else {
+    root.setAttribute("data-seen", "yes");
+  }
 
   function setFrom(clientX) {
     current = secFromEvent(clientX);
@@ -136,6 +156,7 @@
   }
 
   track.addEventListener("pointerdown", function (e) {
+    markTouched();
     dragging = true;
     track.setPointerCapture(e.pointerId);
     setFrom(e.clientX);
@@ -153,7 +174,7 @@
     if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = current - step;
     else if (e.key === "ArrowRight" || e.key === "ArrowUp") next = current + step;
     else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = HOUR;
+    else if (e.key === "End") next = LAST_SECOND;
     else if (e.key === "PageUp" || e.key === "PageDown") {
       var dir = e.key === "PageUp" ? -1 : 1;
       for (var i = 0; i < PROBES.length; i++) {
@@ -163,8 +184,9 @@
         }
       }
     } else return;
+    markTouched();
     e.preventDefault();
-    current = Math.max(0, Math.min(HOUR, next));
+    current = Time.clampSecond(next);
     render(current);
   });
 
@@ -174,6 +196,7 @@
   var flipcap = root.querySelector(".sd-flipcap");
   if (flipcap) {
     flipcap.addEventListener("click", function () {
+      markTouched();
       current = Math.round((FLIP_LO + FLIP_HI) / 2);
       render(current);
       handle.focus();

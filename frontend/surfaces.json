@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "origin": "https://projectarmillary.com",
+  "default_locale": "zh-TW",
+  "indexnow_key": "bbb6ac30c1952dbb592262ea2656d708",
+  "surfaces": [
+    {
+      "key": "home",
+      "fragment": "home",
+      "output": "zh-TW/index.html",
+      "surface": "/zh-TW/",
+      "locale": "zh-TW",
+      "layers": ["L2", "L3"],
+      "indexable": true,
+      "title": "可驗證的古典西洋占星計算器｜渾儀 Armillary",
+      "description": "以Swiss Ephemeris計算星盤，並呈現座標、時間、方法來源、計算收據與可重現驗證資料。"
+    },
+    {
+      "key": "calculate",
+      "fragment": "calculate",
+      "output": "zh-TW/calculate.html",
+      "surface": "/zh-TW/calculate",
+      "locale": "zh-TW",
+      "layers": ["L1", "L2"],
+      "indexable": true,
+      "title": "古典西洋占星排盤與計算｜渾儀 Armillary",
+      "description": "輸入時間與地點，取得附帶計算模式、座標、方法、來源與驗證收據的古典西洋占星星盤。"
+    },
+    {
+      "key": "features",
+      "fragment": "features",
+      "output": "zh-TW/features.html",
+      "surface": "/zh-TW/features",
+      "locale": "zh-TW",
+      "layers": ["L2", "L3"],
+      "indexable": true,
+      "title": "可驗證的星盤計算與輸出功能｜渾儀 Armillary",
+      "description": "查看渾儀提供的天文座標、古典方法、出生時間敏感度、計算卷宗與多格式匯出功能。"
+    },
+    {
+      "key": "methods",
+      "fragment": "methods",
+      "output": "zh-TW/methods.html",
+      "surface": "/zh-TW/methods",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "古典占星計算方法、界、三分性與宮位制｜渾儀 Armillary",
+      "description": "說明渾儀採用及可選的宮位制、界、面與旬、三分性、相位、黃道與其他計算規則及來源狀態。"
+    },
+    {
+      "key": "validation",
+      "fragment": "validation",
+      "output": "zh-TW/validation.html",
+      "surface": "/zh-TW/validation",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "古典占星天文計算的驗證方法｜渾儀 Armillary",
+      "description": "查看星曆、座標、時間換算、數值比較、計算卷宗與已知驗證範圍，不把抽樣結果外推成全面認證。"
+    },
+    {
+      "key": "trust",
+      "fragment": "trust",
+      "output": "zh-TW/trust.html",
+      "surface": "/zh-TW/trust",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "計算透明度、隱私與信任邊界｜渾儀 Armillary",
+      "description": "了解渾儀如何連結計算結果、版本、來源、隱私控制、驗證證據與尚未完成的限制。"
+    },
+    {
+      "key": "security",
+      "fragment": "security",
+      "output": "zh-TW/security.html",
+      "surface": "/zh-TW/security",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "安全、隱私邊界與漏洞回報｜渾儀 Armillary",
+      "description": "說明渾儀的安全與隱私邊界、負責任漏洞回報方式、禁止提交的敏感資料及非授權測試範圍。"
+    },
+    {
+      "key": "about",
+      "fragment": "about",
+      "output": "zh-TW/about.html",
+      "surface": "/zh-TW/about",
+      "locale": "zh-TW",
+      "layers": ["L2", "L3"],
+      "indexable": true,
+      "title": "關於渾儀 Armillary｜可驗證的古典占星計算",
+      "description": "認識渾儀的產品目的、開發者Sebastian、Swiss Ephemeris基礎、方法透明度與零持久化方向。"
+    },
+    {
+      "key": "contact",
+      "fragment": "contact",
+      "output": "zh-TW/contact.html",
+      "surface": "/zh-TW/contact",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "聯絡渾儀 Armillary",
+      "description": "聯絡渾儀開發者Sebastian，提出隱私、安全、來源、更正或產品使用相關問題。"
+    },
+    {
+      "key": "roadmap",
+      "fragment": "roadmap",
+      "output": "zh-TW/roadmap.html",
+      "surface": "/zh-TW/roadmap",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": false,
+      "title": "產品現況與後續方向｜渾儀 Armillary",
+      "description": "區分渾儀已提供的能力、正在驗證的工作與尚未承諾的後續方向。"
+    },
+    {
+      "key": "blog",
+      "fragment": "blog",
+      "output": "zh-TW/blog.html",
+      "surface": "/zh-TW/blog",
+      "locale": "zh-TW",
+      "layers": ["L2", "L3"],
+      "indexable": false,
+      "title": "古典占星計算文章與研究筆記｜渾儀 Armillary",
+      "description": "渾儀預計發布的古典占星計算、方法差異、驗證與出生時間敏感度文章。"
+    },
+    {
+      "key": "legal-privacy",
+      "fragment": "legal-privacy",
+      "output": "zh-TW/legal/privacy.html",
+      "surface": "/zh-TW/legal/privacy",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "隱私政策｜渾儀 Armillary",
+      "description": "說明渾儀處理出生日期時間、座標、憑證、日誌及第三方服務的資料流與限制。"
+    },
+    {
+      "key": "legal-terms",
+      "fragment": "legal-terms",
+      "output": "zh-TW/legal/terms.html",
+      "surface": "/zh-TW/legal/terms",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "使用條款｜渾儀 Armillary",
+      "description": "渾儀的使用範圍、計算資訊性質、責任邊界、禁止行為及適用法律說明。"
+    },
+    {
+      "key": "legal-copyright",
+      "fragment": "legal-copyright",
+      "output": "zh-TW/legal/copyright.html",
+      "surface": "/zh-TW/legal/copyright",
+      "locale": "zh-TW",
+      "layers": ["L1"],
+      "indexable": true,
+      "title": "著作權、授權與對應原始碼｜渾儀 Armillary",
+      "description": "查看渾儀、Swiss Ephemeris、地名資料、第三方依賴及AGPLv3對應原始碼資訊。"
+    }
+  ]
+}

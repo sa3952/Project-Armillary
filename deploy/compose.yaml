@@ -1,9 +1,6 @@
 services:
   private-alpha-app:
-    # Runtime consumer only.  Candidate images are built through the governed
-    # materializer and verified before this file receives the release tag.
-    # Keeping `build:` here created a second raw-root context whose effective
-    # Docker input was 5,900 files instead of the governed 55-file universe.
+    # Runtime only; release images come from the governed materialized context.
     image: "classical-astrology-private-alpha:${IMAGE_TAG:-local}"
     init: true
     read_only: true
@@ -13,30 +10,7 @@ services:
       - "ALL"
     security_opt:
       - "no-new-privileges:true"
-    # FPI-2026-08-06-E-014. 64 was below what this service's own declared
-    # capacity requires. The pids cgroup counts tasks, and a thread is a task:
-    # every endpoint is a sync `def`, so FastAPI runs them on the AnyIO thread
-    # pool, and static assets share that pool. Measured with the production
-    # flags (2 workers, 40 charts + 200 health concurrently) the tree peaked at
-    # 70 tasks with each worker reaching AnyIO's default 40-thread ceiling —
-    # above the app's own 32 + 4 boundary, because threads are reused and not
-    # returned immediately. Add the parent, the resource tracker, `init: true`
-    # and the 5-second HEALTHCHECK subprocess and the worst case is ~85.
-    #
-    # Reaching it needs no attack: a page bootstrap issues 12 parallel asset
-    # GETs, so roughly five people opening the page together is enough. Twenty
-    # invitees arriving in the same evening is the ordinary case, and the
-    # failure is bad — `RuntimeError: can't start new thread` surfaces as 500s
-    # while the worker stays alive, the healthcheck fails too, and
-    # `restart: unless-stopped` does not restart an unhealthy container.
-    #
-    # 192 is 2 x (40 + 1) per worker plus supervisor, tracker, init and probe
-    # processes, with roughly 2x headroom. It is still a real fork-bomb bound;
-    # the Docker default is unlimited. The alternative Sebastian may prefer is
-    # to lower MAX_HOSTED_REQUESTS_PER_WORKER instead and keep the tighter cap,
-    # which trades capacity for containment. tests/deployment/
-    # test_resource_limits.py pins the arithmetic either way, so the two
-    # numbers can no longer drift apart silently.
+    # Two 40-thread workers plus supervisor/init/probes with bounded headroom.
     pids_limit: 192
     mem_limit: 512m
     memswap_limit: 512m
@@ -46,18 +20,7 @@ services:
       options:
         max-size: "5m"
         max-file: "2"
-    # Historical leaking image 18391de opened three ephemeris files per new
-    # worker thread and retained them after the thread expired. Current source
-    # closes the per-thread Swiss state in the serialized request finally path.
-    # The current exact-image 0a9f4f2c S23 warm/measured soaks observed zero
-    # file/socket/total-FD growth, and the separate 4200-request control kept
-    # ephemeris FDs flat while distinct thread IDs increased. IMG-2026-08-08-E-001
-    # therefore remains REMEDIATED_FOCUSED pending an independent exact-image
-    # replay; historical evidence must not be narrated as current behavior.
-    #
-    # Keep the 65536 ceiling as conservative headroom, not as evidence of a
-    # current leak or a substitute for the S24 synthetic-chart watchdog and
-    # unhealthy-container recovery policy.
+    # Conservative process FD ceiling; leak detection remains an image test.
     ulimits:
       nofile:
         soft: 65536

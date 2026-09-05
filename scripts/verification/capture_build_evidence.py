@@ -24,6 +24,12 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def canonical_json_bytes(value: object) -> bytes:
+    """Encode one build-evidence identity; transport and pretty JSON are separate."""
+
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
 def context_manifest(root: Path) -> dict[str, object]:
     """Observe the filesystem BuildKit mounted, without following links."""
     root = root.resolve()
@@ -33,7 +39,10 @@ def context_manifest(root: Path) -> dict[str, object]:
         metadata = path.lstat()
         common: dict[str, object] = {
             "path": relative,
-            "mode": f"{stat.S_IMODE(metadata.st_mode):04o}",
+            # Git tracks one permission bit, not the umask the checkout
+            # happened to run under.  Recording the full mode made the
+            # evidence differ between two correct environments.
+            "executable": bool(stat.S_IMODE(metadata.st_mode) & 0o111),
             "size_bytes": None,
             "sha256": None,
             "symlink_target": None,
@@ -51,9 +60,7 @@ def context_manifest(root: Path) -> dict[str, object]:
         else:
             common["type"] = "special"
         entries.append(common)
-    canonical = json.dumps(
-        entries, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    canonical = canonical_json_bytes(entries)
     return {
         "schema_version": "build-context-identity-v1",
         "producer": "builder_mount_observation",
@@ -207,7 +214,7 @@ def main() -> int:
         "target_platform": args.target_platform,
         "build_context_identity_sha256": context["identity_sha256"],
         "toolchain_identity_sha256": hashlib.sha256(
-            json.dumps(toolchain, sort_keys=True, separators=(",", ":")).encode()
+            canonical_json_bytes(toolchain)
         ).hexdigest(),
     }
     _write_json(args.output_dir / "build-context-received.json", context)

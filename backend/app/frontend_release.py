@@ -9,7 +9,7 @@ from datetime import date
 from pathlib import Path, PurePosixPath
 import re
 import stat
-from typing import Any, Mapping
+from typing import Any, Final, Mapping
 
 from .frontend_assets import (
     MANIFEST_NAME,
@@ -26,17 +26,17 @@ ROOT_ENV = "CLASSICAL_ASTROLOGY_FRONTEND_ROOT"
 DIGEST_ENV = "CLASSICAL_ASTROLOGY_FRONTEND_RELEASE_DIGEST"
 COMBINED_ENV = "CLASSICAL_ASTROLOGY_COMBINED_RELEASE_ID"
 BACKEND_IMAGE_ENV = "CLASSICAL_ASTROLOGY_BACKEND_IMAGE_ID"
-_REVISION = re.compile(r"^[0-9a-f]{40}$")
-_DIGEST = re.compile(r"^[0-9a-f]{64}$")
-_IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
-_RELEASE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-_FORMAL_LEGAL_FIELDS = {
+REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
+DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+IMAGE_ID_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+RELEASE_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+FORMAL_LEGAL_FIELDS = frozenset({
     "effective_date",
     "release_version",
     "public_revision",
     "source_archive_url",
     "source_archive_sha256",
-}
+})
 
 
 def _load_object(path: Path) -> dict[str, Any]:
@@ -48,13 +48,75 @@ def _load_object(path: Path) -> dict[str, Any]:
     return value
 
 
-def _canonical_bytes(value: object) -> bytes:
+#: The canonical form.  The trace receipt publishes these parameters as part of
+#: what it claims, so they are a stated fact, and the same three values were
+#: restated independently in every module that computed a digest.  One
+#: definition, read by all of them.
+CANONICAL_JSON_ENSURE_ASCII: Final = False
+CANONICAL_JSON_SORT_KEYS: Final = True
+CANONICAL_JSON_SEPARATORS: Final = (",", ":")
+
+
+def canonical_json_bytes(value: object) -> bytes:
     return json.dumps(
         value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
+        ensure_ascii=CANONICAL_JSON_ENSURE_ASCII,
+        sort_keys=CANONICAL_JSON_SORT_KEYS,
+        separators=CANONICAL_JSON_SEPARATORS,
     ).encode("utf-8")
+
+
+def validate_publication_evidence(
+    receipt: object, *, expected_revision: str
+) -> dict[str, str]:
+    keys = {
+        "schema_version", "status", "effective_date", "release_version",
+        "public_source_revision", "source_url", "source_archive_url",
+        "source_archive_sha256", "anonymous_checkout_sha256", "evidence_sha256",
+    }
+    if not isinstance(receipt, dict) or set(receipt) != keys:
+        raise ValueError("Corresponding Source publication receipt key set is invalid")
+    try:
+        parsed_date = date.fromisoformat(str(receipt.get("effective_date", "")))
+    except ValueError:
+        parsed_date = None
+    if (
+        receipt.get("schema_version")
+        != "corresponding-source-publication-receipt-v1"
+        or receipt.get("status") != "published_anonymously_reachable"
+        or receipt.get("public_source_revision") != expected_revision
+        or receipt.get("source_url") != f"{SOURCE_URL_PREFIX}{expected_revision}"
+        or receipt.get("source_archive_url")
+        != f"{SOURCE_ARCHIVE_URL_PREFIX}{expected_revision}.tar.gz"
+        or parsed_date is None
+        or parsed_date.isoformat() != receipt.get("effective_date")
+        or not RELEASE_VERSION_RE.fullmatch(str(receipt.get("release_version", "")))
+        or any(
+            not DIGEST_RE.fullmatch(str(receipt.get(key, "")))
+            for key in (
+                "source_archive_sha256", "anonymous_checkout_sha256", "evidence_sha256"
+            )
+        )
+    ):
+        raise ValueError(
+            "Corresponding Source publication receipt identity or evidence is invalid"
+        )
+    return {key: str(receipt[key]) for key in keys}
+
+
+def load_publication_evidence(path: Path, *, expected_revision: str) -> dict[str, str]:
+    metadata = path.lstat()
+    if not path.is_file() or path.is_symlink() or metadata.st_size > 32 * 1024:
+        raise ValueError("Corresponding Source publication receipt is unsafe")
+    try:
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(
+            f"Corresponding Source publication receipt is unreadable: {error}"
+        ) from None
+    return validate_publication_evidence(
+        receipt, expected_revision=expected_revision
+    )
 
 
 def _sha256(path: Path) -> str:
@@ -83,7 +145,7 @@ def exact_contract(authority_root: Path) -> dict[str, str | int]:
 
 
 def artifact_digest(payload: dict[str, object]) -> str:
-    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+    return hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
 
 
 def _release_tree(release: Path) -> tuple[set[str], set[str]]:
@@ -130,7 +192,7 @@ def verify_release(
         # A manifest is immutable, so the URL it names cannot be corrected
         # later. Until the Corresponding Source is published this field says
         # the URL is provisional rather than letting the reader assume it
-        # resolves (`PIA-2026-08-06-011`).
+        # resolves.
         "source_url_status",
         "source_publication",
         "formal_legal_release_fields",
@@ -150,46 +212,27 @@ def verify_release(
     if manifest.get("source_url_status") == "provisional_pending_publication":
         if publication is not None or legal_fields is not None:
             raise ValueError("provisional frontend source must not carry publication evidence")
-    elif (
-        not isinstance(publication, dict)
-        or set(publication)
-        != {
-            "schema_version",
-            "status",
-            "effective_date",
-            "release_version",
-            "public_source_revision",
-            "source_url",
-            "source_archive_url",
-            "source_archive_sha256",
-            "anonymous_checkout_sha256",
-            "evidence_sha256",
-        }
-        or publication.get("schema_version")
-        != "corresponding-source-publication-receipt-v1"
-        or publication.get("status") != "published_anonymously_reachable"
-        or not isinstance(legal_fields, dict)
-        or set(legal_fields) != _FORMAL_LEGAL_FIELDS
-    ):
-        raise ValueError("published frontend source evidence is invalid")
+    else:
+        publication = validate_publication_evidence(
+            publication,
+            expected_revision=str(manifest.get("frontend_public_source_revision", "")),
+        )
+        if not isinstance(legal_fields, dict) or set(legal_fields) != FORMAL_LEGAL_FIELDS:
+            raise ValueError("published frontend source evidence is invalid")
     revision = manifest.get("frontend_public_source_revision")
     digest = manifest.get("artifact_digest")
     if manifest.get("schema_version") != 3 or manifest.get(
         "artifact_type"
     ) != "classical-astrology-frontend-release":
         raise ValueError("frontend release manifest type is invalid")
-    if not isinstance(revision, str) or not _REVISION.fullmatch(revision):
+    if not isinstance(revision, str) or not REVISION_RE.fullmatch(revision):
         raise ValueError("frontend source revision is invalid")
-    if not isinstance(digest, str) or not _DIGEST.fullmatch(digest):
+    if not isinstance(digest, str) or not DIGEST_RE.fullmatch(digest):
         raise ValueError("frontend artifact digest is invalid")
     if manifest.get("source_url") != f"{SOURCE_URL_PREFIX}{revision}":
         raise ValueError("frontend source URL is not pinned to its revision")
     if publication is not None and (
-        publication.get("public_source_revision") != revision
-        or publication.get("source_url") != manifest.get("source_url")
-        or publication.get("source_archive_url")
-        != f"{SOURCE_ARCHIVE_URL_PREFIX}{revision}.tar.gz"
-        or legal_fields
+        legal_fields
         != {
             "effective_date": publication.get("effective_date"),
             "release_version": publication.get("release_version"),
@@ -197,26 +240,8 @@ def verify_release(
             "source_archive_url": publication.get("source_archive_url"),
             "source_archive_sha256": publication.get("source_archive_sha256"),
         }
-        or not _RELEASE_VERSION.fullmatch(str(publication.get("release_version", "")))
-        or any(
-            not _DIGEST.fullmatch(str(publication.get(key, "")))
-            for key in (
-                "source_archive_sha256",
-                "anonymous_checkout_sha256",
-                "evidence_sha256",
-            )
-        )
     ):
         raise ValueError("frontend source publication evidence identity is invalid")
-    if publication is not None:
-        try:
-            effective_date = date.fromisoformat(str(publication.get("effective_date", "")))
-        except ValueError:
-            effective_date = None
-        if effective_date is None or effective_date.isoformat() != publication.get(
-            "effective_date"
-        ):
-            raise ValueError("frontend source publication effective date is invalid")
     contract = exact_contract(authority_root)
     if manifest.get("required_contracts") != {
         "api_schema_version": contract["api_schema_version"],
@@ -279,15 +304,15 @@ def combined_release_id(
     frontend_artifact_digest: str,
     frontend_public_source_revision: str,
 ) -> str:
-    if not _IMAGE_ID.fullmatch(backend_image_id):
+    if not IMAGE_ID_RE.fullmatch(backend_image_id):
         raise ValueError("backend image ID is invalid")
-    if not _REVISION.fullmatch(backend_public_source_revision):
+    if not REVISION_RE.fullmatch(backend_public_source_revision):
         raise ValueError("backend public source revision is invalid")
-    if not _DIGEST.fullmatch(frontend_artifact_digest):
+    if not DIGEST_RE.fullmatch(frontend_artifact_digest):
         raise ValueError("frontend artifact digest is invalid")
-    if not _REVISION.fullmatch(frontend_public_source_revision):
+    if not REVISION_RE.fullmatch(frontend_public_source_revision):
         raise ValueError("frontend public source revision is invalid")
-    return hashlib.sha256(_canonical_bytes({
+    return hashlib.sha256(canonical_json_bytes({
         "backend_image_id": backend_image_id,
         "backend_public_source_revision": backend_public_source_revision,
         "frontend_artifact_digest": frontend_artifact_digest,
@@ -316,11 +341,11 @@ def load_runtime_release(
     backend_image_id = environment.get(BACKEND_IMAGE_ENV)
     if not raw_root or not Path(raw_root).is_absolute():
         raise RuntimeError("external frontend root must be absolute")
-    if not expected_digest or not _DIGEST.fullmatch(expected_digest):
+    if not expected_digest or not DIGEST_RE.fullmatch(expected_digest):
         raise RuntimeError("external frontend digest is missing or invalid")
-    if not combined or not _DIGEST.fullmatch(combined):
+    if not combined or not DIGEST_RE.fullmatch(combined):
         raise RuntimeError("combined release ID is missing or invalid")
-    if not backend_image_id or not _IMAGE_ID.fullmatch(backend_image_id):
+    if not backend_image_id or not IMAGE_ID_RE.fullmatch(backend_image_id):
         raise RuntimeError("backend image ID is missing or invalid")
     release_root = Path(raw_root)
     try:

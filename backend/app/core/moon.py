@@ -15,12 +15,12 @@
 - Lilly（1647）成文定義提及星座，但實務採容許度（moieties），界線不阻斷 application。
 
 舊名 `classical_ptolemaic_applying_linear_v1` 中的 "classical" 因此是可被證偽的陳述，
-依憲法屬完全禁止之列，故更名為如實描述其定義來源者。日後若要提供古典定義，
+一律不得出現，故更名為如實描述其定義來源者。日後若要提供古典定義，
 應另立具名方法並列（例如 hellenistic_30_degree_kenodromia_v1、lilly_moiety_application_v1），
 而非改寫本方法。
 
 數值解法（MTH-Q-003 乙）：
-原本的線性外插已於 2026-08-03 依裁決廢止，改由 `core/root_finding.py` 的兩段式
+線性外插已於 2026-08-03 依裁決廢止，改由 `core/root_finding.py` 的兩段式
 求根器求解，且**換座邊界本身也改為求根**而非除法外插——月亮在 2.5 天內的黃經速度
 變化足以讓「(邊界 − 現在黃經) / 現在速度」產生數分鐘到數十分鐘的誤差，而該誤差
 直接決定哪些候選相位算在邊界之內，也就直接決定空亡的布林結果。
@@ -64,9 +64,7 @@ VOC_SOURCE_VERIFICATION = {
         "Sahl ibn Bishr, Introduction to Astrology",
         "Bonatti, Liber Astronomiae Tract V",
     ),
-    "recorded_in": (
-        "docs/decisions/product/SEBASTIAN_METHOD_RULINGS_2026-08-03.md §13.5"
-    ),
+    "recorded_in": "Sebastian method ruling 2026-08-03 §13.5",
     "consequence": (
         "method_status cannot be raised to adopted until the attribution is "
         "settled against a named edition"
@@ -75,11 +73,11 @@ VOC_SOURCE_VERIFICATION = {
 
 # 換座搜尋視窗。
 #
-# 初版寫的理由是「月亮速度介於 11.7–15.4 度/日，故 30/11.7 ≈ 2.57 日，取 3.0 日
-# 有餘裕」。**那個速度區間只對地心成立**（RT-BACKEND-9-E-006）。實測
+# 「月亮速度介於 11.7–15.4 度/日，故 30/11.7 ≈ 2.57 日，取 3.0 日有餘裕」這個
+# 推理不能用：**那個速度區間只對地心成立**。實測
 # topocentric 模式在高海拔測站可低到 6.21 度/日、高到 21.15 度/日——視差在一天
 # 之內就能讓瞬時黃經速度變動一倍以上。以最低瞬時速度外推，跨越 30 度需要 4.83 日，
-# 超過原本的視窗。
+# 超過 3.0 日的視窗。
 #
 # 實際量測：在該測站掃描一整年、每 3 小時起算一次，最久的一次換座是 2.65 日，
 # 且 topocentric 黃經在取樣中未曾倒退（monotonic），故「第一個根即換座時刻」的
@@ -257,9 +255,9 @@ def find_voc_candidates(
     # **MTH-Q-017 已裁決（Sebastian 2026-08-03）：恰在盤上時刻精確成立的相位
     # 計入空亡判定。** 理由是它此刻正在完成——有事情正在發生，月亮不是空亡。
     #
-    # 紅隊指出的問題（RT-BACKEND-9-E-005）不是「t=0 被計入」本身，而是它被
-    # **默默**當成一個未來事件回報：改用求根器之後 t=0 混進 candidates，
-    # 既無標記也無政策說明，而舊的線性外插以 `t > 1e-6` 排除它。
+    # 需要區分的不是「t=0 是否計入」，而是它不得**默默**被當成一個未來事件
+    # 回報：求根器會讓 t=0 混進 candidates，而舊的線性外插以 `t > 1e-6`
+    # 排除它。
     #
     # 因此裁決後的實作是「計入，但可分辨」：t=0 的事件另列在
     # exact_at_chart_moment，不混進代表未來的 candidates；空亡判定則同時看兩者。

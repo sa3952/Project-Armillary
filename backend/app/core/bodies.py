@@ -17,6 +17,7 @@ ecliptic-of-date/J2000、章動開關。地平座標/物理現象等在 heliocen
 
 import swisseph as swe
 
+from ..ephemeris import require_full_ephemeris
 from .formatting import to_dms, to_hms, swiss_azimuth_to_standard
 from .trace import Trace
 
@@ -251,7 +252,12 @@ def make_longitude_sampler(ctx, *, moon_ctx=None, moon_id: int = swe.MOON):
             if moon_flags is not None and body_id == moon_id
             else flags
         )
-        values, _retflag = swe.calc_ut(jd_ut, body_id, effective_flags)
+        values, retflag = swe.calc_ut(jd_ut, body_id, effective_flags)
+        require_full_ephemeris(
+            retflag,
+            operation=f"未來事件搜尋（Swiss body {body_id} 黃經）",
+            jd_ut=jd_ut,
+        )
         return values[0]
 
     return longitude_at

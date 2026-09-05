@@ -6,8 +6,8 @@
   "use strict";
 
   const PROFILES = Object.freeze({
-    LOCAL: "local",
     PRIVATE_ALPHA: "private_alpha",
+    PUBLIC: "public",
   });
 
   const FIELD_LABELS = Object.freeze({
@@ -32,19 +32,18 @@
 
   const ERROR_CODE_MESSAGES = Object.freeze({
     nonexistent_local_time: (
-      "這個本地時間在所選時區不存在；請核對出生紀錄，或在確知 UTC 偏移時改用固定偏移。"
+      // 後端的訊息會提到 fixed_offset，那對 API 消費者是對的；本頁沒有那個
+      // 控制項，所以這裡只指向本頁真的能做的事。
+      "這個本地時間在所選時區不存在（該時鐘從未指向這個時刻）；請核對出生紀錄的日期、"
+      + "時刻與時區。"
     ),
-    // 只在「只知道約略小時」時出現：該模式下後端要求明示是重複小時的哪一次，
-    // 而本頁尚未提供那個選擇。措辭刻意說出這是頁面的限制，不是使用者填錯——
-    // 也不建議改選「精確到分鐘」，那等於要人宣稱比實際更高的精度。
-    // 這則訊息原本寫「本頁尚未提供這個選擇……請改用固定偏移輸入」，
-    // 而本頁**沒有**固定偏移輸入——一則指向不存在控制項的「可行動訊息」。
-    // SD-32 之後，精確到分鐘時頁面會直接提供選擇；只知道約略小時時仍無法
-    // 表達，因為那是後端要求的整點取樣，唯一誠實的出路是改用精確時刻。
+    // 這裡只描述情況，不描述頁面能做什麼。曾經它寫著「只知道約略小時無法指明
+    // 是哪一次」，那在寫的當天是對的；SD-32 的修復讓頁面對這個精度也提供了選擇，
+    // 而這句話沒有任何路徑會被通知，於是文案與介面互相矛盾了 27 天。
+    // 出路由 calculate.js 依「選擇區實際有沒有出現」導出。
     ambiguous_local_time_choice_required: (
       "這個民用小時在所選時區出現了兩次（日光節約時間結束當天會重複一小時），"
-      + "而「只知道約略小時」無法指明是哪一次。"
-      + "若你知道確切的分鐘，請改選「精確到分鐘」，頁面會讓你指定是第一次還是第二次。"
+      + "服務需要知道是哪一次。"
     ),
     house_system_unavailable: (
       "所選宮位制無法在這個緯度計算；請改選 Whole Sign 或其他可用宮位制。"
@@ -52,10 +51,10 @@
     full_ephemeris_required: (
       "這次計算超出目前完整 Swiss Ephemeris 資料範圍；服務已拒絕改用較低精度替代。"
     ),
-    // 內建地名目錄開不起來時由 /api/places/search 回 503。先前掉進 statusCode>=500
-    // 的通用訊息「服務暫時無法完成計算」——但這是地名查詢，不是計算，用詞就是錯的。
-    // 出路指向手動輸入，依 SD-18：「找不到地點時保留手動座標／時區入口並提供可行動錯誤」。
-    // 不建議重新載入——那是伺服器端的資料檔問題，重載不會改變它。
+    // 內建地名目錄開不起來時由 /api/places/search 回 503。通用的 5xx 措辭在
+    // 這裡是錯的：這是地名查詢，不是計算。出路指向手動輸入，依 SD-18：
+    // 「找不到地點時保留手動座標／時區入口並提供可行動錯誤」。不建議重新
+    // 載入——那是伺服器端的資料檔問題，重載不會改變它。
     place_catalog_unavailable: (
       "內建地名目錄暫時無法讀取，這次查不了地點。這不是你的輸入有問題；"
       + "請改用下方的手動輸入座標與時區，或稍後重試。"
@@ -77,6 +76,30 @@
     ),
   });
 
+  const VALIDATION_REASON_MESSAGES = Object.freeze({
+    approximate_hour_requires_zero_subhour: (
+      "「只知道約略小時」只能輸入整點；請將分鐘與秒數改為 0，或改選「精確到分鐘」。"
+    ),
+    date_only_requires_zero_time: (
+      "「只知道日期」不能同時指定時分秒；請清除時間，或改選較精確的出生時間類型。"
+    ),
+    moon_profile_center_conflict: (
+      "月亮出生地站心模式只能搭配地心全域中心；請調整月亮模式或計算中心。"
+    ),
+    body_selection_conflict: (
+      "古典七政預設不能同時加入三王星、凱龍星、固定星或莉莉絲／普里阿普斯。"
+    ),
+    aspect_orb_scale_requires_profile: (
+      "縮放相位容許度前，請先選擇一套具名容許度來源。"
+    ),
+    aspect_orb_sources_conflict: (
+      "固定相位容許度與具名容許度來源不能同時使用；請保留其中一種。"
+    ),
+    aspect_angle_orb_requires_angles: (
+      "設定角點相位容許度前，請先開啟角點參與相位。"
+    ),
+  });
+
   function validateClientConfiguration(payload) {
     if (!payload || typeof payload !== "object") {
       throw new Error("client configuration 不是物件");
@@ -85,6 +108,43 @@
       throw new Error("client configuration 含有不支援的 profile");
     }
     return Object.freeze({ profile: payload.profile });
+  }
+
+  function resolveProfileBounded(
+    load,
+    cancel,
+    timeoutMs,
+    schedule,
+    cancelSchedule
+  ) {
+    if (typeof load !== "function" || typeof cancel !== "function") {
+      throw new TypeError("client configuration loader and cancel must be functions");
+    }
+    if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+      throw new RangeError("client configuration timeout must be positive");
+    }
+    const startTimer = schedule || setTimeout;
+    const stopTimer = cancelSchedule || clearTimeout;
+    return new Promise((resolve) => {
+      let finished = false;
+      let timer;
+      const finish = (value) => {
+        if (finished) return;
+        finished = true;
+        stopTimer(timer);
+        resolve(value);
+      };
+      timer = startTimer(() => {
+        try { cancel(); } catch (_error) { /* timeout仍必須完成 */ }
+        finish(null);
+      }, timeoutMs);
+      Promise.resolve()
+        .then(load)
+        .then(
+          (payload) => finish(validateClientConfiguration(payload).profile),
+          () => finish(null)
+        );
+    });
   }
 
   function fieldLabel(location) {
@@ -101,6 +161,8 @@
     const locationKeys = new Set(location.map(String));
     const label = fieldLabel(location);
     const type = issue && typeof issue.type === "string" ? issue.type : "";
+
+    if (VALIDATION_REASON_MESSAGES[type]) return VALIDATION_REASON_MESSAGES[type];
 
     if (type === "missing") return `${label}尚未填寫。`;
     if (type === "extra_forbidden") {
@@ -153,6 +215,7 @@
     if (statusCode === 413) return "送出的資料超過服務允許大小，請重新載入頁面後再試。";
     if (statusCode === 415) return "送出的資料格式不受支援，請重新載入頁面後再試。";
     if (statusCode === 422) return "部分輸入無法驗證；請檢查必填欄位與格式。";
+    if (statusCode === 429) return "服務目前忙碌，這不是你的輸入有問題；請依提示稍後重試。";
     if (statusCode >= 500) {
       return "服務暫時無法完成計算。請稍後重試；若持續發生，請聯絡服務管理者。";
     }
@@ -160,18 +223,18 @@
   }
 
   function networkErrorMessage(profile) {
-    if (profile === PROFILES.LOCAL) {
-      return "無法連線到本機命盤計算後端。請關閉這個頁面後，重新啟動 Classical Astrology App。";
-    }
     if (profile === PROFILES.PRIVATE_ALPHA) {
       return "無法連線到 Private Alpha 命盤計算服務。請確認網路連線後再試；若持續發生，請聯絡邀請者。";
+    }
+    if (profile === PROFILES.PUBLIC) {
+      return "無法連線到命盤計算服務。請確認網路連線後再試；若持續發生，請透過聯絡頁回報。";
     }
     return "無法確認目前執行環境或連線到計算服務。請重新載入頁面後再試。";
   }
 
   function apiErrorActions(statusCode, retryAfterHeader, profile) {
     const actions = [];
-    if (statusCode >= 500) {
+    if (statusCode === 429 || statusCode >= 500) {
       const raw = typeof retryAfterHeader === "string" ? retryAfterHeader.trim() : "";
       const seconds = /^\d+$/.test(raw) ? Number(raw) : 0;
       actions.push(
@@ -185,18 +248,19 @@
     if (statusCode === 413 || statusCode === 415) actions.push("重新載入頁面。");
     if (profile === PROFILES.PRIVATE_ALPHA) {
       actions.push("若持續發生，請聯絡邀請者。");
+    } else if (profile === PROFILES.PUBLIC) {
+      actions.push("若持續發生，請透過聯絡頁回報。");
     }
     return actions;
   }
 
   /**
-   * 地名查詢的 token 截斷告知（PIA-2026-08-06-009）。
+   * 地名查詢的 token 截斷告知。
    *
    * 後端會把超過上限的詞丟掉，並在 `query` 收據裡逐字交代
-   * （`truncated`、`tokens_used`、`tokens_ignored`）。前端原本只讀
-   * `results`，於是「新竹縣 竹北市 光明六路 東二段」被砍成前六個詞之後，
-   * 畫面要嘛顯示「找到 N 筆」，要嘛顯示「沒有符合的地名」——**兩者都在
-   * 使用者不知情的狀況下，把一個被改寫過的查詢報成他自己的查詢**。
+   * （`truncated`、`tokens_used`、`tokens_ignored`）。只讀 `results` 是不夠
+   * 的：一個被砍過詞的查詢無論回「找到 N 筆」還是「沒有符合的地名」，都是
+   * **在使用者不知情的狀況下，把一個被改寫過的查詢報成他自己的查詢**。
    *
    * 回傳 null 表示沒有截斷，呼叫端不必顯示任何東西。
    *
@@ -225,6 +289,7 @@
   return Object.freeze({
     PROFILES,
     validateClientConfiguration,
+    resolveProfileBounded,
     formatApiError,
     apiErrorActions,
     networkErrorMessage,

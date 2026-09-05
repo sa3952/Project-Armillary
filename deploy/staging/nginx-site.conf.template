@@ -1,32 +1,20 @@
 # Installed inside the nginx http context after rendering the three placeholders.
 # No real domain, address, credential, or TLS private key belongs in Git.
 
-# NGX-2026-08-07-E-001. These were keyed on $server_name, which is a constant
-# inside this file, so all three zones held exactly one counter and limited the
-# site rather than the visitor. Measured on the rendered template: twelve
-# parallel connections got four 200s and eight 503s, and twenty chart requests
-# — twenty invitees pressing once — got nine 429s. Any one visitor could lock
-# everyone out without meaning to.
+# Every zone below is keyed on $binary_remote_addr so a zone bounds one client
+# rather than the whole site. nginx is the edge here, so this is the real peer
+# and not a proxy hop. The address lives only in this shared-memory counter and
+# is never written anywhere: the privacy rule bans client IPs from application
+# logs, which is not the same thing as banning per-client rate limiting.
 #
-# An adjacent control changed only these three keys and left every rate, burst
-# and connection number identical: twelve distinct clients then all passed. The
-# limits were never the problem, so the fix is the key, not the numbers.
-#
-# $binary_remote_addr is the client address. It lives in this shared-memory
-# counter and is never written anywhere: the privacy rule bans client IPs from
-# application logs, which is not the same thing as banning per-client rate
-# limiting. nginx is the edge here, so this is the real peer, not a proxy hop.
-#
-# The zone key cannot be changed by reload — nginx rejects it with an emerg and
-# keeps serving the old configuration. Applying this needs a full restart, and
-# with error_log at emerg the refusal is invisible (NGX-2026-08-07-E-003).
+# A zone key cannot be changed by reload; applying a change to one requires a
+# full restart, and the operator procedure owns verifying that the restart took
+# effect.
 limit_req_zone $binary_remote_addr zone=private_alpha_chart_client:10m rate=30r/m;
-# 120r/m was chosen when this zone counted the whole site. Per client it is
-# too tight for ordinary use: a page bootstrap issues twelve asset GETs, and
-# one visitor opening three pages in quick succession measured 21 served and
-# 15 rejected. 600r/m with a burst of 40 absorbs three bootstraps at once and
-# sustains browsing; it bounds one visitor, not the site, and concurrency is
-# separately bounded by limit_conn below.
+# Static asset budget is sized for ordinary browsing rather than for a single
+# request: one page bootstrap issues about a dozen asset GETs, and the burst
+# below absorbs several concurrent bootstraps. Concurrency is bounded
+# separately by limit_conn.
 limit_req_zone $binary_remote_addr zone=private_alpha_static_client:10m rate=600r/m;
 limit_conn_zone $binary_remote_addr zone=private_alpha_connections:10m;
 
@@ -54,7 +42,7 @@ server {
     }
 
     location / {
-        return 308 https://$server_name$uri;
+        return 308 https://$server_name$request_uri;
     }
 }
 
@@ -67,7 +55,7 @@ server {
     if ($request_method !~ ^(?:GET|HEAD)$) {
         return 405;
     }
-    return 308 https://__STAGING_SERVER_NAME__$uri;
+    return 308 https://__STAGING_SERVER_NAME__$request_uri;
 }
 
 server {
@@ -83,8 +71,10 @@ server {
     error_log /var/log/nginx/error.log emerg;
     server_tokens off;
     add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header Content-Security-Policy "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     add_header Cache-Control "no-store" always;
-    return 308 https://__STAGING_SERVER_NAME__$uri;
+    return 308 https://__STAGING_SERVER_NAME__$request_uri;
 }
 
 server {
@@ -98,8 +88,7 @@ server {
     ssl_session_cache shared:private_alpha_tls:10m;
     ssl_session_timeout 10m;
 
-    access_log /var/log/nginx/private-alpha-outcomes.log
-        private_alpha_outcome if=$private_alpha_outcome_loggable;
+    access_log off;
     error_log /var/log/nginx/error.log emerg;
     server_tokens off;
 
@@ -122,6 +111,8 @@ server {
     limit_conn_status 503;
 
     add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header Content-Security-Policy "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer" always;
@@ -140,7 +131,6 @@ server {
     # generic dot-path or the immutable frontend mount.
     location = /.well-known/security.txt {
         auth_basic off;
-        set $private_alpha_route_class static;
         limit_req zone=private_alpha_static_client burst=40 nodelay;
         limit_conn private_alpha_connections 32;
         alias /var/www/project-armillary/.well-known/security.txt;
@@ -180,13 +170,11 @@ server {
     # Segment-bounded chart subtree: covers /api/chart and /api/chart/...
     # without treating /api/chartography as a sensitive chart route.
     location ~ ^/api/chart(?:/|$) {
-        set $private_alpha_route_class chart;
         limit_req zone=private_alpha_chart_client burst=10 nodelay;
-        # S24 exact-current HTTP/2 measured one TLS connection carrying the
-        # calculate page plus eleven automatic assets. NGINX counts each
-        # concurrent HTTP/2 request here, so 8 rejected four ordinary cold-load
-        # streams. 32 admits two complete page fanouts with bounded headroom
-        # while the application retains its separate general and compute caps.
+        # NGINX counts each concurrent HTTP/2 request here, and one cold page
+        # load fans out to about a dozen assets over a single TLS connection.
+        # This budget admits two complete page fanouts with headroom while the
+        # application retains its separate general and compute caps.
         limit_conn private_alpha_connections 32;
 
         # Stream the bounded request and response instead of writing birth data
@@ -222,7 +210,6 @@ server {
     # bounded here at the chart rate and given a shorter read timeout, because
     # the application now caps its own statement budget below that.
     location ~ ^/api/places/search(?:/|$) {
-        set $private_alpha_route_class places;
         limit_req zone=private_alpha_chart_client burst=5 nodelay;
         limit_conn private_alpha_connections 32;
 
@@ -246,7 +233,6 @@ server {
     }
 
     location / {
-        set $private_alpha_route_class static;
         limit_req zone=private_alpha_static_client burst=40 nodelay;
         limit_conn private_alpha_connections 32;
 

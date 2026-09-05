@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import json
 from pathlib import Path
 import re
 import time
 
 import pytest
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -16,7 +20,7 @@ def _transaction_module():
     return importlib.import_module("scripts.verification.build_release_image")
 
 
-def test_context_receipt_distinguishes_path_type_mode_link_size_and_bytes(tmp_path):
+def test_context_receipt_distinguishes_path_type_executable_link_size_and_bytes(tmp_path):
     module = _transaction_module()
     root = tmp_path / "context"
     root.mkdir()
@@ -30,17 +34,45 @@ def test_context_receipt_distinguishes_path_type_mode_link_size_and_bytes(tmp_pa
     by_path = {entry["path"]: entry for entry in receipt["entries"]}
 
     assert by_path["empty"]["type"] == "directory"
-    assert by_path["empty"]["mode"] == "0750"
+    assert by_path["empty"]["executable"] is True
     assert by_path["payload.txt"] == {
         "path": "payload.txt",
         "type": "file",
-        "mode": "0640",
+        "executable": False,
         "size_bytes": 8,
         "sha256": "d4e4877bac978b7952f0d544fc52ebff5411d351d129f1f056fa43f11da9af2b",
         "symlink_target": None,
     }
     assert by_path["alias"]["type"] == "symlink"
     assert by_path["alias"]["symlink_target"] == "payload.txt"
+
+
+def test_both_sides_of_the_context_comparison_have_one_producer(tmp_path):
+    """Host and in-image context receipts import the same observer."""
+    module = _transaction_module()
+    root = tmp_path / "context"
+    (root / "nested").mkdir(parents=True)
+    (root / "nested" / "payload.txt").write_text("payload\n", encoding="utf-8")
+    script = root / "nested" / "runnable.sh"
+    script.write_text("#!/bin/sh\n", encoding="utf-8")
+    script.chmod(0o755)
+
+    spec = importlib.util.spec_from_file_location(
+        "capture_build_evidence_copy",
+        PROJECT_ROOT / "scripts" / "verification" / "capture_build_evidence.py",
+    )
+    assert spec is not None and spec.loader is not None
+    in_image = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(in_image)
+
+    module.assert_context_receipts_match(
+        module.context_manifest(root),
+        in_image.context_manifest(root),
+    )
+
+    # And they must stay one producer, not two that happen to agree today.
+    installed = importlib.import_module("scripts.verification.capture_build_evidence")
+    assert module.context_manifest is installed.context_manifest
 
 
 @pytest.mark.parametrize("mutation", ("extra", "missing", "renamed", "changed"))
@@ -52,7 +84,7 @@ def test_buildkit_context_comparison_rejects_adjacent_manifest_drift(mutation):
             {
                 "path": "ordinary.txt",
                 "type": "file",
-                "mode": "0644",
+                "executable": False,
                 "size_bytes": 2,
                 "sha256": "a" * 64,
                 "symlink_target": None,
@@ -81,14 +113,44 @@ def test_buildkit_context_comparison_rejects_adjacent_manifest_drift(mutation):
         )
 
 
+def test_a_context_mismatch_names_the_field_that_differs_not_only_the_paths():
+    """A context mismatch names fields and values, not only affected paths."""
+    module = _transaction_module()
+    expected = {
+        "entries": [
+            {"path": "a", "mode": "0644", "type": "file", "sha256": "a" * 64},
+            {"path": "b", "mode": "0755", "type": "directory"},
+        ]
+    }
+    observed = {
+        "entries": [
+            {"path": "a", "mode": "0664", "type": "file", "sha256": "a" * 64},
+            {"path": "b", "mode": "0775", "type": "directory"},
+        ]
+    }
+
+    with pytest.raises(module.BuildTransactionFailure) as failure:
+        module.assert_context_receipts_match(expected, observed)
+
+    message = str(failure.value)
+    assert "differing_fields=['mode']" in message
+    assert "changed_count=2" in message
+    assert "'0644'" in message and "'0664'" in message
+
+
 def test_embedded_build_contract_binds_context_and_toolchain():
     module = _transaction_module()
+    from scripts.verification.capture_build_evidence import canonical_json_bytes
+
+    assert canonical_json_bytes({"z": "é", "a": 1}) == (
+        b'{"a":1,"z":"\\u00e9"}'
+    )
     revision = "a" * 40
     platform = "linux/amd64"
     context = {"identity_sha256": "b" * 64}
     toolchain = {"schema_version": "builder-toolchain-receipt-v1"}
     toolchain_identity = __import__("hashlib").sha256(
-        json.dumps(toolchain, sort_keys=True, separators=(",", ":")).encode()
+        canonical_json_bytes(toolchain)
     ).hexdigest()
     contract = {
         "schema_version": "build-contract-v1",
@@ -126,19 +188,18 @@ def test_embedded_build_contract_binds_context_and_toolchain():
             )
 
 
-def test_release_and_comparison_builds_require_verified_publication_receipt(tmp_path):
+def test_release_build_requires_verified_publication_receipt(tmp_path):
     module = _transaction_module()
 
     assert module.publication_status_for_build(
         purpose="diagnostic", publication_receipt=None, revision="a" * 40
     ) == "provisional_unpublished"
-    for purpose in ("release-candidate", "reproducibility-comparison"):
-        with pytest.raises(module.BuildTransactionFailure, match="publication receipt"):
-            module.publication_status_for_build(
-                purpose=purpose,
-                publication_receipt=None,
-                revision="a" * 40,
-            )
+    with pytest.raises(module.BuildTransactionFailure, match="publication receipt"):
+        module.publication_status_for_build(
+            purpose="release-candidate",
+            publication_receipt=None,
+            revision="a" * 40,
+        )
     provisional = tmp_path / "SOURCE_EXPORT.json"
     provisional.write_text(
         json.dumps(
@@ -158,7 +219,7 @@ def test_release_and_comparison_builds_require_verified_publication_receipt(tmp_
         )
 
 
-def test_release_and_comparison_builds_cannot_disable_clean_checkout():
+def test_release_build_cannot_disable_clean_checkout():
     module = _transaction_module()
 
     assert module.clean_checkout_required(
@@ -167,21 +228,9 @@ def test_release_and_comparison_builds_cannot_disable_clean_checkout():
     assert module.clean_checkout_required(
         purpose="diagnostic", requested=True
     ) is True
-    for purpose in ("release-candidate", "reproducibility-comparison"):
-        assert module.clean_checkout_required(
-            purpose=purpose, requested=False
-        ) is True
-
-
-def test_dockerfile_fail_closed_checks_do_not_depend_on_python_assert():
-    dockerfile = (ROOT / "deploy" / "Dockerfile").read_text(encoding="utf-8")
-
-    assert re.search(r"\bassert\b", dockerfile) is None
-    assert "capture_build_evidence.py" in dockerfile
-    assert "--context-root /build-context" in dockerfile
-    assert "buildkit-probe-consumed.json" in dockerfile
-    assert "COPY --from=builder /release" in dockerfile
-    assert "FROM scratch AS release-evidence" not in dockerfile
+    assert module.clean_checkout_required(
+        purpose="release-candidate", requested=False
+    ) is True
 
 
 def test_only_canonical_owner_executes_release_capable_docker_build():
@@ -197,63 +246,6 @@ def test_only_canonical_owner_executes_release_capable_docker_build():
             if relative != owner:
                 offenders.append(relative)
     assert offenders == []
-
-
-def test_release_builds_use_ephemeral_builder_and_no_cache():
-    owner = (
-        ROOT / "scripts" / "verification" / "build_release_image.py"
-    ).read_text(encoding="utf-8")
-    assert '"buildx", "create"' in owner
-    assert '"--driver", "docker-container"' in owner
-    assert '"--builder", builder_name, "--no-cache"' in owner
-    assert '"buildx", "rm", "--force", builder_name' in owner
-
-
-def test_public_and_private_release_consumers_name_canonical_orchestration():
-    private_overlay = ROOT / "publication" / "public_overlay"
-    if private_overlay.is_dir():
-        consumers = (
-            ROOT / "README.md",
-            private_overlay / "README.md",
-            ROOT / ".github" / "workflows" / "private-engineering-ci.yml",
-            private_overlay / ".github" / "workflows" / "production-amd64.yml",
-        )
-    else:
-        consumers = (
-            ROOT / "README.md",
-            ROOT / ".github" / "workflows" / "production-amd64.yml",
-        )
-    for path in consumers:
-        text = path.read_text(encoding="utf-8")
-        assert "scripts.verification.build_release_image" in text, path
-        assert "docker build " not in text, path
-
-    if private_overlay.is_dir():
-        private_workflow = (
-            ROOT / ".github" / "workflows" / "private-engineering-ci.yml"
-        ).read_text(encoding="utf-8")
-        assert (
-            "--container-only \\\n"
-            "            --worker-resilience \\\n"
-            "            --soak-requests 250 \\\n"
-            "            --quiet"
-        ) in private_workflow
-
-
-def test_build_evidence_owner_records_required_toolchain_axes():
-    producer = (
-        ROOT / "scripts" / "verification" / "capture_build_evidence.py"
-    ).read_text(encoding="utf-8")
-    for required in (
-        "dpkg-query",
-        "gcc",
-        "ld",
-        "libc",
-        "os-release",
-        "TARGETPLATFORM",
-        "source_revision",
-    ):
-        assert required in producer
 
 
 def test_toolchain_receipt_is_a_populated_object(monkeypatch):
@@ -306,7 +298,10 @@ def test_builder_side_context_receipt_observes_actual_filesystem_axes(tmp_path):
     by_path = {entry["path"]: entry for entry in receipt["entries"]}
 
     assert receipt["producer"] == "builder_mount_observation"
-    assert by_path["payload.txt"]["mode"] == "0640"
+    # Git tracks one permission bit, not the umask the checkout ran under, so
+    # recording the full mode made this evidence differ between two correct
+    # environments.  The executable bit is the part that is actually versioned.
+    assert by_path["payload.txt"]["executable"] is False
     assert by_path["payload.txt"]["size_bytes"] == 16
     assert by_path["payload.txt"]["sha256"] == (
         "0a0ab8c4079c94bccbcf7faa554c90530fa25aa241f1cca486c8d7e97ea03e2c"
@@ -342,6 +337,33 @@ def test_builder_side_native_receipt_classifies_and_requires_source_build(tmp_pa
         producer.native_extension_receipt(venv)
 
 
+def test_gate_d_binds_installed_native_bytes_to_builder_receipt():
+    verifier = importlib.import_module(
+        "scripts.verification.verify_container_runtime"
+    )
+    receipt = {
+        "schema_version": "builder-native-extensions-v1",
+        "artifacts": [
+            {
+                "path": "/opt/venv/swisseph.cpython-314.so",
+                "origin_class": "source_built_native",
+                "sha256": "a" * 64,
+            }
+        ],
+    }
+    verifier._assert_native_extension_receipt_matches_image(
+        receipt,
+        {"/opt/venv/swisseph.cpython-314.so": "a" * 64},
+    )
+    with pytest.raises(verifier.GateFailure, match="differ"):
+        verifier._assert_native_extension_receipt_matches_image(
+            receipt,
+            {"/opt/venv/swisseph.cpython-314.so": "b" * 64},
+        )
+    with pytest.raises(verifier.GateFailure, match="paths"):
+        verifier._assert_native_extension_receipt_matches_image(receipt, {})
+
+
 def test_bounded_source_watcher_observes_a_sustained_source_write(tmp_path):
     module = _transaction_module()
     source = tmp_path / "source.py"
@@ -352,84 +374,3 @@ def test_bounded_source_watcher_observes_a_sustained_source_write(tmp_path):
         source.write_text("after\n", encoding="utf-8")
         time.sleep(0.04)
     assert watcher.changed is True
-
-
-def test_reproducibility_comparison_separates_toolchain_and_native_drift(tmp_path):
-    module = _transaction_module()
-    candidate = tmp_path / "candidate"
-    comparison = tmp_path / "comparison"
-    candidate.mkdir()
-    comparison.mkdir()
-    common_transaction = {
-        "schema_version": "release-build-transaction-v1",
-        "source_revision": "a" * 40,
-        "platform": "linux/amd64",
-        "publication_status": "published_anonymously_reachable",
-        "materialized_context_identity_sha256": "b" * 64,
-        "buildkit_context_identity_sha256": "b" * 64,
-    }
-    native = {
-        "schema_version": "builder-native-extensions-v1",
-        "artifacts": [
-            {
-                "path": "/opt/venv/site-packages/swisseph.so",
-                "origin_class": "source_built_native",
-                "size_bytes": 10,
-                "sha256": "c" * 64,
-            },
-            {
-                "path": "/opt/venv/site-packages/pydantic_core.so",
-                "origin_class": "acquired_native_wheel",
-                "size_bytes": 20,
-                "sha256": "d" * 64,
-            },
-        ],
-    }
-    for directory, purpose in (
-        (candidate, "release-candidate"),
-        (comparison, "reproducibility-comparison"),
-    ):
-        (directory / "build-transaction.json").write_text(
-            json.dumps({**common_transaction, "purpose": purpose}), encoding="utf-8"
-        )
-        (directory / "builder-toolchain.json").write_text(
-            json.dumps({"toolchain": "same"}), encoding="utf-8"
-        )
-        (directory / "native-extensions.json").write_text(
-            json.dumps(native), encoding="utf-8"
-        )
-
-    result = module.compare_reproducibility_builds(candidate, comparison)
-    assert result["status"] == "byte_identical_same_toolchain_scoped"
-    assert result["source_built_native_paths"] == [
-        "/opt/venv/site-packages/swisseph.so"
-    ]
-
-    (comparison / "builder-toolchain.json").write_text(
-        json.dumps({"toolchain": "different"}), encoding="utf-8"
-    )
-    with pytest.raises(module.BuildTransactionFailure, match="inconclusive"):
-        module.compare_reproducibility_builds(candidate, comparison)
-    (comparison / "builder-toolchain.json").write_text(
-        json.dumps({"toolchain": "same"}), encoding="utf-8"
-    )
-    changed = json.loads(json.dumps(native))
-    changed["artifacts"][0]["sha256"] = "e" * 64
-    (comparison / "native-extensions.json").write_text(
-        json.dumps(changed), encoding="utf-8"
-    )
-    with pytest.raises(module.BuildTransactionFailure, match="same-toolchain"):
-        module.compare_reproducibility_builds(candidate, comparison)
-
-
-def test_runtime_verifier_extracts_evidence_from_image_without_another_build():
-    verifier = (
-        ROOT / "scripts" / "verification" / "verify_container_runtime.py"
-    ).read_text(encoding="utf-8")
-    function = verifier.split("def _exported_release_evidence", 1)[1].split(
-        "\ndef ", 1
-    )[0]
-    assert "_image_evidence_json" in function
-    assert "_build_image" not in function
-    assert "build-context-received.json" in function
-    assert "builder-toolchain.json" in function

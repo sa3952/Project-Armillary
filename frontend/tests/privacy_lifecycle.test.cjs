@@ -127,9 +127,9 @@ test("releasing a Blob URL is idempotent and clear does not revoke it twice", ()
   assert.deepEqual(revoked, ["blob:short-lived"]);
 });
 
-// ── PIA-2026-08-06-007 ───────────────────────────────────────
-// 送出後唯一會 abort 的入口是兩個清除鈕，而它們在第一次成功前不可達。
-// 新增的中止入口必須只停這一次請求，不得順手把已算出的結果一起收掉。
+// ── 中止入口的範圍 ───────────────────────────────────────────
+// 中止入口必須在送出後即可達，且只停這一次請求，不得順手把已算出的
+// 結果一起收掉。
 
 test("aborting the active request stops it without clearing results", () => {
   const lifecycle = PrivacyLifecycle.createSensitiveDataLifecycle({

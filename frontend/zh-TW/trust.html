@@ -3,11 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title>信任｜渾儀 Armillary</title>
+<meta name="robots" content="index, follow">
+<title>計算透明度、隱私與信任邊界｜渾儀 Armillary</title>
+<meta name="description" content="了解渾儀如何連結計算結果、版本、來源、隱私控制、驗證證據與尚未完成的限制。">
+<link rel="canonical" href="https://projectarmillary.com/zh-TW/trust">
+<meta property="og:type" content="website">
+<meta property="og:title" content="計算透明度、隱私與信任邊界｜渾儀 Armillary">
+<meta property="og:description" content="了解渾儀如何連結計算結果、版本、來源、隱私控制、驗證證據與尚未完成的限制。">
+<meta property="og:url" content="https://projectarmillary.com/zh-TW/trust">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@id":"https://projectarmillary.com/#website","@type":"WebSite","inLanguage":"zh-TW","name":"渾儀 Armillary","url":"https://projectarmillary.com/"},{"@id":"https://projectarmillary.com/zh-TW/trust#webpage","@type":"WebPage","description":"了解渾儀如何連結計算結果、版本、來源、隱私控制、驗證證據與尚未完成的限制。","inLanguage":"zh-TW","isPartOf":{"@id":"https://projectarmillary.com/#website"},"name":"計算透明度、隱私與信任邊界｜渾儀 Armillary","url":"https://projectarmillary.com/zh-TW/trust"}]}</script>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.15.0-final-polish">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.15.0-final-polish">
 </head>
 <body>
 
@@ -27,9 +35,10 @@
     </a>
     <nav class="site-nav" aria-label="主要導覽">
       <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
-      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/blog">文章</a>
       <a href="/zh-TW/about">關於</a>
       <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
@@ -50,12 +59,12 @@
       <div><b>0</b><span>個第三方</span><i>不引入追蹤、分析或遠端日誌相依</i></div>
       <div><b>CH</b><span>瑞士</span><i>網域註冊、DNS 權威伺服器、主機——三者同一家瑞士公司</i></div>
     </div>
-    <p class="tr-sub">但上面這四句話，每個產品都寫得出來。<b>所以這一頁的其餘部分只做一件事：把每一項承諾放回它實際被執行的那一層，並寫出那一層能被反證到什麼程度。</b>打勾符號不會告訴你這些——是程式碼？是容器設定？是主機上的一行組態？還是供應商合約裡的一句話？四者的強度差很多，而打勾符號長得一模一樣。</p>
+    <p class="tr-sub">但上面這些話，每個產品都寫得出來。<b>所以這一頁的其餘部分只做一件事：把每一項承諾放回它實際被執行的那一層，並寫出那一層能被反證到什麼程度。</b>打勾符號不會告訴你這些——是程式碼？是容器設定？是主機上的一行組態？還是供應商合約裡的一句話？四者的強度差很多，而打勾符號長得一模一樣。</p>
   </section>
 
   <div class="audit">
-    <p class="au-k">每一次交付都要跑完這些</p>
-    <p class="au-line">具名檢測分成天文正確性、程式與契約、供應鏈與隱私、治理四組；exact stage與執行次數以current delivery receipt為準。<b>其中一項的工作，是證明其餘幾項沒有漏掉東西。</b></p>
+    <p class="au-k">每一種交付，只能由適用的gate回答</p>
+    <p class="au-line">Gate A是普通產品交付、Gate B是repository治理、Gate C是具名audit closure、Gate D是exact image、Gate E是真實host、Gate F是public release。<b>一個gate通過不會替其他gate背書；exact執行與結果以current receipt為準。</b></p>
     <div class="roster">
       <div>
         <span class="ro-k">天文正確性</span>
@@ -67,9 +76,9 @@
       <div>
         <span class="ro-k">程式與契約</span>
         <ul>
-          <li><b>完整Python迴歸與驗證測試</b>；exact數量、選集與結果由每次delivery receipt記錄，不在本頁手填一個會漂移的總數</li>
+          <li><b>Gate A完整Python產品迴歸測試</b>；exact數量與結果由每次delivery receipt記錄，不在本頁手填會漂移的總數</li>
           <li><b>突變測試</b>：exact-population ratchet固定具名突變體，每一個都必須被自己的expected consumers殺死——<b>這一項檢的不是程式對不對，是測試會不會漏</b></li>
-          <li>mypy 型別檢查（baseline 模式）、ESLint、前端單元測試、5 個 JS 檔語法檢查</li>
+          <li>mypy 型別檢查（baseline 模式）、ESLint、前端單元測試與runtime JS closed-set語法檢查</li>
         </ul>
       </div>
       <div>
@@ -77,19 +86,19 @@
         <ul>
           <li><b>CycloneDX SBOM</b>，與 lockfile 比對，過期即失敗</li>
           <li><b>隱私相依守衛</b>：以具名清單阻擋 analytics、opentelemetry、sentry 這類套件進入相依樹</li>
-          <li>容器 parity baseline、docker context 完整性、staging 組態靜態契約</li>
+          <li>Docker context與staging組態可在source層預檢；exact image的SBOM、parity與runtime只由Gate D回答</li>
         </ul>
       </div>
       <div>
         <span class="ro-k">治理</span>
         <ul>
-          <li><b>分層登錄檔 verifier</b>：每個使用者可見介面都必須有分層指派，未分類即硬性失敗</li>
-          <li>repository 完整性（9 項子檢查）、稽核檢查點閉合、紅隊範圍檢查</li>
-          <li>具名記錄的獨立 AI 紅隊與外部模型審查；輪次與狀態以current audit registry為準</li>
+          <li><b>Gate B</b>核對current repository結構與authority的可觀測closed sets</li>
+          <li><b>Gate C</b>只有在具名registry、report、execution與retained evidence都可讀時才回答audit lifecycle</li>
+          <li>具名記錄的外部技術審查與多工具對抗測試；每一輪的範圍與結果逐次留存</li>
         </ul>
       </div>
     </div>
-    <p class="au-note">上面每一項都是這個 repository 裡跑得出來的檢查。<b>應用層沒有第三方安全認證，也沒有專業滲透測試</b>——那兩件事我們沒有做過，也不把紅隊審查說成滲透測試。<b>主機層則兩者都有</b>：供應商持 ISO/IEC 27001:2022 認證，並依合約每年執行入侵測試（見層五）。<b>兩層的證據強度不同，我們不把它們混成一句。</b></p>
+    <p class="au-note">上面同時包含source gate、artifact／host gate與task-triggered獨立驗證；<b>它們不是每次普通交付都會一起執行</b>。應用層沒有第三方安全認證，也沒有專業滲透測試——外部技術審查與多工具測試不等於滲透測試。<b>供應商層</b>持 ISO/IEC 27001:2022 認證，並依合約每年執行入侵測試（見層五）。<b>兩層的證據強度不同，我們不把它們混成一句。</b></p>
   </div>
 
   <!-- ═══ 01 執行層 ═══ -->
@@ -135,7 +144,7 @@
           <span class="tier-how">只能在真實主機上驗，且只代表驗的那個時間點</span>
         </div>
         <ul class="claims">
-          <li><b>存取憑證在代理層</b><span>2026-08-19的具名實測中，本站回傳 <span class="mono">401</span> 與 <span class="mono">WWW-Authenticate: Basic realm="Private Alpha"</span>。<b>這是歷史觀察，不自動代表目前live state</b>；release前須重新驗證。</span></li>
+          <li><b>存取憑證在代理層</b><span>既有live baseline已有具名實測證據：本站回傳 <span class="mono">401</span> 與 <span class="mono">WWW-Authenticate: Basic realm="Private Alpha"</span>。<b>該證據只涵蓋當時部署的那一組版本</b>；下一組尚未部署，須對新版本重新驗證。</span></li>
           <li><b>不記錄存取日誌、不轉送原始 IP</b><span>有歷史執行證據。<b>供應商、DNS 與 Internet 轉送環節仍會為了建立連線而處理連線 metadata</b>——我們可以不記錄，不能宣稱它在網路上不存在。</span></li>
           <li><b>系統日誌短保留、停用 swap 與當機傾印</b><span>有歷史執行證據。這一層的每一項都需要重新在主機上驗證才能宣稱現況。</span></li>
         </ul>
@@ -255,7 +264,7 @@
 
     <p class="limit"><b>repository 裡的測試是設計期的迴歸證據，不會在你每次計算時重跑。</b>卷宗裡的證據欄位是指向那些測試的指標，不是「這一次執行過並通過」的紀錄。最新一次完整執行的exact revision、選集、數量與結果由current delivery evidence記錄；本頁不複製一個會隨開發漂移的總數。</p>
 
-    <p>我們<b>沒有</b>第三方安全認證，<b>沒有</b>專業滲透測試，<b>沒有</b>法規合規認證；<b>有</b>具名記錄的獨立 AI 紅隊與外部模型審查，exact輪次與status以current audit registry為準。<b>紅隊審查與滲透測試不是同一種證據，我們不把前者說成後者。</b></p>
+    <p>我們<b>沒有</b>第三方安全認證，<b>沒有</b>專業滲透測試，<b>沒有</b>法規合規認證；<b>有</b>具名記錄的外部技術審查與多工具對抗測試，每一輪的範圍與結果逐次留存。<b>技術審查與滲透測試不是同一種證據，我們不把前者說成後者。</b></p>
   </section>
 
   <!-- ═══ 04 產品邊界與可查證性 ═══ -->
@@ -333,7 +342,6 @@
   <div class="wrap">
     <span>渾儀 ARMILLARY</span>
     <span>只計算，不解盤，不預測</span>
-    <span>/zh-TW/trust · L1 受託宣稱</span>
   </div>
 </footer>
 

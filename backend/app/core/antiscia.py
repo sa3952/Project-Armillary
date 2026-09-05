@@ -3,7 +3,7 @@
 鏡射軸（夏至/冬至軸、牡羊/天秤軸）是回歸黃道(tropical)上固定的天文軸，與 sidereal 的
 0°無關。若輸入黃經是 sidereal 座標，需先加回 ayanamsa 換算成 tropical 做鏡射，再減回
 ayanamsa 換算回 sidereal，淨效果等同在公式中多減一次 2×ayanamsa（tropical 模式 ayanamsa=0，
-公式退化回原本的版本）。
+公式退化回未套用歲差的版本）。
 
 Antiscia：以巨蟹/摩羯 0 度軸 (夏至/冬至軸) 為鏡射軸 -> (180 - 黃經 - 2×ayanamsa) mod 360
 Contra-antiscia：以牡羊/天秤 0 度軸為鏡射軸 -> (360 - 黃經 - 2×ayanamsa) mod 360

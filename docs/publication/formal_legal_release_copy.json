@@ -8,7 +8,7 @@
   "qualified_counsel_review": false,
   "operator": "Sebastian",
   "official_contact": "privacy@projectarmillary.com",
-  "contact_reachability": "Sebastian-declared reachable; anonymous public delivery and receive/reply replay remain S21 evidence",
+  "contact_reachability": "A live contact route with receive and reply evidence exists for the deployed baseline; independent confirmation remains pending.",
   "specific_purpose_authority": {
     "title": "個人資料保護法之特定目的及個人資料之類別",
     "official_notice": "https://www.moj.gov.tw/2204/2528/2529/2545/12798/",
@@ -52,28 +52,28 @@
     },
     {
       "path": "scripts/frontend/pages/legal-copyright.html",
-      "sha256": "7d977fd34d359ef47e7ff830ff1bd8377a7deebf7f959d816bc5538b09b1290e"
+      "sha256": "30842a10ea9aa1896d4fbd76d226dacce51f13967c4b83dd215c71338e9728fe"
     }
   ],
   "machine_owned_release_fields": {
     "effective_date": {
-      "owner": "S21 publication/frontend release producer",
+      "owner": "verified publication/frontend release producer",
       "source_value": null
     },
     "release_version": {
-      "owner": "S21 publication/frontend release producer",
+      "owner": "verified publication/frontend release producer",
       "source_value": null
     },
     "public_revision": {
-      "owner": "S21 publication/frontend release producer",
+      "owner": "verified publication/frontend release producer",
       "source_value": null
     },
     "source_archive_url": {
-      "owner": "S21 publication/frontend release producer",
+      "owner": "verified publication/frontend release producer",
       "source_value": null
     },
     "source_archive_sha256": {
-      "owner": "S21 publication/frontend release producer",
+      "owner": "verified publication/frontend release producer",
       "source_value": null
     }
   }

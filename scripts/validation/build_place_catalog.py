@@ -6,26 +6,20 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
-import importlib
 import io
 import json
 import os
 from pathlib import Path
 import sqlite3
 import sys
+from typing import TypedDict
 import zipfile
 
-# The backend package is not installed by the documented producer command,
-# which runs from repository root without an explicit PYTHONPATH. Add the
-# repository-relative backend package root, then
-# import the *same* runtime function under its one canonical module name; using
-# both ``app.*`` and ``backend.app.*`` makes mypy see one source file twice.
 _BACKEND_PACKAGE_ROOT = Path(__file__).resolve().parents[2] / "backend"
 if str(_BACKEND_PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(_BACKEND_PACKAGE_ROOT))
-normalize_search_text = importlib.import_module(
-    "app.core.place_catalog"
-).normalize_search_text
+from app.core.place_catalog import normalize_search_text
+from scripts.tools.source_tree_identity import sha256_file
 
 
 GEONAMES_SOURCE_URL = "https://download.geonames.org/export/dump/cities500.zip"
@@ -39,12 +33,18 @@ TAIWAN_SETTLEMENT_SOURCE_URL = (
     "4A5AB0C9-0395-4B04-AE50-02624075516F/resource/"
     "AE5B85B6-0895-4D32-8027-1713F018A649/download"
 )
-GENERATOR_VERSION = "place-catalog-builder-v1"
+GENERATOR_VERSION = "place-catalog-builder-v2"
 MAX_INPUT_BYTES = 512 * 1024 * 1024
 MAX_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024
 MAX_LINE_CHARS = 1_000_000
 MAX_SOURCE_ROWS = 10_000_000
 MAX_OUTPUT_BYTES = 4 * 1024 * 1024 * 1024
+
+
+class _CountyGroup(TypedDict):
+    county_code: str
+    coordinates: list[tuple[float, float]]
+    aliases: set[str]
 
 
 def _require_bounded_input(path: Path) -> None:
@@ -66,14 +66,6 @@ def _taiwan_character_variants(value: str) -> str:
             )
         )
     )
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _schema(connection: sqlite3.Connection) -> None:
@@ -166,6 +158,13 @@ def _insert(connection: sqlite3.Connection, record: dict) -> bool:
     return True
 
 
+def _bounded_lines(handle):
+    for line in handle:
+        if len(line) > MAX_LINE_CHARS:
+            raise ValueError("GeoNames row exceeds bounded line limit")
+        yield line
+
+
 def _geonames_lines(path: Path):
     _require_bounded_input(path)
     if zipfile.is_zipfile(path):
@@ -179,16 +178,10 @@ def _geonames_lines(path: Path):
             if member.file_size > MAX_UNCOMPRESSED_BYTES:
                 raise ValueError("GeoNames member exceeds bounded uncompressed limit")
             with archive.open(member) as raw:
-                for line in io.TextIOWrapper(raw, encoding="utf-8"):
-                    if len(line) > MAX_LINE_CHARS:
-                        raise ValueError("GeoNames row exceeds bounded line limit")
-                    yield line
+                yield from _bounded_lines(io.TextIOWrapper(raw, encoding="utf-8"))
     else:
         with path.open(encoding="utf-8") as handle:
-            for line in handle:
-                if len(line) > MAX_LINE_CHARS:
-                    raise ValueError("GeoNames row exceeds bounded line limit")
-                yield line
+            yield from _bounded_lines(handle)
 
 
 def import_geonames(
@@ -326,6 +319,91 @@ def import_taiwan(
     return count
 
 
+def import_taiwan_county_representatives(
+    connection: sqlite3.Connection,
+    paths: tuple[Path, ...],
+) -> int:
+    """Add one explicitly derived representative point for each county/city.
+
+    The MOI files name the top-level administrative areas but omit coordinates
+    on those rows.  Their coordinate-bearing child records form the closed
+    source set used here.  The arithmetic mean is only a search/picker anchor;
+    ``location_precision`` prevents it being presented as a city hall,
+    geometric centroid, address, or birth location.
+    """
+
+    groups: dict[str, _CountyGroup] = {}
+    for path in paths:
+        _require_bounded_input(path)
+        with path.open(encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                if reader.line_num > MAX_SOURCE_ROWS + 1:
+                    raise ValueError("Taiwan input exceeds bounded row limit")
+                county = str(row.get("County") or "").strip()
+                if not county:
+                    continue
+                group = groups.setdefault(
+                    county,
+                    {
+                        "county_code": str(row.get("CountyCode") or ""),
+                        "coordinates": [],
+                        "aliases": set(),
+                    },
+                )
+                if row.get("Longitude") and row.get("Latitude"):
+                    group["coordinates"].append(
+                        (float(row["Longitude"]), float(row["Latitude"]))
+                    )
+                if row.get("PlaceName") == county:
+                    group["aliases"].update(
+                        str(row.get(key) or "").strip()
+                        for key in (
+                            "ChinesePhonetic",
+                            "CommonPhonetic",
+                            "AnotherName",
+                        )
+                        if str(row.get(key) or "").strip()
+                    )
+
+    count = 0
+    for county in sorted(groups):
+        group = groups[county]
+        coordinates = group["coordinates"]
+        if not coordinates:
+            continue
+        longitude = sum(item[0] for item in coordinates) / len(coordinates)
+        latitude = sum(item[1] for item in coordinates) / len(coordinates)
+        stable = f"{group['county_code']}\x1f{county}".encode("utf-8")
+        count += int(
+            _insert(
+                connection,
+                {
+                    "source": "taiwan_moi_place_names",
+                    "source_record_id": (
+                        "tw-moi-county-derived:"
+                        f"{hashlib.sha256(stable).hexdigest()[:20]}"
+                    ),
+                    "name": county,
+                    "display_name": f"{county}, TW",
+                    "aliases": " ".join(sorted(group["aliases"])),
+                    "country_code": "TW",
+                    "admin1": county,
+                    "admin2": None,
+                    "latitude": round(latitude, 6),
+                    "longitude": round(longitude, 6),
+                    "timezone": "Asia/Taipei",
+                    "location_precision": (
+                        "administrative_area_representative_point"
+                    ),
+                    "population": 0,
+                    "source_priority": -1,
+                },
+            )
+        )
+    return count
+
+
 def build_catalog(
     *,
     geonames_zip: Path,
@@ -361,8 +439,14 @@ def build_catalog(
                 source_priority=0,
             ),
         }
+        counts["taiwan_moi_county_representative"] = (
+            import_taiwan_county_representatives(
+                connection,
+                (taiwan_admin_csv, taiwan_settlement_csv),
+            )
+        )
         metadata = {
-            "schema_version": 1,
+            "schema_version": 2,
             "source_snapshot_date": source_date,
             "row_counts": counts,
             "licenses": {
@@ -386,6 +470,12 @@ def build_catalog(
                 ),
             },
             "runtime_outbound": False,
+            "derived_record_policy": {
+                "taiwan_moi_county_representative": (
+                    "arithmetic mean of all coordinate-bearing MOI child "
+                    "records in the named county/city; picker anchor only"
+                ),
+            },
         }
         connection.executemany(
             """
@@ -424,22 +514,10 @@ def build_artifact_manifest(
     metadata: dict,
     *,
     catalog_path: Path,
-    source_date: str,
 ) -> dict:
     return {
-        "artifact_id": "offline-place-catalog-v1",
-        "classification": "generated_runtime_dataset",
         "producer": "scripts/validation/build_place_catalog.py",
         "generator_version": GENERATOR_VERSION,
-        "mutable": False,
-        "distribution": {
-            "private_git": "direct",
-            "docker": "same_exact_file",
-            "publication": "same_exact_file",
-            "ci": "verify_manifest_hash_rows_and_integrity",
-            "local_runtime": "same_exact_file",
-        },
-        "release_policy": "low_frequency_intentional_dataset_release",
         "rebuild": {
             "command": (
                 "python -m scripts.validation.build_place_catalog "
@@ -448,7 +526,7 @@ def build_artifact_manifest(
                 "--taiwan-settlement-csv <taiwan-settlement.csv> "
                 "--output backend/place_data/places.sqlite3 "
                 "--manifest backend/place_data/catalog_manifest.json "
-                f"--source-date {source_date}"
+                f"--source-date {metadata['source_snapshot_date']}"
             ),
             "exact_inputs_required": True,
             "input_identity": "source_sha256",
@@ -459,6 +537,7 @@ def build_artifact_manifest(
             "size_bytes": catalog_path.stat().st_size,
         },
         "licenses": metadata["licenses"],
+        "derived_record_policy": metadata["derived_record_policy"],
         "row_counts": metadata["row_counts"],
         "runtime_policy": {
             "catalog_mode": "bundled_read_only_sqlite",
@@ -474,11 +553,19 @@ def build_artifact_manifest(
 
 def write_artifact_manifest(path: Path, manifest: dict) -> None:
     temporary = path.with_name(f".{path.name}.building")
-    temporary.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    os.replace(temporary, path)
+    try:
+        temporary.write_text(
+            json.dumps(
+                manifest,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def main() -> int:
@@ -507,7 +594,6 @@ def main() -> int:
     manifest = build_artifact_manifest(
         metadata,
         catalog_path=args.output,
-        source_date=args.source_date,
     )
     write_artifact_manifest(manifest_path, manifest)
     print(json.dumps(manifest, ensure_ascii=False, indent=2))

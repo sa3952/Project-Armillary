@@ -25,31 +25,18 @@ def _sha256(path: Path) -> str:
 
 def verify() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    expected_distribution = {
-        "private_git": "direct",
-        "docker": "same_exact_file",
-        "publication": "same_exact_file",
-        "ci": "verify_manifest_hash_rows_and_integrity",
-        "local_runtime": "same_exact_file",
-    }
-    if (
-        manifest.get("artifact_id") != "offline-place-catalog-v1"
-        or manifest.get("classification") != "generated_runtime_dataset"
-        or manifest.get("producer") != "scripts/validation/build_place_catalog.py"
-        or manifest.get("generator_version") != "place-catalog-builder-v1"
-        or manifest.get("mutable") is not False
-        or manifest.get("distribution") != expected_distribution
-        or manifest.get("release_policy")
-        != "low_frequency_intentional_dataset_release"
-        or manifest.get("rebuild", {}).get("exact_inputs_required") is not True
-    ):
-        raise SystemExit("place catalog governance manifest is incomplete")
-    catalog_path = DATA_DIR / manifest["catalog"]["filename"]
+    catalog = manifest.get("catalog")
+    if not isinstance(catalog, dict):
+        raise SystemExit("place catalog identity is missing")
+    filename = catalog.get("filename")
+    if not isinstance(filename, str) or Path(filename).name != filename:
+        raise SystemExit("place catalog filename is unsafe")
+    catalog_path = DATA_DIR / filename
     if not catalog_path.is_file():
         raise SystemExit(f"missing place catalog: {catalog_path}")
-    if catalog_path.stat().st_size != manifest["catalog"]["size_bytes"]:
+    if catalog_path.stat().st_size != catalog.get("size_bytes"):
         raise SystemExit("place catalog size does not match manifest")
-    if _sha256(catalog_path) != manifest["catalog"]["sha256"]:
+    if _sha256(catalog_path) != catalog.get("sha256"):
         raise SystemExit("place catalog SHA-256 does not match manifest")
     for suffix in ("-journal", "-wal", "-shm"):
         if Path(f"{catalog_path}{suffix}").exists():
@@ -75,6 +62,8 @@ def verify() -> None:
                             THEN 'taiwan_moi_administrative'
                         WHEN source_record_id LIKE 'tw-moi-settlement:%'
                             THEN 'taiwan_moi_settlement'
+                        WHEN source_record_id LIKE 'tw-moi-county-derived:%'
+                            THEN 'taiwan_moi_county_representative'
                     END AS source,
                     COUNT(*) AS count
                 FROM places

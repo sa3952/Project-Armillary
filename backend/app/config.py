@@ -105,6 +105,13 @@ NODE_BODIES = [
     {"key": "mean_node", "zh": "北交點(平均)", "id": swe.MEAN_NODE},
 ]
 
+BODY_ID_BY_KEY = {
+    body["key"]: body["id"]
+    for body in (
+        CLASSICAL_BODIES + OUTER_BODIES + MODERN_MINOR_BODIES + NODE_BODIES
+    )
+}
+
 # 需要單一交點的技法一律採此者（MTH-Q-008 甲 裁決）。
 # 目前沒有任何技法消費交點；本常數是為日後的技法預先固定選擇。
 FORMAL_TECHNIQUE_NODE_KEY = "mean_node"
@@ -171,3 +178,8 @@ DECLINATION_ASPECT_ORB = 1.0
 
 # 月空亡(VOC)判斷用的托勒密五大相位角度
 PTOLEMAIC_ASPECTS = [0.0, 60.0, 90.0, 120.0, 180.0]
+
+# One declared default for the refraction atmosphere.  The bundled client sent
+# 15 and the schema defaulted to 0.0, so anyone reproducing a published chart
+# through the API without an atmosphere block computed against a different sky.
+DEFAULT_ATMOSPHERE_TEMPERATURE_C = 15.0

@@ -3,11 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title>驗證｜渾儀 Armillary</title>
+<meta name="robots" content="index, follow">
+<title>古典占星天文計算的驗證方法｜渾儀 Armillary</title>
+<meta name="description" content="查看星曆、座標、時間換算、數值比較、計算卷宗與已知驗證範圍，不把抽樣結果外推成全面認證。">
+<link rel="canonical" href="https://projectarmillary.com/zh-TW/validation">
+<meta property="og:type" content="website">
+<meta property="og:title" content="古典占星天文計算的驗證方法｜渾儀 Armillary">
+<meta property="og:description" content="查看星曆、座標、時間換算、數值比較、計算卷宗與已知驗證範圍，不把抽樣結果外推成全面認證。">
+<meta property="og:url" content="https://projectarmillary.com/zh-TW/validation">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@id":"https://projectarmillary.com/#website","@type":"WebSite","inLanguage":"zh-TW","name":"渾儀 Armillary","url":"https://projectarmillary.com/"},{"@id":"https://projectarmillary.com/zh-TW/validation#webpage","@type":"WebPage","description":"查看星曆、座標、時間換算、數值比較、計算卷宗與已知驗證範圍，不把抽樣結果外推成全面認證。","inLanguage":"zh-TW","isPartOf":{"@id":"https://projectarmillary.com/#website"},"name":"古典占星天文計算的驗證方法｜渾儀 Armillary","url":"https://projectarmillary.com/zh-TW/validation"}]}</script>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.9.5-s20">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.9.5-s20">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.15.0-final-polish">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.15.0-final-polish">
 </head>
 <body>
 
@@ -27,9 +35,10 @@
     </a>
     <nav class="site-nav" aria-label="主要導覽">
       <a href="/zh-TW/features">功能</a>
+      <a href="/zh-TW/methods">方法</a>
       <a href="/zh-TW/validation">驗證</a>
       <a href="/zh-TW/trust">信任</a>
-      <a href="/zh-TW/security">安全</a>
+      <a href="/zh-TW/blog">文章</a>
       <a href="/zh-TW/about">關於</a>
       <a class="nav-cta" href="/zh-TW/calculate">排一張盤</a>
     </nav>
@@ -47,7 +56,7 @@
   <section>
     <h2>我們拿產品去對一套完全不同的管線</h2>
     <p><strong>只用同一套函式庫自我驗證，沒有意義。</strong>所以我們用 JPL 的 DE442 星曆核心，經由 Astropy／ERFA 建立另一條參考管線，與產品使用的 Swiss Ephemeris 逐小時比對。它在幾何星曆與主要轉換實作上獨立，但仍共享 IERS／IAU 標準、部分觀測資料譜系與視位置定義；因此不能簡寫成「完全獨立」。</p>
-    <p>本頁下列 1990–2026 統計是<strong>歷史驗證批次</strong>，不是每次開頁重跑，也不是目前 candidate image 的收據。後續 validator v2 使用 frozen backend <code>70a6a8b</code> 作更深的成因與邊界研究；正式 candidate 必須另以 exact source／image identity重播，不能把歷史數字自動貼到新映像。</p>
+    <p>本頁下列 1990–2026 統計是<strong>歷史驗證批次</strong>，不是每次開頁重跑，也不是目前候選映像的收據。後續 validator v2 在一個凍結的後端版本上作更深的成因與邊界研究；正式候選版本必須另以自己的原始碼與映像識別重播，不能把歷史數字自動貼到新映像。</p>
     <table class="log">
       <thead><tr><th>項目</th><th>設定</th></tr></thead>
       <tbody>
@@ -131,12 +140,12 @@
     <p><strong>這份範例由後端實際計算產生，不是手寫的。</strong>使用的是一組標示為範例的出生資料。</p>
 <!-- 由 scripts/frontend/render_example_dossier.cjs 產生，請勿手改。 -->
 <details class="dossier">
-  <summary>展開完整範例卷宗（28 節、496 列）</summary>
+  <summary>展開完整範例卷宗（28 節、494 列）</summary>
   <div class="dossier-body">
   <p class="dossier-lede"><strong>這是範例，不是任何人的真實出生資料。</strong>
   底下每一個數值都由後端實際計算產生，不是手寫的；使用的是一組標示為範例的輸入。</p>
   <p class="dossier-lede">本次請求<strong>明示指定</strong>了界表、面、三分性與容許度表。
-  這不是預設行為——不指定時那幾節會留空並說明原因，因為選一套表就是替你做方法裁決。</p>
+  這不是預設行為。不指定時那幾節會留空並說明原因，因為選一套表就是替你做方法決定。</p>
   <dl class="legal-terms dossier-meta">
     <dt>匯出契約版本</dt><dd class="mono">0.1.2</dd>
     <dt>API schema 版本</dt><dd class="mono">0.13.0</dd>
@@ -331,18 +340,18 @@
     </h3>
     <p class="dossier-layer">RING I 天文事實</p>
     <p class="dossier-note">non_classical_technical_angles_opt_in</p>
-    <p class="dossier-note">以下五個角點由 swe.houses_ex 附帶回傳，皆非古典占星的四角。本產品輸出其數值，不對其占星用途表示任何立場。</p>
+    <p class="dossier-note">5 個角點swe.houses_ex 附帶回傳；1 個角點由 Vertex 黃經對蹠導出。皆非古典占星的四角。本產品輸出其數值，不對其占星用途表示任何立場。</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>角點</caption>
         <thead><tr><th>角點</th><th>黃經 λ</th><th>星座度數</th></tr></thead>
         <tbody>
-        <tr><td>anti_vertex</td><td>—</td><td>—</td></tr>
-        <tr><td>co_ascendant_koch</td><td>—</td><td>—</td></tr>
-        <tr><td>co_ascendant_munkasey</td><td>—</td><td>—</td></tr>
-        <tr><td>equatorial_ascendant</td><td>—</td><td>—</td></tr>
-        <tr><td>polar_ascendant</td><td>—</td><td>—</td></tr>
-        <tr><td>vertex</td><td>—</td><td>—</td></tr>
+        <tr><td>anti_vertex</td><td>207.757412</td><td>天秤 27°45′26.68″</td></tr>
+        <tr><td>co_ascendant_koch</td><td>181.223365</td><td>天秤 1°13′24.11″</td></tr>
+        <tr><td>co_ascendant_munkasey</td><td>180.501009</td><td>天秤 0°30′03.63″</td></tr>
+        <tr><td>equatorial_ascendant</td><td>180.985568</td><td>天秤 0°59′08.05″</td></tr>
+        <tr><td>polar_ascendant</td><td>1.223365</td><td>牡羊 1°13′24.11″</td></tr>
+        <tr><td>vertex</td><td>27.757412</td><td>牡羊 27°45′26.68″</td></tr>
         </tbody>
       </table>
     </div>
@@ -352,21 +361,31 @@
       <span class="dossier-status" data-state="present">已計算</span>
     </h3>
     <p class="dossier-layer">RING I 天文事實</p>
-    <p class="dossier-note">geocentric_apparent_tropical_of_date</p>
+    <p class="dossier-note">地心視黃經、當日回歸黃道</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>朔望時刻（UTC）</caption>
         <thead><tr><th>事件</th><th>時刻</th></tr></thead>
         <tbody>
-        <tr><td>first_quarter（前一次）</td><td>1990-05-01T20:17:49.251Z</td></tr>
-        <tr><td>first_quarter（下一次）</td><td>1990-05-31T08:10:43.290Z</td></tr>
-        <tr><td>full_moon（前一次）</td><td>1990-05-09T19:30:45.850Z</td></tr>
-        <tr><td>full_moon（下一次）</td><td>1990-06-08T11:01:07.075Z</td></tr>
-        <tr><td>last_quarter（前一次）</td><td>1990-04-18T07:02:32.393Z</td></tr>
-        <tr><td>last_quarter（下一次）</td><td>1990-05-17T19:44:56.735Z</td></tr>
-        <tr><td>new_moon（前一次）</td><td>1990-04-25T04:27:27.174Z</td></tr>
-        <tr><td>new_moon（下一次）</td><td>1990-05-24T11:47:07.011Z</td></tr>
-        <tr><td>產前朔望（full_moon）</td><td>1990-05-09T19:30:45.850Z</td></tr>
+        <tr><td>上弦（前一次）</td><td>1990-05-01T20:17:49.251Z</td></tr>
+        <tr><td>上弦（下一次）</td><td>1990-05-31T08:10:43.290Z</td></tr>
+        <tr><td>望（前一次）</td><td>1990-05-09T19:30:45.850Z</td></tr>
+        <tr><td>望（下一次）</td><td>1990-06-08T11:01:07.075Z</td></tr>
+        <tr><td>下弦（前一次）</td><td>1990-04-18T07:02:32.393Z</td></tr>
+        <tr><td>下弦（下一次）</td><td>1990-05-17T19:44:56.735Z</td></tr>
+        <tr><td>朔（前一次）</td><td>1990-04-25T04:27:27.174Z</td></tr>
+        <tr><td>朔（下一次）</td><td>1990-05-24T11:47:07.011Z</td></tr>
+        <tr><td>產前朔望（望）</td><td>1990-05-09T19:30:45.850Z</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dossier-table-wrap">
+      <table class="log dossier-table">
+      <caption>出生前最近一次日月食（UTC）</caption>
+        <thead><tr><th>事件</th><th>類型</th><th>食甚時刻</th></tr></thead>
+        <tbody>
+        <tr><td>前一次日食</td><td>環食</td><td>1990-01-26T19:30:23.381Z</td></tr>
+        <tr><td>前一次月食</td><td>全食</td><td>1990-02-09T19:11:03.027Z</td></tr>
         </tbody>
       </table>
     </div>
@@ -431,7 +450,7 @@
     </h3>
     <p class="dossier-layer">RING II 幾何推導</p>
     <p class="dossier-note">方法：parallel_contra_parallel_fixed_orb_v1；審閱狀態：provisional_pending_method_audit；權威：未確立。</p>
-    <p class="dossier-note">分類：research_only——MTH-Q-004 A1 (2026-08-03)。這是近現代技法，不是古典傳統。</p>
+    <p class="dossier-note">分類：research_only，MTH-Q-004 A1 (2026-08-03)。這是近現代技法，不是古典傳統。</p>
     <p class="dossier-note">容許度：1.000°。</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
@@ -446,10 +465,8 @@
         <tr><td>反平行 contra-parallel</td><td>凱龍星</td><td>16°24′28.93″</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>0.9676</td></tr>
         <tr><td>平行 parallel</td><td>凱龍星</td><td>16°24′28.93″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.9676</td></tr>
         <tr><td>平行 parallel</td><td>北交點(密切)</td><td>-17°40′19.45″</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>0.2964</td></tr>
-        <tr><td>反平行 contra-parallel</td><td>北交點(密切)</td><td>-17°40′19.45″</td><td>南交點(密切)</td><td>17°40′19.45″</td><td>0.0000</td></tr>
         <tr><td>反平行 contra-parallel</td><td>北交點(密切)</td><td>-17°40′19.45″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.2964</td></tr>
         <tr><td>反平行 contra-parallel</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>南交點(密切)</td><td>17°40′19.45″</td><td>0.2964</td></tr>
-        <tr><td>反平行 contra-parallel</td><td>北交點(平均)</td><td>-17°22′32.32″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.0000</td></tr>
         <tr><td>平行 parallel</td><td>南交點(密切)</td><td>17°40′19.45″</td><td>南交點(平均)</td><td>17°22′32.32″</td><td>0.2964</td></tr>
         </tbody>
       </table>
@@ -556,7 +573,7 @@
     <p class="dossier-layer">RING III 方法判斷</p>
     <p class="dossier-note">方法：modern_sign_bounded_exact_perfection_v1；審閱狀態：provisional_pending_method_audit；權威：未確立。</p>
     <p class="dossier-note">求解器：two_stage_scan_then_bisection_v1（狀態 converged）。</p>
-    <p class="dossier-note">本模組目前以線性外插求相位完成時刻，那是已知的正確性缺陷：月亮速度會變、被相位的行星可能站留、站留附近可能出現多重根。方向已定為兩段式求根，尚未實作。</p>
+    <p class="dossier-note">完成時刻以求根取得，逐點查詢星曆而不假設速度為定值，因此對月亮速度變化、行星站留與同一視窗內的多重根皆成立。括號端點與迭代次數一併輸出，可據以複算。</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>判定</caption>
@@ -710,7 +727,7 @@
       <span class="dossier-status" data-state="present">已計算</span>
     </h3>
     <p class="dossier-layer">RING III 方法判斷</p>
-    <p class="dossier-note">本模組只評估廟與旺（domicile／exaltation）。陷、落、外來與互容尚未評估——那是「未評估」，不是「沒有」。</p>
+    <p class="dossier-note">本模組只評估廟與旺（domicile／exaltation）。陷、落、外來與互容尚未評估，那是「未評估」，不是「沒有」。</p>
     <p class="dossier-note">另有 3 套並列比較用的 profile；並列不會改變你選定的那一套。</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
@@ -732,7 +749,7 @@
     <p class="dossier-layer">RING III 方法判斷</p>
     <p class="dossier-note">採用 profile：traditional_seven_domicile_exaltation_signs_v1</p>
     <p class="dossier-note">來源：Ptolemy, Tetrabiblos I.17 and I.19, Frank E. Robbins trans. (Loeb 1940); sign assignments corroborated by Dorotheus Carmen Astrologicum I.1-2, Valens Anthologies III.4, and Firmicus Maternus Mathesis II.2-3</p>
-    <p class="dossier-note">陷、落、外來與互容標記為未評估——那是「未評估」，不是「沒有」。</p>
+    <p class="dossier-note">陷、落、外來與互容標記為未評估，那是「未評估」，不是「沒有」。</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>廟與旺 Domicile / Exaltation　判定</caption>
@@ -911,9 +928,9 @@
       <span class="dossier-status" data-state="present">已計算</span>
     </h3>
     <p class="dossier-layer">VERIFICATION 驗證</p>
-    <p class="dossier-note">本次共 98 步。步數隨你勾選的模組而變，不是固定值。</p>
+    <p class="dossier-note">本次共 96 步。步數隨你勾選的模組而變，不是固定值。</p>
     <p class="dossier-note">整份可複製貼出去逐步對照；每一步都列出算式、輸入與結果。</p>
-    <p class="dossier-note">序列化雜湊 537297e226df46d56341fe5b34512fcddca80286cbfa60b821f96f9456e21f1b（對 Python 固定參數序列化的結果計算，不跨語言可攜，證明的是完整性而非跨實作指紋）</p>
+    <p class="dossier-note">序列化雜湊 a474492a3b6732968cc5b54dd052b1c47d1215b505c1259d8edad2993656b14a（對 Python 固定參數序列化的結果計算，不跨語言可攜，證明的是完整性而非跨實作指紋）</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>軌跡</caption>
@@ -981,7 +998,7 @@
         <tr><td>60</td><td>恆星 王良四（Schedar,alCas）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=143.05717615238342；方位角Az(北=0,順時針)=323.0571761523834；星等=2.23；赤經=9.983030669371322；赤緯=56.48216121340792；高度Alt=24.870716841834582；黃經=37.64537223227034；黃緯=46.62034457520491</td><td>—</td></tr>
         <tr><td>61</td><td>恆星 婁宿三（Hamal,alAri）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=102.21385808198465；方位角Az(北=0,順時針)=282.21385808198465；星等=2.01；赤經=31.654417750767543；赤緯=23.417040536438897；高度Alt=36.207284221990754；黃經=37.52550462862643；黃緯=9.964536534810104</td><td>—</td></tr>
         <tr><td>62</td><td>恆星 氐宿一（Zubenelgenubi,al-2Lib）位置計算</td><td>黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL</td><td>JD(UT)=2448026.7708342457；地平座標來源flags(tropical of-date)=258；氣壓(hPa；0=依海拔估算)=0；溫度(°C)=15</td><td>方位角Az(Swiss原始,南=0,向西)=269.20718658998356；方位角Az(北=0,順時針)=89.20718658998356；星等=2.75；赤經=222.59453127660112；赤緯=-16.005831157155335；高度Alt=-44.12103532216385；黃經=224.95714881782652；黃緯=0.33429896028482536</td><td>—</td></tr>
-        <tr><td>63</td><td>前後朔望弦與出生前朔望</td><td>以 Moon-Sun 視地心回歸黃經差對 0°/90°/180°/270° 作 Newton root search</td><td>contract=geocentric apparent tropical of-date；flags=258；reference_JD_UT=2448026.7708342457</td><td>first_quarter={&quot;next&quot;:&quot;1990-05-31T08:10:43.290Z&quot;,&quot;previous&quot;:&quot;1990-05-01T20:17:49.251Z&quot;}；full_moon={&quot;next&quot;:&quot;1990-06-08T11:01:07.075Z&quot;,&quot;previous&quot;:&quot;1990-05-09T19:30:45.850Z&quot;}；last_quarter={&quot;next&quot;:&quot;1990-05-17T19:44:56.735Z&quot;,&quot;previous&quot;:&quot;1990-04-18T07:02:32.393Z&quot;}；new_moon={&quot;next&quot;:&quot;1990-05-24T11:47:07.011Z&quot;,&quot;previous&quot;:&quot;1990-04-25T04:27:27.174Z&quot;}</td><td>prenatal_syzygy 僅指出生前最近一次朔或望，不含古典技法解讀。</td></tr>
+        <tr><td>63</td><td>前後朔望弦與出生前朔望</td><td>以 Moon-Sun 視地心回歸黃經差對 0°/90°/180°/270° 作粗掃描、分割根區間與二分求根</td><td>contract=geocentric apparent tropical of-date；flags=258；reference_JD_UT=2448026.7708342457</td><td>first_quarter={&quot;next&quot;:&quot;1990-05-31T08:10:43.290Z&quot;,&quot;previous&quot;:&quot;1990-05-01T20:17:49.251Z&quot;}；full_moon={&quot;next&quot;:&quot;1990-06-08T11:01:07.075Z&quot;,&quot;previous&quot;:&quot;1990-05-09T19:30:45.850Z&quot;}；last_quarter={&quot;next&quot;:&quot;1990-05-17T19:44:56.735Z&quot;,&quot;previous&quot;:&quot;1990-04-18T07:02:32.393Z&quot;}；new_moon={&quot;next&quot;:&quot;1990-05-24T11:47:07.011Z&quot;,&quot;previous&quot;:&quot;1990-04-25T04:27:27.174Z&quot;}</td><td>prenatal_syzygy 僅指出生前最近一次朔或望，不含古典技法解讀。</td></tr>
         <tr><td>64</td><td>出生前最近日食／月食</td><td>Swiss Ephemeris global eclipse search, backwards=True</td><td>flags=2；reference_JD_UT=2448026.7708342457</td><td>lunar=1990-02-09T19:11:03.027Z；solar=1990-01-26T19:30:23.381Z</td><td>只回報天文事件與 Swiss 類型，不提供古典占星解讀。</td></tr>
         <tr><td>65</td><td>星體升降與上下中天</td><td>swe.rise_trans；由出生前兩日起逐事件搜尋 previous，出生時刻後搜尋 next</td><td>flags=2；geopos=[120.6736,24.1477,80]；pressure_hPa=0；reference_JD_UT=2448026.7708342457；refraction=enabled；rise_set_disc=upper_limb；temperature_C=15</td><td>body_count=11</td><td>上下中天不使用 disc/refraction；升降使用 Swiss upper-limb + standard-refraction default。</td></tr>
         <tr><td>66</td><td>對蹠點計算方法</td><td>Antiscia = (180° − 黃經 − 2×ayanamsa) mod 360°；Contra-antiscia = (360° − 黃經 − 2×ayanamsa) mod 360°</td><td>—</td><td>—</td><td>—</td></tr>
@@ -1009,14 +1026,12 @@
         <tr><td>88</td><td>凱龍星 與 北交點(平均) 成赤緯反平行</td><td>—</td><td>δ(凱龍星)=16.40803737282183；δ(北交點(平均))=-17.375645539722985</td><td>誤差(度)=0.9676081669011545</td><td>—</td></tr>
         <tr><td>89</td><td>凱龍星 與 南交點(平均) 成赤緯平行</td><td>—</td><td>δ(凱龍星)=16.40803737282183；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.9676081669011545</td><td>—</td></tr>
         <tr><td>90</td><td>北交點(密切) 與 北交點(平均) 成赤緯平行</td><td>—</td><td>δ(北交點(密切))=-17.672069819888172；δ(北交點(平均))=-17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
-        <tr><td>91</td><td>北交點(密切) 與 南交點(密切) 成赤緯反平行</td><td>—</td><td>δ(北交點(密切))=-17.672069819888172；δ(南交點(密切))=17.672069819888172</td><td>誤差(度)=0</td><td>—</td></tr>
-        <tr><td>92</td><td>北交點(密切) 與 南交點(平均) 成赤緯反平行</td><td>—</td><td>δ(北交點(密切))=-17.672069819888172；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
-        <tr><td>93</td><td>北交點(平均) 與 南交點(密切) 成赤緯反平行</td><td>—</td><td>δ(北交點(平均))=-17.375645539722985；δ(南交點(密切))=17.672069819888172</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
-        <tr><td>94</td><td>北交點(平均) 與 南交點(平均) 成赤緯反平行</td><td>—</td><td>δ(北交點(平均))=-17.375645539722985；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0</td><td>—</td></tr>
-        <tr><td>95</td><td>南交點(密切) 與 南交點(平均) 成赤緯平行</td><td>—</td><td>δ(南交點(密切))=17.672069819888172；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
-        <tr><td>96</td><td>整宮配置 (method=whole_sign_configuration_v1)</td><td>星座距離 = min((星座B − 星座A) mod 12, 12 − 同值)；0/2/3/4/6 → 合/六分/刑/拱/沖，其餘不合意</td><td>參與者數=16</td><td>成整宮相位者=61；組合總數=119</td><td>此層不需容許度：星座距離是算術，配置名稱是希臘化占星的成文教義。</td></tr>
-        <tr><td>97</td><td>逐度相位 (method=named_degree_aspect_set_with_explicit_orb_policy_v1, orb_configuration=named_profile)</td><td>成立條件由 degree_based.orb_receipt.pair_threshold_formula 與每一 pair 的 pair_orb_threshold_degrees 完整記錄</td><td>orb收據={&quot;angle_pair_threshold_degrees&quot;:null,&quot;applicable&quot;:true,&quot;available&quot;:true,&quot;configuration_mode&quot;:&quot;named_profile&quot;,&quot;executed&quot;:true,&quot;fixed_pair_threshold_degrees&quot;:null,&quot;pair_threshold_formula&quot;:&quot;(orb_a + orb_b) / 2&quot;,&quot;participant_orbs&quot;:[{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;sun&quot;,&quot;orb_degrees&quot;:17,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;moon&quot;,&quot;orb_degrees&quot;:12.5,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;mercury&quot;,&quot;orb_degrees&quot;:7,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;venus&quot;,&quot;orb_degrees&quot;:8,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;mars&quot;,&quot;orb_degrees&quot;:7.5,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;jupiter&quot;,&quot;orb_degrees&quot;:12,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;saturn&quot;,&quot;orb_degrees&quot;:10,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;lunar_node&quot;,&quot;key&quot;:&quot;true_node&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lunar_node&quot;,&quot;key&quot;:&quot;mean_node&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;uranus&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;neptune&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;pluto&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lot&quot;,&quot;key&quot;:&quot;fortune&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lot&quot;,&quot;key&quot;:&quot;spirit&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;angle&quot;,&quot;key&quot;:&quot;asc&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;angle&quot;,&quot;key&quot;:&quot;mc&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;}],&quot;profile_key&quot;:&quot;lilly_1647_experience_v1&quot;,&quot;reason_code&quot;:null,&quot;requested&quot;:true,&quot;rule&quot;:&quot;moiety&quot;,&quot;scale_percent&quot;:null,&quot;source&quot;:&quot;single_named_author_stated_as_personal_experience&quot;,&quot;source_verification&quot;:{&quot;evidence_standard&quot;:&quot;secondary_tabulation_permitted_when_disclosed&quot;,&quot;finding&quot;:&quot;RT-BACKEND-9-E-011&quot;,&quot;note&quot;:&quot;A scan of Christian Astrology exists at archive.org/details/b30338724; the page was not independently transcribed for this implementation.&quot;,&quot;primary_texts_independently_transcribed&quot;:false,&quot;ruling&quot;:&quot;Sebastian 2026-08-03, E-011 甲&quot;,&quot;tabulated_from&quot;:&quot;Steven Birchfield, 'Orbs of Influence', 2nd ed. 2013 (secondary), quoting Lilly p.107&quot;}}；逐度相位集合=modern_minor_combined_v1</td><td>成逐度相位者=8；明細=[&quot;太陽拱月亮（差 +0.2008°，入相位）&quot;,&quot;太陽拱土星（差 -1.0781°，入相位）&quot;,&quot;月亮六分火星（差 -5.8107°，出相位）&quot;,&quot;月亮合土星（差 +1.2789°，入相位）&quot;,&quot;水星六分木星（差 +1.4564°，出相位）&quot;,&quot;金星刑木星（差 -3.0585°，出相位）&quot;,&quot;火星拱木星（差 -8.6652°，出相位）&quot;,&quot;火星六分土星（差 -7.0896°，入相位）&quot;]</td><td>orb 數值出自具名歷史來源，見本模組 docstring；method_status 仍為待審閱，不表示本產品已採用該表為正式技法。</td></tr>
-        <tr><td>98</td><td>具名古典尊貴元件</td><td>tropical longitude -&gt; whole-sign domicile/exaltation match and/or source-named half-open table; no scoring or interpretation</td><td>sect_basis=sun_center_true_altitude_gt_zero_v1_exact_birth_time；sect_is_day=true；selected_profiles={&quot;bounds&quot;:&quot;lilly_received_bounds_1647_v1&quot;,&quot;domicile_exaltation&quot;:&quot;traditional_seven_domicile_exaltation_signs_v1&quot;,&quot;face_decan&quot;:&quot;manilius_sign_decans_astronomica_iv_v1&quot;,&quot;triplicity&quot;:&quot;lilly_triplicity_compact_1647_v1&quot;}；triplicity_research_comparison=true</td><td>profile_ids=[&quot;traditional_seven_domicile_exaltation_signs_v1&quot;,&quot;lilly_received_bounds_1647_v1&quot;,&quot;manilius_sign_decans_astronomica_iv_v1&quot;,&quot;lilly_triplicity_compact_1647_v1&quot;,&quot;dorothean_triplicity_three_rulers_v1&quot;,&quot;ptolemy_triplicity_textual_corulership_v1&quot;]</td><td>Traditional-seven whole-sign domicile/exaltation is kept separate from exact exaltation-degree traditions. Dorothean, Ptolemy textual, Lilly compact, Egyptian, Chaldaean, Robbins and Lilly tables remain separate profiles.</td></tr>
+        <tr><td>91</td><td>北交點(密切) 與 南交點(平均) 成赤緯反平行</td><td>—</td><td>δ(北交點(密切))=-17.672069819888172；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
+        <tr><td>92</td><td>北交點(平均) 與 南交點(密切) 成赤緯反平行</td><td>—</td><td>δ(北交點(平均))=-17.375645539722985；δ(南交點(密切))=17.672069819888172</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
+        <tr><td>93</td><td>南交點(密切) 與 南交點(平均) 成赤緯平行</td><td>—</td><td>δ(南交點(密切))=17.672069819888172；δ(南交點(平均))=17.375645539722985</td><td>誤差(度)=0.29642428016518707</td><td>—</td></tr>
+        <tr><td>94</td><td>整宮配置 (method=whole_sign_configuration_v1)</td><td>星座距離 = min((星座B − 星座A) mod 12, 12 − 同值)；0/2/3/4/6 → 合/六分/刑/拱/沖，其餘不合意</td><td>參與者數=16</td><td>成整宮相位者=61；組合總數=119</td><td>此層不需容許度：星座距離是算術，配置名稱是希臘化占星的成文教義。</td></tr>
+        <tr><td>95</td><td>逐度相位 (method=named_degree_aspect_set_with_explicit_orb_policy_v1, orb_configuration=named_profile)</td><td>成立條件由 degree_based.orb_receipt.pair_threshold_formula 與每一 pair 的 pair_orb_threshold_degrees 完整記錄</td><td>orb收據={&quot;angle_pair_threshold_degrees&quot;:null,&quot;applicable&quot;:true,&quot;available&quot;:true,&quot;configuration_mode&quot;:&quot;named_profile&quot;,&quot;executed&quot;:true,&quot;fixed_pair_threshold_degrees&quot;:null,&quot;pair_threshold_formula&quot;:&quot;(orb_a + orb_b) / 2&quot;,&quot;participant_orbs&quot;:[{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;sun&quot;,&quot;orb_degrees&quot;:17,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;moon&quot;,&quot;orb_degrees&quot;:12.5,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;mercury&quot;,&quot;orb_degrees&quot;:7,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;venus&quot;,&quot;orb_degrees&quot;:8,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;mars&quot;,&quot;orb_degrees&quot;:7.5,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;jupiter&quot;,&quot;orb_degrees&quot;:12,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;classical_planet&quot;,&quot;key&quot;:&quot;saturn&quot;,&quot;orb_degrees&quot;:10,&quot;orb_eligible&quot;:true,&quot;reason_code&quot;:null},{&quot;category&quot;:&quot;lunar_node&quot;,&quot;key&quot;:&quot;true_node&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lunar_node&quot;,&quot;key&quot;:&quot;mean_node&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;uranus&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;neptune&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;outer_planet&quot;,&quot;key&quot;:&quot;pluto&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lot&quot;,&quot;key&quot;:&quot;fortune&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;lot&quot;,&quot;key&quot;:&quot;spirit&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;angle&quot;,&quot;key&quot;:&quot;asc&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;},{&quot;category&quot;:&quot;angle&quot;,&quot;key&quot;:&quot;mc&quot;,&quot;orb_degrees&quot;:null,&quot;orb_eligible&quot;:false,&quot;reason_code&quot;:&quot;no_sourced_orb_for_participant&quot;}],&quot;profile_key&quot;:&quot;lilly_1647_experience_v1&quot;,&quot;reason_code&quot;:null,&quot;requested&quot;:true,&quot;rule&quot;:&quot;moiety&quot;,&quot;scale_percent&quot;:null,&quot;source&quot;:&quot;single_named_author_stated_as_personal_experience&quot;,&quot;source_verification&quot;:{&quot;evidence_standard&quot;:&quot;secondary_tabulation_permitted_when_disclosed&quot;,&quot;finding&quot;:&quot;RT-BACKEND-9-E-011&quot;,&quot;note&quot;:&quot;A scan of Christian Astrology exists at archive.org/details/b30338724; the page was not independently transcribed for this implementation.&quot;,&quot;primary_texts_independently_transcribed&quot;:false,&quot;ruling&quot;:&quot;Sebastian 2026-08-03, E-011 甲&quot;,&quot;tabulated_from&quot;:&quot;Steven Birchfield, 'Orbs of Influence', 2nd ed. 2013 (secondary), quoting Lilly p.107&quot;}}；逐度相位集合=modern_minor_combined_v1</td><td>成逐度相位者=8；明細=[&quot;太陽拱月亮（差 +0.2008°，入相位）&quot;,&quot;太陽拱土星（差 -1.0781°，入相位）&quot;,&quot;月亮六分火星（差 -5.8107°，出相位）&quot;,&quot;月亮合土星（差 +1.2789°，入相位）&quot;,&quot;水星六分木星（差 +1.4564°，出相位）&quot;,&quot;金星刑木星（差 -3.0585°，出相位）&quot;,&quot;火星拱木星（差 -8.6652°，出相位）&quot;,&quot;火星六分土星（差 -7.0896°，入相位）&quot;]</td><td>orb 數值出自具名歷史來源，見本模組 docstring；method_status 仍為待審閱，不表示本產品已採用該表為正式技法。</td></tr>
+        <tr><td>96</td><td>具名古典尊貴元件</td><td>tropical longitude -&gt; whole-sign domicile/exaltation match and/or source-named half-open table; no scoring or interpretation</td><td>sect_basis=sun_center_true_altitude_gt_zero_v1_exact_birth_time；sect_is_day=true；selected_profiles={&quot;bounds&quot;:&quot;lilly_received_bounds_1647_v1&quot;,&quot;domicile_exaltation&quot;:&quot;traditional_seven_domicile_exaltation_signs_v1&quot;,&quot;face_decan&quot;:&quot;manilius_sign_decans_astronomica_iv_v1&quot;,&quot;triplicity&quot;:&quot;lilly_triplicity_compact_1647_v1&quot;}；triplicity_research_comparison=true</td><td>profile_ids=[&quot;traditional_seven_domicile_exaltation_signs_v1&quot;,&quot;lilly_received_bounds_1647_v1&quot;,&quot;manilius_sign_decans_astronomica_iv_v1&quot;,&quot;lilly_triplicity_compact_1647_v1&quot;,&quot;dorothean_triplicity_three_rulers_v1&quot;,&quot;ptolemy_triplicity_textual_corulership_v1&quot;]</td><td>Traditional-seven whole-sign domicile/exaltation is kept separate from exact exaltation-degree traditions. Dorothean, Ptolemy textual, Lilly compact, Egyptian, Chaldaean, Robbins and Lilly tables remain separate profiles.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1026,7 +1041,7 @@
       <span class="dossier-status" data-state="present">已計算</span>
     </h3>
     <p class="dossier-layer">VERIFICATION 驗證</p>
-    <p class="dossier-note">契約狀態：provisional——provisional 表示欄位仍可能變動，不是已凍結的公開 API。</p>
+    <p class="dossier-note">契約狀態：provisional，provisional 表示欄位仍可能變動，不是已凍結的公開 API。</p>
     <p class="dossier-note">相容性政策：additive_during_0.x_unless_a_documented_correctness_fix_requires_change</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
@@ -1046,7 +1061,7 @@
     </h3>
     <p class="dossier-layer">VERIFICATION 驗證</p>
     <p class="dossier-note">這是本次計算的可重現證據，不是占星解讀，也不是任何外部天文、方法、資安或法規認證。</p>
-    <p class="dossier-note">隱私聲明狀態為後端原值 provisional_pending_external_review——它不等於已通過外部審查。</p>
+    <p class="dossier-note">隱私聲明狀態為後端原值 provisional_pending_external_review，它不等於已通過外部審查。</p>
     <div class="dossier-table-wrap">
       <table class="log dossier-table">
       <caption>版本與來源</caption>
@@ -1118,9 +1133,9 @@
       <caption>軌跡收據</caption>
         <thead><tr><th>項目</th><th>數值</th></tr></thead>
         <tbody>
-        <tr><td>逐步軌跡步數</td><td>98</td></tr>
-        <tr><td>後端回報步數</td><td>98</td></tr>
-        <tr><td>序列化雜湊 SHA-256</td><td>537297e226df46d56341fe5b34512fcddca80286cbfa60b821f96f9456e21f1b</td></tr>
+        <tr><td>逐步軌跡步數</td><td>96</td></tr>
+        <tr><td>後端回報步數</td><td>96</td></tr>
+        <tr><td>序列化雜湊 SHA-256</td><td>a474492a3b6732968cc5b54dd052b1c47d1215b505c1259d8edad2993656b14a</td></tr>
         <tr><td>跨語言可攜</td><td>否（僅供完整性核對）</td></tr>
         </tbody>
       </table>
@@ -1149,7 +1164,7 @@
     <p>說清楚比較好：</p>
     <ul>
       <li><strong>沒有</strong>第三方安全認證。</li>
-      <li><strong>已有</strong>獨立 AI 紅隊與外部模型審查；<strong>沒有</strong>專業滲透測試。</li>
+      <li><strong>已有</strong>具名外部技術審查與多工具對抗測試；<strong>沒有</strong>專業滲透測試。</li>
       <li><strong>沒有</strong>全系統天文正確性認證——上面那次比對涵蓋指定的天體、年代、欄位與模式，不是全部。</li>
       <li>Heliocentric、barycentric、true position、J2000、nutation-off、固定星、日月食shadow與完整升降／上下中天，仍在各自的具名validation boundary；沒有證據的欄位不因同頁其他項目通過而變成通過。</li>
       <li>repository 內的測試是設計期的迴歸證據，<strong>不會在你每次計算時重跑</strong>。</li>
@@ -1190,7 +1205,6 @@
   <div class="wrap">
     <span>渾儀 ARMILLARY</span>
     <span>只計算，不解盤，不預測</span>
-    <span>/zh-TW/validation · L1 受託宣稱</span>
   </div>
 </footer>
 

@@ -1,17 +1,7 @@
-# Private Alpha staging topology.
-#
-# The application container stays on the `internal: true` network so it has no
-# route to the Internet, which is what keeps submitted birth data from leaving
-# the host. Docker cannot publish ports for a container attached only to an
-# internal network, so there is deliberately no `ports:` mapping here; the host
-# NGINX reaches the container directly on the pinned address below.
-#
-# See DEP-EXEC-E-005 in
-# docs/operations/deployment/EXACT_STAGING_EXECUTION_FINDINGS_2026-07-31.md.
-#
-# The address is pinned rather than dynamic because the host NGINX upstream
-# refers to it literally. Changing it here requires changing
-# deploy/staging/nginx-site.conf.template in the same commit.
+# Fixed internal address for the host NGINX upstream; no host port is published.
+# The address and subnet are literal because host NGINX refers to the upstream
+# by address. Re-evaluate the subnet when moving hosts and update both owners
+# together.
 services:
   private-alpha-app:
     restart: unless-stopped

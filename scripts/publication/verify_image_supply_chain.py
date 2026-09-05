@@ -16,10 +16,15 @@ import json
 from pathlib import Path
 import subprocess
 import sys
-from typing import Any
+from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
+from packaging.markers import Marker, default_environment
+
 from scripts.tools.output_confinement import external_output_path
+from scripts.tools.closed_set import ClosedSetError, require_closed_set
+from scripts.tools.source_tree_identity import sha256_file as _sha256
+from scripts.verification.build_sbom import _components
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -45,6 +50,62 @@ class AuditFailure(RuntimeError):
     pass
 
 
+def validate_receipt(receipt: dict, candidate: dict) -> dict[str, str]:
+    if receipt.get("schema_version") != "private-alpha-supply-chain-summary-v2":
+        raise ValueError("unsupported supply-chain receipt schema")
+    backend = candidate.get("backend") or candidate
+    observed = receipt.get("candidate")
+    expected = {
+        "image_id": backend.get("image_id"),
+        "revision": backend.get("vcs_revision"),
+        "os": "linux",
+        "architecture": "amd64",
+    }
+    if not isinstance(observed, dict):
+        raise ValueError("supply-chain receipt candidate is missing")
+    for key, value in expected.items():
+        if observed.get(key) != value:
+            raise ValueError(f"supply-chain receipt {key} differs from release candidate")
+    counts = receipt.get("severity_counts")
+    if (
+        not isinstance(counts, dict)
+        or set(counts) != {"grype"}
+        or any(
+            not isinstance(item, dict)
+            or set(item) != {"critical", "high"}
+            or any(type(value) is not int or value < 0 for value in item.values())
+            for item in counts.values()
+        )
+    ):
+        raise ValueError("supply-chain severity counts are invalid")
+    adverse = any(value > 0 for item in counts.values() for value in item.values())
+    # This branch used to accept an adverse scan when the caller named a
+    # triaged issue on the command line, and nothing tied that name's validity
+    # to the issue still being open, so the escape hatch would have outlived its
+    # reason.  A receipt now certifies an image with no high or critical match,
+    # or it is not a receipt.
+    if adverse:
+        raise ValueError(
+            "a supply-chain receipt cannot certify an image with high or critical "
+            "matches; triage the matches and rebuild"
+        )
+    if receipt.get("decision") != "no_high_or_critical_matches":
+        raise ValueError("clean supply-chain receipt has an adverse disposition")
+    positive = receipt.get("scanner_positive_control")
+    if not isinstance(positive, dict) or not isinstance(
+        positive.get("matches"), int
+    ) or positive["matches"] < 1:
+        raise ValueError("supply-chain scanner positive control did not pass")
+    artifacts = receipt.get("artifact_sha256")
+    if not isinstance(artifacts, dict) or not artifacts or not all(
+        isinstance(value, str) and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+        for value in artifacts.values()
+    ):
+        raise ValueError("supply-chain raw artifact identity is invalid")
+    return {"image_id": str(expected["image_id"]), "revision": str(expected["revision"])}
+
+
 def _run(command: list[str], *, timeout: int = 1800) -> str:
     result = subprocess.run(
         command,
@@ -59,14 +120,6 @@ def _run(command: list[str], *, timeout: int = 1800) -> str:
             f"command failed ({result.returncode}): {command[0]}: {detail[-2000:]}"
         )
     return result.stdout
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _normalized(name: str) -> str:
@@ -136,10 +189,8 @@ def _scanner_positive_control(grype: str, workspace: Path) -> dict[str, Any]:
     The database freshness check above bounds staleness, not effectiveness: an
     empty database, a wrong scan target or a silently failed load all produce
     a clean report, and a clean report is exactly the outcome this gate is
-    used to justify.  This repository already learned that lesson from secret
-    scanners — three of them stayed silent on AWS documentation keys, because
-    those keys are allowlisted — and `POSTMORTEM_6A` §4.4 records the rule
-    that a zero means nothing until the sink is shown to work.
+    used to justify.  A zero result means nothing until the sink is shown to
+    work.
 
     The control feeds Grype a minimal SBOM naming one package with known
     published advisories and requires at least one match.
@@ -191,14 +242,6 @@ def _scanner_positive_control(grype: str, workspace: Path) -> dict[str, Any]:
     }
 
 
-def _python_inventory(sbom: dict[str, Any]) -> set[str]:
-    packages = set()
-    for artifact in sbom.get("artifacts", []):
-        if artifact.get("type") == "python":
-            packages.add(_normalized(artifact.get("name", "")))
-    return packages
-
-
 def _python_inventory_versions(sbom: dict[str, Any]) -> dict[str, str]:
     versions: dict[str, str] = {}
     for artifact in sbom.get("artifacts", []):
@@ -212,14 +255,46 @@ def _python_inventory_versions(sbom: dict[str, Any]) -> dict[str, str]:
 
 
 def _verify_python_versions(
-    sbom: dict[str, Any], dependencies: list[dict[str, Any]]
+    sbom: dict[str, Any], dependencies: list[dict[str, Any]], lock: Path
 ) -> dict[str, str]:
     installed = _python_inventory_versions(sbom)
-    expected = {
+    marker_environment = cast(dict[str, str], default_environment())
+    marker_environment.update({
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_system": "Linux",
+        "python_full_version": "3.14.7",
+        "python_version": "3.14",
+        "sys_platform": "linux",
+    })
+    expected: dict[str, str] = {}
+    for item in _components(lock, "required"):
+        marker = next(
+            (
+                property_["value"]
+                for property_ in item.get("properties", [])
+                if property_.get("name") == "pep508_marker"
+            ),
+            None,
+        )
+        if marker is None or Marker(marker).evaluate(marker_environment):
+            expected[_normalized(item["name"])] = str(item["version"])
+    audited = {
         _normalized(item.get("name", "")): str(item.get("version") or "")
         for item in dependencies
-        if item.get("name") and item.get("version")
+        if isinstance(item, dict) and item.get("name") and item.get("version")
     }
+    try:
+        require_closed_set(expected, audited, role="pip-audit dependency universe")
+    except ClosedSetError as error:
+        raise AuditFailure(str(error)) from None
+    audit_mismatches = {
+        name: f"expected={version}, audited={audited.get(name, 'missing')}"
+        for name, version in expected.items()
+        if audited.get(name) != version
+    }
+    if audit_mismatches:
+        raise AuditFailure(f"pip-audit version mismatch: {audit_mismatches}")
     mismatches = {
         name: f"expected={version}, installed={installed.get(name, 'missing')}"
         for name, version in expected.items()
@@ -228,27 +303,6 @@ def _verify_python_versions(
     if mismatches:
         raise AuditFailure(f"Python inventory version mismatch: {mismatches}")
     return expected
-
-
-def _matches(grype: dict[str, Any]) -> list[dict[str, Any]]:
-    normalized = []
-    for match in grype.get("matches", []):
-        vulnerability = match.get("vulnerability", {})
-        artifact = match.get("artifact", {})
-        fix_versions = vulnerability.get("fix", {}).get("versions") or []
-        normalized.append(
-            {
-                "id": vulnerability.get("id"),
-                "severity": vulnerability.get("severity", "Unknown"),
-                "package": artifact.get("name"),
-                "installed_version": artifact.get("version"),
-                "package_type": artifact.get("type"),
-                "fix_available": bool(fix_versions),
-                "fix_versions": fix_versions,
-                "data_source": vulnerability.get("dataSource"),
-            }
-        )
-    return normalized
 
 
 def main() -> int:
@@ -274,7 +328,6 @@ def main() -> int:
         )
         output.mkdir(parents=True, exist_ok=True)
         sbom_path = output / "sbom.syft.json"
-        spdx_path = output / "sbom.spdx.json"
         grype_path = output / "grype.json"
         pip_audit_path = output / "pip-audit.json"
         _run([args.grype, "db", "update"])
@@ -285,8 +338,6 @@ def main() -> int:
                 args.image,
                 "-o",
                 f"syft-json={sbom_path}",
-                "-o",
-                f"spdx-json={spdx_path}",
             ]
         )
         _run(
@@ -317,7 +368,8 @@ def main() -> int:
         pip_audit = json.loads(
             pip_audit_path.read_text(encoding="utf-8")
         )
-        python_packages = _python_inventory(sbom)
+        installed_versions = _python_inventory_versions(sbom)
+        python_packages = set(installed_versions)
         missing = REQUIRED - python_packages
         forbidden = FORBIDDEN & python_packages
         if missing or forbidden:
@@ -325,9 +377,15 @@ def main() -> int:
                 f"Python inventory mismatch: missing={sorted(missing)}, "
                 f"forbidden={sorted(forbidden)}"
             )
-        matches = _matches(grype)
-        severity = Counter(item["severity"] for item in matches)
-        fix_available = sum(item["fix_available"] for item in matches)
+        matches = grype.get("matches", [])
+        severity = Counter(
+            item.get("vulnerability", {}).get("severity", "Unknown")
+            for item in matches
+        )
+        fix_available = sum(
+            bool(item.get("vulnerability", {}).get("fix", {}).get("versions"))
+            for item in matches
+        )
         image = json.loads(
             _run(["docker", "image", "inspect", args.image])
         )[0]
@@ -338,32 +396,36 @@ def main() -> int:
             if isinstance(pip_audit, list)
             else pip_audit.get("dependencies", [])
         )
-        verified_versions = _verify_python_versions(sbom, dependencies)
+        verified_versions = _verify_python_versions(
+            sbom,
+            dependencies,
+            args.production_lock.resolve(),
+        )
         vulnerabilities = sum(
             len(item.get("vulns", [])) for item in dependencies
         )
-        normalized_pip_audit_command = list(pip_audit_command)
-        normalized_pip_audit_command[0] = Path(
-            normalized_pip_audit_command[0]
-        ).name
-        normalized_pip_audit_command[
-            normalized_pip_audit_command.index("--output") + 1
-        ] = "<audit-output>/pip-audit.json"
-        normalized_pip_audit_command[
-            normalized_pip_audit_command.index("--requirement") + 1
-        ] = "deploy/requirements.lock"
         python_dependency_audit = {
             "artifact_sha256": _sha256(pip_audit_path),
             "dependency_count": len(dependencies),
             "known_vulnerability_count": vulnerabilities,
-            "observed_argv_normalized": normalized_pip_audit_command,
             "production_lock_sha256": _sha256(
                 args.production_lock.resolve()
             ),
             "exit_code": 0,
         }
+        severity_counts = {
+            "grype": {
+                "critical": severity["Critical"],
+                "high": severity["High"],
+            }
+        }
+        decision = (
+            "manual_triage_required"
+            if high_or_critical
+            else "no_high_or_critical_matches"
+        )
         receipt = {
-            "schema_version": "private-alpha-supply-chain-summary-v1",
+            "schema_version": "private-alpha-supply-chain-summary-v2",
             "candidate": {
                 "image_reference": args.image,
                 "image_id": image["Id"],
@@ -382,9 +444,9 @@ def main() -> int:
             },
             "grype_database": database,
             "scanner_positive_control": positive_control,
+            "severity_counts": severity_counts,
             "artifact_sha256": {
                 "syft_json": _sha256(sbom_path),
-                "spdx_json": _sha256(spdx_path),
                 "grype_json": _sha256(grype_path),
                 "pip_audit_json": _sha256(pip_audit_path),
             },
@@ -392,7 +454,6 @@ def main() -> int:
                 "sbom_packages": len(sbom.get("artifacts", [])),
                 "production_python_distributions": len(python_packages),
                 "lock_bound_python_versions": dict(sorted(verified_versions.items())),
-                "required_packages_present": sorted(REQUIRED),
                 "forbidden_packages_present": sorted(forbidden),
                 "pip_present": "pip" in python_packages,
             },
@@ -402,30 +463,7 @@ def main() -> int:
                 "matches_with_scanner_fix_available": fix_available,
             },
             "python_dependency_audit": python_dependency_audit,
-            "decision": (
-                "manual_triage_required"
-                if high_or_critical
-                else "no_high_or_critical_matches"
-            ),
-            "interpretation": (
-                "Raw package matches remain in the generated Grype artifact "
-                "for evidence-backed manual triage and are not automatically "
-                "reachable or exploitable findings."
-            ),
-            "limitations": [
-                (
-                    "This is a local image receipt, not a registry manifest "
-                    "or published artifact."
-                ),
-                (
-                    "Raw scanner outputs remain local evidence and must be "
-                    "regenerated for each release candidate."
-                ),
-                (
-                    "This receipt is not whole-repository security approval "
-                    "or deployment readiness."
-                ),
-            ],
+            "decision": decision,
         }
         receipt_path = external_output_path(
             args.receipt or output / "receipt.json",
@@ -438,7 +476,7 @@ def main() -> int:
             encoding="utf-8",
         )
         print(json.dumps(receipt, indent=2, sort_keys=True))
-        return 0
+        return 2 if decision == "manual_triage_required" else 0
     except (
         AuditFailure,
         OSError,

@@ -23,6 +23,19 @@ FIXED_STAR_METHOD_CLASSIFICATION = "research_only"
 FIXED_STAR_CLASSIFICATION_RULING = "MTH-Q-006 A1 (2026-08-03)"
 
 
+def _canonical_catalog_name(query: str, matched: str) -> str:
+    """Keep Swiss catalog identity while removing platform-only name formatting."""
+
+    query_name, _, query_code = query.partition(",")
+    matched_name, _, matched_code = matched.partition(",")
+    same_name = "".join(query_name.split()).casefold() == "".join(
+        matched_name.split()
+    ).casefold()
+    name = query_name if same_name else matched_name.strip()
+    code = matched_code.strip() or query_code.strip()
+    return f"{name},{code}" if code else name
+
+
 def fixed_star_receipt(star_defs: list, requested: bool) -> dict:
     """恆星模組的分類收據，與座標結果分開，供 dossier 與前端一致引用。"""
 
@@ -68,16 +81,16 @@ def compute_fixed_stars(star_defs: list, jd_ut: float, ctx, atmosphere, trace: T
                 "key": star["key"], "name": star["zh"], "input_name": name,
                 "catalog_name": None, "error": str(exc),
                 "longitude": None, "latitude": None, "distance_au": None,
-                "speed_longitude": None, "speed_latitude": None, "speed_distance": None,
-                "right_ascension": None, "declination": None, "speed_ra": None, "speed_dec": None,
+                "right_ascension": None, "declination": None,
                 "azimuth": None, "azimuth_swiss_raw": None, "altitude_true": None, "altitude_apparent": None,
                 "altitude_apparent_reason_code": "fixed_star_query_failed",
                 "magnitude": None, "retflag_horizontal_source": None, "used_full_ephemeris": None,
             })
             continue
 
-        ecl_lon, ecl_lat, dist, speed_lon, speed_lat, speed_dist = ecl
-        ra, dec, _dist2, speed_ra, speed_dec, _sd2 = equ
+        ecl_lon, ecl_lat, dist, _speed_lon, _speed_lat, _speed_dist = ecl
+        ra, dec, _dist2, _speed_ra, _speed_dec, _sd2 = equ
+        catalog_name = _canonical_catalog_name(name, matched_name)
         used_full_ephemeris = bool(retflag_ecl & swe.FLG_SWIEPH) and bool(retflag_eq & swe.FLG_SWIEPH)
 
         az = az_raw = true_alt = app_alt = None
@@ -113,7 +126,7 @@ def compute_fixed_stars(star_defs: list, jd_ut: float, ctx, atmosphere, trace: T
                 app_alt = None
 
         trace.add(
-            f"恆星 {star['zh']}（{matched_name}）位置計算",
+            f"恆星 {star['zh']}（{catalog_name}）位置計算",
             formula="黃道使用計算模式旗標；赤道移除 sidereal 後加 FLG_EQUATORIAL",
             inputs={
                 "JD(UT)": jd_ut,
@@ -133,18 +146,13 @@ def compute_fixed_stars(star_defs: list, jd_ut: float, ctx, atmosphere, trace: T
             "key": star["key"],
             "name": star["zh"],
             "input_name": name,
-            "catalog_name": matched_name,
+            "catalog_name": catalog_name,
             "error": None,
             "longitude": ecl_lon,
             "latitude": ecl_lat,
             "distance_au": dist,
-            "speed_longitude": speed_lon,
-            "speed_latitude": speed_lat,
-            "speed_distance": speed_dist,
             "right_ascension": ra,
             "declination": dec,
-            "speed_ra": speed_ra,
-            "speed_dec": speed_dec,
             "longitude_dms": to_dms(ecl_lon, wrap_360=True),
             "latitude_dms": to_dms(ecl_lat, signed=True),
             "right_ascension_hms": to_hms(ra),

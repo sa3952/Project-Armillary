@@ -8,7 +8,7 @@
   <section>
     <h2>我們拿產品去對一套完全不同的管線</h2>
     <p><strong>只用同一套函式庫自我驗證，沒有意義。</strong>所以我們用 JPL 的 DE442 星曆核心，經由 Astropy／ERFA 建立另一條參考管線，與產品使用的 Swiss Ephemeris 逐小時比對。它在幾何星曆與主要轉換實作上獨立，但仍共享 IERS／IAU 標準、部分觀測資料譜系與視位置定義；因此不能簡寫成「完全獨立」。</p>
-    <p>本頁下列 1990–2026 統計是<strong>歷史驗證批次</strong>，不是每次開頁重跑，也不是目前 candidate image 的收據。後續 validator v2 使用 frozen backend <code>70a6a8b</code> 作更深的成因與邊界研究；正式 candidate 必須另以 exact source／image identity重播，不能把歷史數字自動貼到新映像。</p>
+    <p>本頁下列 1990–2026 統計是<strong>歷史驗證批次</strong>，不是每次開頁重跑，也不是目前候選映像的收據。後續 validator v2 在一個凍結的後端版本上作更深的成因與邊界研究；正式候選版本必須另以自己的原始碼與映像識別重播，不能把歷史數字自動貼到新映像。</p>
     <table class="log">
       <thead><tr><th>項目</th><th>設定</th></tr></thead>
       <tbody>
@@ -98,7 +98,7 @@
     <p>說清楚比較好：</p>
     <ul>
       <li><strong>沒有</strong>第三方安全認證。</li>
-      <li><strong>已有</strong>獨立 AI 紅隊與外部模型審查；<strong>沒有</strong>專業滲透測試。</li>
+      <li><strong>已有</strong>具名外部技術審查與多工具對抗測試；<strong>沒有</strong>專業滲透測試。</li>
       <li><strong>沒有</strong>全系統天文正確性認證——上面那次比對涵蓋指定的天體、年代、欄位與模式，不是全部。</li>
       <li>Heliocentric、barycentric、true position、J2000、nutation-off、固定星、日月食shadow與完整升降／上下中天，仍在各自的具名validation boundary；沒有證據的欄位不因同頁其他項目通過而變成通過。</li>
       <li>repository 內的測試是設計期的迴歸證據，<strong>不會在你每次計算時重跑</strong>。</li>

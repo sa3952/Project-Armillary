@@ -30,12 +30,12 @@
     <p>威脅模型把系統切成五個邊界，<b>每一個都假設對面是敵意的</b>。這是內部文件的結構，不是為了這一頁編的。</p>
     <div class="bounds">
       <div><span class="bd-k">A</span><b>瀏覽器 → HTTP／ASGI</b><span>攻擊者可控制 body、method、路徑、查詢字串、標頭、content-length、連線時序與畸形載荷。</span></div>
-      <div><span class="bd-k">B</span><b>啟動器 → 執行期</b><span>本機啟動器以 per-run secret 與 nonce HMAC 驗證服務身分，並檢查執行期檔案的擁有者、權限與符號連結競態。</span></div>
+      <div><span class="bd-k">B</span><b>反向代理 → 應用程式</b><span>應用程式不把邊緣傳來的任何值當成前提：方法、路徑、body 大小與併發上限一律由應用程式自己再判一次。<b>邊緣的限制是額外一層，不是應用程式的保護來源。</b></span></div>
       <div><span class="bd-k">C</span><b>應用程式 → 星曆函式庫</b><span>pyswisseph 使用<b>行程全域</b>狀態，因此同行程以鎖序列化。星曆檔與 C extension 是受信任但高影響的相依——<b>不可把內部一致性當成外部天文驗證</b>。</span></div>
       <div><span class="bd-k">D</span><b>瀏覽器 → 複製／下載</b><span>使用者明示匯出後，資料離開應用程式記憶體。<b>明示清除可使文件、區段、Blob URL 與請求世代失效，但撤不回已完成的複製或下載。</b></span></div>
       <div><span class="bd-k">E</span><b>部署與第三方</b><span>代理、CDN、WAF、主機、遙測服務可能預設記錄網址、body、標頭或例外。<b>在實際選型與設定驗證完成前，這個邊界一律視為不受信任。</b></span></div>
     </div>
-    <p class="limit"><b>要誠實說一件事：</b>這份威脅模型主要是為本機啟動器寫的，而現在有一個實際部署的 HTTPS 服務。<b>邊界 E 已經有一部分變成現況，文件還沒追上。</b>這是我們自己知道的落差，不是被指出來才承認的。</p>
+    <p class="limit"><b>要誠實說一件事：</b>這份威脅模型成文於實際部署之前。<b>邊界 E 已經有一部分變成現況，文件還沒完全追上。</b>這是我們自己知道的落差，不是被指出來才承認的。</p>
   </section>
 
   <!-- ═══ 02 日誌 ═══ -->
@@ -46,16 +46,7 @@
       <table class="spec">
         <thead><tr><th>欄位</th><th>允許的值</th></tr></thead>
         <tbody>
-          <tr><td class="mono">event_schema_version</td><td>固定字串</td></tr>
-          <tr><td class="mono">event</td><td>固定字串</td></tr>
-          <tr><td class="mono">request_id</td><td><b>伺服器產生</b>的 32 字元十六進位字串</td></tr>
-          <tr><td class="mono">route</td><td>固定分類，<b>不是原始網址</b></td></tr>
-          <tr><td class="mono">method</td><td>GET／POST／HEAD／OPTIONS</td></tr>
-          <tr><td class="mono">status_code</td><td>100–599</td></tr>
-          <tr><td class="mono">duration_bucket</td><td>固定分組，<b>不記精確耗時</b></td></tr>
-          <tr><td class="mono">request_size_bucket</td><td>固定區間，<b>不記內容</b></td></tr>
-          <tr><td class="mono">outcome</td><td>success／rejected／error／unknown</td></tr>
-          <tr><td class="mono">error_code</td><td>空值，或四個固定字串之一</td></tr>
+{{telemetry_contract_rows}}
         </tbody>
       </table>
     </div>
@@ -157,10 +148,10 @@
     <p>匯出時 renderer 或 Blob 建立失敗，<b>匯出面板必須顯示使用者看得見的錯誤</b>，不能只留 console 或讓按鈕看似沒反應。</p>
   </section>
 
-  <!-- ═══ 三個判斷 ═══ -->
+  <!-- ═══ 兩個判斷 ═══ -->
   <section class="ds-sec">
-    <p class="hdr"><span>09</span>三個做過的判斷</p>
-    <p>控制清單看不出判斷力。這三件事看得出來——<b>兩件是我們拒絕了外部建議的一部分。</b></p>
+    <p class="hdr"><span>09</span>兩個做過的判斷</p>
+    <p>控制清單看不出判斷力。下面兩件事仍屬於目前網頁產品，而且都包含我們拒絕外部建議一部分的理由。</p>
 
     <div class="case">
       <p class="case-t">不可見字元：黑名單不會收斂，所以不用黑名單</p>
@@ -168,13 +159,6 @@
       <p><b>修補不是「再補幾個字元」</b>——改以 Unicode general category 表達：<span class="mono">Cc</span>、<span class="mono">Cf</span>、<span class="mono">Zl</span>、<span class="mono">Zp</span>。這涵蓋上述全部，也涵蓋<b>未來 Unicode 版本新增的格式字元</b>。</p>
       <p class="case-no"><b>但我們拒絕了建議的一部分。</b>報告主張把 ZWNJ（<span class="mono">U+200C</span>）與 ZWJ（<span class="mono">U+200D</span>）一併列為危險。<b>那兩個字元在波斯文、阿拉伯文與印度系文字中是正字法必需的</b>，用來選擇連寫或不連寫字形——封鎖它們是拒絕合法地名，不是拒絕敵意輸入。而且它們無法像 bidi 控制碼那樣重排已渲染的標籤，支撐這條邊界的顯示欺騙論證不及於它們。<b>兩者明確豁免。</b></p>
       <p>另外，錯誤訊息回報 <span class="mono">U+XXXX</span> 而<b>不回顯該字元本身</b>——避免把一個不可見或會翻轉方向的字元，放進一個將被其他介面渲染的字串。</p>
-    </div>
-
-    <div class="case">
-      <p class="case-t">HMAC：先更正診斷，再接受真正的問題</p>
-      <p>一份外部報告主張我們的 HMAC 用法錯誤。<b>那句診斷是錯的</b>——它描述的正是挑戰－回應的正常運作：啟動器出 nonce，服務回摘要，啟動器自己比對。</p>
-      <p><b>但同一批發現裡有一項是對的</b>：任何能觸及該端點的人都可以無限取得 <span class="mono">(nonce, HMAC)</span> 配對供離線窮舉，<b>因此整個機制的強度恰等於 token 的熵</b>。查核後現況本來就穩固——該端點在 Private Alpha <b>完全不註冊</b>，而 token 是 256 bit。</p>
-      <p>仍然加了一層深度防禦：<b>token 長度不足時直接拒絕證明身分，而不是以弱密鑰背書。</b>測試另外斷言——<b>拒絕本身不得回傳摘要，否則拒絕就成了預言機。</b></p>
     </div>
 
     <div class="case">
@@ -237,9 +221,9 @@
     <p class="hdr"><span>13</span>我們自己知道的攻擊面</p>
     <p>這一節列的是<b>真的可以拿來攻擊我們的東西</b>，不是免責聲明。</p>
     <ul class="weak">
-      <li><b>沒有專業滲透測試。</b>應用層的對抗性檢驗只有我們自己與具名記錄的獨立 AI 紅隊；exact輪次與status以current audit registry為準。<b>紅隊審查與滲透測試不是同一種證據。</b>主機層另有供應商依合約每年執行的入侵測試（見〈<a href="/zh-TW/trust">信任</a>〉層五）。</li>
+      <li><b>沒有專業滲透測試。</b>應用層有具名外部技術審查與多工具對抗測試，每一輪的範圍與結果逐次留存。<b>技術審查與滲透測試不是同一種證據。</b>主機層另有供應商依合約每年執行的入侵測試（見〈<a href="/zh-TW/trust">信任</a>〉層五）。</li>
       <li><b>沒有內容傳遞網路，也沒有應用防火牆。</b>目前架構就是沒有這兩個元件。限流與連線上限在反向代理，僅此而已。</li>
-      <li><b>相依守衛只擋名單上的名字。</b>一個沒被列名的新套件不會被它擋下——真正的出口封鎖靠 internal 網路。</li>
+      <li><b>沒有任何單一相依守衛算是完整控制。</b>相依安全由直接輸入、雜湊鎖定的解析、SBOM、安裝集合回讀與執行期出口限制共同承擔；其中任何一項單獨都不足以宣稱安全。</li>
       <li><b>測試是設計期的迴歸證據，不在你每次計算時重跑。</b>卷宗裡的證據欄位是指向測試的指標，不是「這一次執行過並通過」的紀錄。</li>
       <li><b>線上跑的版本不必然等於公開程式庫的最新版。</b>要確認你正在用哪一版，看卷宗裡的版本識別碼——<b>不要從最新提交推定，我們自己也不這樣推定。</b></li>
       <li><b>隱私聲明狀態為「暫定，待外部審查」。</b>在獨立審查完成之前不會改；即使通過，也不會自動延伸到未涵蓋的層。</li>

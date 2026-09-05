@@ -3,7 +3,7 @@
   <section class="lg-head">
     <p class="eyebrow">法律 · LEGAL</p>
     <h1>著作權與原始碼</h1>
-    <p class="draft-flag"><b>本版文案已由 Sebastian 認可，但尚未經合格法律查核。</b>本輪reconstruction的public revision、source archive與image identity仍須由S21～S23的verified producers建立；不得把文案認可誤稱為已完成publication或法律專業審閱。</p>
+    <p class="draft-flag"><b>本版文案已由 Sebastian 認可，但尚未經合格法律查核。</b>本頁的公開版本識別碼、原始碼封存與映像識別，只在該版本實際發布時由發布流程寫入，不沿用先前已上線的版本，也不把文案認可說成法律專業審閱。</p>
 
     <p class="lg-decl"><b>本服務以 GNU Affero General Public License v3 授權。</b>不是部分、不是雙授權——<b>公開的原始碼樹整棵是它</b>，發布清單裡的授權表述就是一行 <span class="mono">AGPL-3.0-only</span>。</p>
 
@@ -49,11 +49,11 @@
 
     <p class="lg-vow">因為現在還沒有一個真的版本可以寫。</p>
 
-    <p><b>本輪reconstruction的public revision、source archive與exact image尚未完成S21～S23驗收。</b>既有歷史服務或公開repository不能替這個新版本回答「線上跑的是哪一版」；新版本只有在receipt chain完成後才有可發布的答案。</p>
+    <p><b>Next-image line會建立自己的public revision、source archive與exact image identity。</b>既有live baseline不能替這個新版本回答「線上跑的是哪一版」；新版本只有在receipt chain完成後才有可發布的答案。</p>
 
     <p>依內部裁決，這一頁的版本識別與封存檔欄位<b>只能由發布收據產生器寫入，禁止手動填寫</b>。收據缺失或前後矛盾時，流程<b>失敗關閉</b>——寧可讓公開文件維持未發布，也不接受手打的身分。</p>
 
-    <p><b>所以現況要照實說：本輪reconstruction的AGPL第13條identity chain仍在建立中。</b>S21會建立可匿名取得的public revision與source archive，S22／S23再把exact image與runtime自報識別綁回該revision；任何一段缺失或矛盾都會停止release。<b>我們不會為了讓這一頁看起來完整而先填一個數字。</b></p>
+    <p><b>Next-image line的AGPL第13條identity chain仍在建立中。</b>Release producer會先建立可匿名取得的public revision與source archive，再把exact image與runtime自報識別綁回該revision；任何一段缺失或矛盾都會停止release。<b>我們不會拿live baseline的數字預填下一版。</b></p>
   </section>
 
   <!-- ═══ 隨服務送出什麼 ═══ -->
@@ -98,7 +98,7 @@
         <tr>
           <td><b>容器基礎映像</b></td>
           <td class="lic">Debian，多為<br>GPL / LGPL</td>
-          <td><span class="mono">python:3.13.14-slim-trixie</span>，以摘要釘選於 <span class="mono">deploy/Dockerfile</span></td>
+          <td><span class="mono">python:3.14.7-slim-trixie</span>，以摘要釘選於 <span class="mono">deploy/Dockerfile</span></td>
         </tr>
       </tbody>
     </table>

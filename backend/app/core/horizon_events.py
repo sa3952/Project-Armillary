@@ -1,34 +1,17 @@
-"""Rise, set, upper-transit, and lower-transit events for major bodies.
+"""Rise/set/transit events in a fixed apparent topocentric frame.
 
-## 本模組使用自己的固定座標框架，不跟隨 `computation_mode`
-
-`compute_horizon_events()` 刻意不接收 `ComputationContext`。它一律以
-視位置（apparent）＋站心（topocentric）計算，無論請求選了 `heliocentric`、
-`j2000`、`nutation=false` 或 `position_mode="true"`。
-
-理由是升降本身的定義：一顆星體「升起」的時刻，指的是它**經過大氣折射後的
-上緣**穿過地平的那一刻。把折射拿掉，「升起」就沒有對應的物理事件了。
-因此本模組不能套用 MTH-Q-009 對 `altitude_apparent` 的抑制——那條裁決處理的是
-「幾何方向」與「大氣折射」混用會產生無法解讀的數值，而在這裡折射不是附加的
-修正，是事件定義的一部分。
-
-**這造成一個確實存在的不一致，且已被紅隊指出（RT-BACKEND-9-E-009）：**
-`position_mode="true"` 時，`astronomical_data.bodies[].altitude_apparent` 為 null，
-但 `horizon_events` 的可見性證據仍含 97 筆站心視上緣高度取樣。
-數值本身沒有錯，錯的是契約沒有說出這個邊界。本模組現在於輸出中明確宣告自身框架
-與該邊界；**MTH-Q-018 已裁決（Sebastian 2026-08-03）：採甲案——MTH-Q-009 的抑制只涵蓋
-星體／恆星的 `altitude_apparent` 欄位，本模組維持自己的框架——並加上觸發式說明：
-當 `position_mode="true"` 與 `include_rise_set_transits` 同時出現時，Dossier 會
-主動發出 `horizon_events_keep_apparent_frame_under_true_position` 通知解釋原因，
-而不是只寫在契約文件裡等使用者自己去查。
+The event definition uses the refracted upper-limb horizon crossing and does
+not follow display computation modes. The response and triggered Dossier
+warning expose this boundary explicitly.
 """
 
-import datetime as dt
 import math
+from typing import Final
 
 import swisseph as swe
 
 from .trace import Trace
+from .time_utils import jd_ut_to_iso_utc
 
 
 EVENT_FLAGS = {
@@ -56,17 +39,10 @@ FRAME_DECLARATION = {
 }
 
 
-def _jd_ut_to_iso_utc(jd_ut: float) -> str:
-    year, month, day, hour, minute, second = swe.jdut1_to_utc(jd_ut, swe.GREG_CAL)
-    value = dt.datetime(year, month, day, hour, minute, tzinfo=dt.timezone.utc)
-    value += dt.timedelta(seconds=second)
-    return value.isoformat(timespec="milliseconds").replace("+00:00", "Z")
-
-
 def _event_value(jd_ut: float) -> dict:
     return {
         "jd_ut": jd_ut,
-        "utc_time": _jd_ut_to_iso_utc(jd_ut),
+        "utc_time": jd_ut_to_iso_utc(jd_ut),
     }
 
 
@@ -79,10 +55,8 @@ def _rise_trans_call(
     temperature_c: float,
 ) -> tuple[int, float | None]:
     rsmi = event_flag
-    if event_flag in (swe.CALC_RISE, swe.CALC_SET):
-        # Swiss default is the upper limb with standard refraction. Do not add
-        # BIT_DISC_CENTER or BIT_NO_REFRACTION; expose that choice in metadata.
-        rsmi = event_flag
+    # Swiss default for rise/set is the upper limb with standard refraction.
+    # Do not add BIT_DISC_CENTER or BIT_NO_REFRACTION; expose that choice in metadata.
     result, times = swe.rise_trans(
         start_jd_ut,
         body_id,
@@ -93,6 +67,20 @@ def _rise_trans_call(
         EPHEMERIS_FLAGS,
     )
     return result, times[0] if result == 0 else None
+
+
+# The regimes this search can end in, declared once so they can be enumerated.
+# A regime that no sample reaches is a regime nobody has tested, and until these
+# were names in the source there was no way to ask which ones the corpus covers.
+EVENT_STATUSES: Final = ("found", "partial", "no_event")
+EVENT_REASONS: Final = (
+    "swiss_circumpolar",
+    "circumpolar_before_reference_window",
+    "no_event_in_searched_window",
+)
+CIRCUMPOLAR_AT_REFERENCE: Final = EVENT_REASONS[0]
+CIRCUMPOLAR_BEFORE_WINDOW: Final = EVENT_REASONS[1]
+NO_EVENT_IN_WINDOW: Final = EVENT_REASONS[2]
 
 
 def _find_event_pair(
@@ -114,13 +102,21 @@ def _find_event_pair(
     )
     if next_status == -2:
         return {
-            "status": "no_event",
-            "reason": "swiss_circumpolar",
+            "status": EVENT_STATUSES[2],
+            "reason": CIRCUMPOLAR_AT_REFERENCE,
             "previous": None,
             "next": None,
         }
 
+    # Circumpolar is a property of the interval that contains the reference
+    # instant.  A backward probe two days earlier can land inside a different
+    # interval — at 69.65N the midnight sun ends and an event exists on the same
+    # day a probe two days back is still circumpolar.  Reading that probe as the
+    # body's present state confiscated an event Swiss had already returned, and
+    # the response then contradicted its own sampled altitudes.  A missing side
+    # is now reported as a missing side.
     previous_jd = None
+    previous_reason = None
     cursor = reference_jd_ut - 2.0
     for _ in range(6):
         status, candidate = _rise_trans_call(
@@ -132,24 +128,28 @@ def _find_event_pair(
             temperature_c,
         )
         if status == -2:
-            return {
-                "status": "no_event",
-                "reason": "swiss_circumpolar",
-                "previous": None,
-                "next": None,
-            }
+            previous_reason = CIRCUMPOLAR_BEFORE_WINDOW
+            break
         if candidate is None or candidate >= reference_jd_ut:
+            previous_reason = NO_EVENT_IN_WINDOW
             break
         previous_jd = candidate
         cursor = math.nextafter(candidate, math.inf)
 
-    if previous_jd is None or next_jd is None:
-        raise swe.Error("Could not bracket rise/set/transit event around reference time")
+    if previous_jd is not None and next_jd is not None:
+        return {
+            "status": EVENT_STATUSES[0],
+            "reason": None,
+            "previous": _event_value(previous_jd),
+            "next": _event_value(next_jd),
+        }
+    # One side only.  Raising here used to turn a legal boundary geometry into an
+    # unhandled 500; the caller cannot act on that and the user cannot either.
     return {
-        "status": "found",
-        "reason": None,
-        "previous": _event_value(previous_jd),
-        "next": _event_value(next_jd),
+        "status": EVENT_STATUSES[1],
+        "reason": previous_reason or NO_EVENT_IN_WINDOW,
+        "previous": _event_value(previous_jd) if previous_jd is not None else None,
+        "next": _event_value(next_jd) if next_jd is not None else None,
     }
 
 
@@ -218,7 +218,11 @@ def compute_horizon_events(
             )
             for name, flag in EVENT_FLAGS.items()
         }
-        if events["rise"]["status"] == "no_event" or events["set"]["status"] == "no_event":
+        # Only rise and set answer "does this body cross the horizon".  A
+        # transit exists for a circumpolar body too, so including it here would
+        # force every polar sun into an indeterminate label.
+        horizon_crossings = (events["rise"], events["set"])
+        if any(event["status"] != EVENT_STATUSES[0] for event in horizon_crossings):
             visibility, visibility_evidence = _sample_visibility(
                 reference_jd_ut,
                 body["id"],
@@ -226,9 +230,10 @@ def compute_horizon_events(
                 pressure_hpa,
                 atmosphere.temperature_c,
             )
-            if (
-                events["rise"]["status"] == "found"
-                or events["set"]["status"] == "found"
+            if any(
+                event["status"] in {EVENT_STATUSES[0], EVENT_STATUSES[1]}
+                and (event["previous"] or event["next"])
+                for event in horizon_crossings
             ):
                 visibility = "indeterminate_near_horizon"
                 visibility_evidence["event_consistency"] = (

@@ -1,6 +1,1 @@
-{
-  "schema_version": 1,
-  "api_schema_version": "0.13.0",
-  "dossier_version": "0.6.0",
-  "export_contract_version": "0.1.2"
-}
+{"api_schema_version":"0.13.0","dossier_version":"0.6.0","export_contract_version":"0.1.2","schema_version":1}

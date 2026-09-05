@@ -1,18 +1,18 @@
 # PEP 517 build backend trust root for offline source reconstruction.
 # These tools are not installed in the final runtime image.  They cover the
 # build-system requirements declared by every production/development sdist.
-ast-serialize==0.6.0
-flit-core>=3.12,<4
+ast-serialize==0.8.0
+flit-core>=4.0.2,<5
 hatch-fancy-pypi-readme>=22.5.0
-hatchling>=1.27
-maturin>=1.10,<2
+hatchling>=1.32,<2
+maturin>=1.15,<2
 mypy-extensions==1.1.0
 pdm-backend>=2.4,<3
-setuptools>=83,<84
-setuptools-scm[toml]>=9,<10
+setuptools>=84,<85
+setuptools-scm[toml]>=10.2.1,<11
 types-psutil
 types-setuptools
 typing-extensions==4.16.0
-uv-dynamic-versioning>=0.8
-wheel>=0.47,<0.48
-librt==0.13.0
+uv-dynamic-versioning>=0.14.1,<1
+wheel>=0.48,<0.49
+librt==0.15.0
