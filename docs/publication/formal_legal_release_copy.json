@@ -40,19 +40,19 @@
   "release_copy_sources": [
     {
       "path": "scripts/frontend/pages/contact.html",
-      "sha256": "510be9845a1c37a6881044a28b9b44f4417e9ce107145c4350015176ba355759"
+      "sha256": "3acec3563b51c3e5a7351ee2e340fa7abdb3af77b6ebded414011aea4fe181d1"
     },
     {
       "path": "scripts/frontend/pages/legal-privacy.html",
-      "sha256": "394b8fbf9a61134c15678be0971c43c6ef2f4a550ce04fa89088bc8d3714e56b"
+      "sha256": "cbd9601c543248d90aee07f858f0712d6b6aea44aecb3dfbce5767bcc78766d1"
     },
     {
       "path": "scripts/frontend/pages/legal-terms.html",
-      "sha256": "3334be1889bd38d16cf281aed115fc661fba4bdb9dca9a148d7957360f8ea6c2"
+      "sha256": "381d116d53074d9f3b27081df81341c7dc44cb5c7627d04b805d25c521cabc84"
     },
     {
       "path": "scripts/frontend/pages/legal-copyright.html",
-      "sha256": "30842a10ea9aa1896d4fbd76d226dacce51f13967c4b83dd215c71338e9728fe"
+      "sha256": "2f990e201f90c1e4c81f2b47ebda554fdd2cbddd9951914dc182d0e3e4c46993"
     }
   ],
   "machine_owned_release_fields": {

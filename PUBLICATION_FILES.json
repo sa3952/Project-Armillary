@@ -22,7 +22,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "ed6fcfa44346fc8efcea4a8e89d59731829aa1bca244b9ba3abacaeb1967f56e",
+      "sha256": "d033ecbbd2f559ee4375698a454066cc724d0119981895cbd5bd9c333858224c",
       "size_bytes": 322
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "3dd18e5cdbef88701496ba060676d8b2bd7250603d9bbc495bef690430b9fc3c",
+      "sha256": "4901d4cdfbfb8461b7ba24a5138053e54caf8a722fbf8b0fc16ec14c7b6641e7",
       "size_bytes": 353
     },
     {
@@ -422,7 +422,7 @@
     },
     {
       "path": "docs/publication/formal_legal_release_copy.json",
-      "sha256": "188072c1820aa168ab851e9d322fe2707fa93be04ee516394f2249999464b1df",
+      "sha256": "59a33690198d63df96e896552fb55f816a54095729cdc5c160c6c18f4c28db45",
       "size_bytes": 2769
     },
     {
