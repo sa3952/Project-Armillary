@@ -180,12 +180,19 @@ def verify(
     source_dir: Path,
     wheel_dir: Path,
     source_requirement: str,
+    *,
+    observed_system: str | None = None,
+    observed_python: str | None = None,
+    observed_machine: str | None = None,
 ) -> dict[str, Any]:
-    if platform.system() != "Linux":
+    system = observed_system or platform.system()
+    python_version = observed_python or platform.python_version()
+    machine = observed_machine or platform.machine()
+    if system != "Linux":
         raise RuntimeError("source-build proof must run on Linux")
-    if platform.python_version() != EXPECTED_PYTHON:
+    if python_version != EXPECTED_PYTHON:
         raise RuntimeError(
-            f"expected Python {EXPECTED_PYTHON}, got {platform.python_version()}"
+            f"expected Python {EXPECTED_PYTHON}, got {python_version}"
         )
     if source_requirement != EXPECTED_SOURCE_REQUIREMENT:
         raise RuntimeError(
@@ -232,7 +239,6 @@ def verify(
         elf_machine = int.from_bytes(extension_binary[18:20], "big")
     else:
         raise RuntimeError("swisseph ELF header has unknown byte order")
-    machine = platform.machine()
     expected_elf_machine = ELF_MACHINE_BY_PLATFORM.get(machine)
     if expected_elf_machine is None:
         raise RuntimeError(f"unsupported Linux build machine: {machine}")
@@ -252,8 +258,8 @@ def verify(
 
     return {
         "schema_version": "pyswisseph-linux-source-build-v1",
-        "python_version": platform.python_version(),
-        "platform": platform.system(),
+        "python_version": python_version,
+        "platform": system,
         "machine": machine,
         "source": {
             "filename": source.name,
@@ -274,32 +280,68 @@ def verify(
     }
 
 
+def validate_receipt(
+    receipt_path: Path,
+    source_dir: Path,
+    wheel_dir: Path,
+    source_requirement: str,
+) -> dict[str, Any]:
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"cannot read Linux source-build receipt: {exc}") from exc
+    if not isinstance(receipt, dict):
+        raise RuntimeError("Linux source-build receipt must be an object")
+    expected = verify(
+        source_dir,
+        wheel_dir,
+        source_requirement,
+        observed_system=str(receipt.get("platform", "")),
+        observed_python=str(receipt.get("python_version", "")),
+        observed_machine=str(receipt.get("machine", "")),
+    )
+    if receipt != expected:
+        raise RuntimeError("Linux source-build receipt differs from actual artifacts")
+    return expected
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--wheel-dir", type=Path, required=True)
     parser.add_argument("--source-requirement", required=True)
     parser.add_argument("--receipt", type=Path, required=True)
+    parser.add_argument("--check-receipt", action="store_true")
     args = parser.parse_args()
     try:
-        receipt = verify(
-            args.source_dir,
-            args.wheel_dir,
-            args.source_requirement,
+        receipt = (
+            validate_receipt(
+                args.receipt,
+                args.source_dir,
+                args.wheel_dir,
+                args.source_requirement,
+            )
+            if args.check_receipt
+            else verify(
+                args.source_dir,
+                args.wheel_dir,
+                args.source_requirement,
+            )
         )
     except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
-    try:
-        receipt_path = _external_receipt_path(args.receipt)
-    except ValueError as exc:
-        print(f"FAIL: {exc}", file=sys.stderr)
-        return 1
-    receipt_path.parent.mkdir(parents=True, exist_ok=True)
-    receipt_path.write_text(
-        json.dumps(receipt, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    if not args.check_receipt:
+        try:
+            receipt_path = _external_receipt_path(args.receipt)
+        except ValueError as exc:
+            print(f"FAIL: {exc}", file=sys.stderr)
+            return 1
+        receipt_path.parent.mkdir(parents=True, exist_ok=True)
+        receipt_path.write_text(
+            json.dumps(receipt, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     print(
         "OK: verified Linux source build "
         f"{receipt['wheel']['filename']}"

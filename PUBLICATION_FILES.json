@@ -22,7 +22,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "e6bdc9c968c016aa88eff400b04c93084dd2c88dec7df8a1ef44c9162ce38885",
+      "sha256": "ed6fcfa44346fc8efcea4a8e89d59731829aa1bca244b9ba3abacaeb1967f56e",
       "size_bytes": 322
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "121726cb5e0c5f880a3045e275934f91b3f981c9cdf5d25b24f21f0c19f61df4",
+      "sha256": "3dd18e5cdbef88701496ba060676d8b2bd7250603d9bbc495bef690430b9fc3c",
       "size_bytes": 353
     },
     {
@@ -807,8 +807,8 @@
     },
     {
       "path": "scripts/publication/verify_linux_source_build.py",
-      "sha256": "f92ab531c287669bcc390223635d921d77f82411b46d3f721b967c0ff9ed965e",
-      "size_bytes": 10481
+      "sha256": "eeb33e31329eb2c63e792c047aec25843b640d2ea728228f36e5c9f38c8861a3",
+      "size_bytes": 11980
     },
     {
       "path": "scripts/publication/verify_publication_candidate.py",
