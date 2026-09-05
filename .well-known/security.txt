@@ -1,6 +1,6 @@
 Contact: https://github.com/sa3952/Project-Armillary/security/advisories/new
 Contact: mailto:privacy@projectarmillary.com
-Expires: 2027-03-04T04:22:59Z
+Expires: 2027-03-04T06:09:10Z
 Preferred-Languages: zh-TW, en
 Canonical: https://projectarmillary.com/.well-known/security.txt
 Policy: https://github.com/sa3952/Project-Armillary/blob/main/SECURITY.md

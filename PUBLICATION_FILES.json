@@ -22,7 +22,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "97c68b86553f7b122fbddd6acfbe3b054432752d42145196a8b81edccedcf846",
+      "sha256": "da911c6538b3435efe5ff52351b44adaf462bffecf4c76215a18541d55bca9d4",
       "size_bytes": 322
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "02994db391c4cdb8a2303b4bf64ba4dacdf916ea400b18e83f10f91874b28168",
+      "sha256": "a557c2471a485d2121e0541437a47b24ee6f76613e15d0de515e7d0393aa6565",
       "size_bytes": 353
     },
     {
@@ -497,8 +497,8 @@
     },
     {
       "path": "frontend/zh-TW/calculate.js",
-      "sha256": "93aa7c2fbe83c356f494e64cb673f987edd50deb0f18b39934c0f554a1b1e8e5",
-      "size_bytes": 59313
+      "sha256": "cbe087cfbf9495fb8e9d06e6823f503940d24b99c1469c2b7afd6e2535d3ce84",
+      "size_bytes": 59367
     },
     {
       "path": "frontend/zh-TW/client-context.js",

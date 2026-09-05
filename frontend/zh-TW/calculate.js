@@ -830,7 +830,9 @@
       const actions = [];
       if (built.missing.length) actions.push("補齊上列欄位後再送出。");
       if (built.invalid.length) actions.push("修正上列數值後再送出。");
-      actions.push("若只知道大約時辰或只知道日期，改選對應的把握程度。");
+      if (currentPrecision() === "exact") {
+        actions.push("若只知道大約時辰或只知道日期，改選對應的把握程度。");
+      }
       // 上一次的結果必須先消失，這條「連送都沒送出去」的分支也一樣：留著舊
       // 卷宗等於在錯誤訊息底下展示一份描述舊輸入的結果，而且它的複製／下載
       // 鈕仍然可用，可以匯出一份與表單不符的卷宗。
