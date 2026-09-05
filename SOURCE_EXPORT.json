@@ -1,6 +1,6 @@
 {
   "export_mode": "closed_allowlist",
-  "private_source_revision": "ec40a25dd1a1a1c7a370f627959718ce6534e8b9",
+  "private_source_revision": "0521b86d038d88204abe4eb6e4e8ff19c2a88c4c",
   "public_revision": null,
   "public_revision_source": "Git commit containing this file; the release receipt records the exact commit and source archive hash",
   "schema_version": 1,

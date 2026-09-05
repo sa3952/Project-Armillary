@@ -158,13 +158,13 @@ class GateFailure(RuntimeError):
 def _run(
     command: list[str],
     *,
-    cwd: Path = PROJECT_ROOT,
+    cwd: Path | None = None,
     check: bool = True,
     timeout: float = 600,
 ) -> subprocess.CompletedProcess[str]:
     completed = subprocess.run(
         command,
-        cwd=cwd,
+        cwd=cwd or PROJECT_ROOT,
         check=False,
         capture_output=True,
         text=True,
@@ -286,7 +286,8 @@ def _exported_release_evidence(
     return evidence
 
 
-def pinned_base_reference(dockerfile: Path = DOCKERFILE) -> str:
+def pinned_base_reference(dockerfile: Path | None = None) -> str:
+    dockerfile = dockerfile or DOCKERFILE
     """Name the base this image is built from, read from the build that pins it."""
 
     try:
@@ -312,7 +313,10 @@ def base_environment(platform: str | None) -> dict[str, str]:
     """Read the pinned base environment; absence or unreadability is refusal."""
 
     reference = pinned_base_reference()
-    inspect = ["docker", "image", "inspect", reference]
+    inspect = ["docker", "image", "inspect"]
+    if platform:
+        inspect.extend(["--platform", platform])
+    inspect.append(reference)
     try:
         raw = _run(inspect).stdout
     except GateFailure:
@@ -1452,7 +1456,11 @@ def _assert_container_build_identity(
 
 
 def main() -> int:
+    global PROJECT_ROOT, CHART_REQUESTS, DOCKERFILE
+    global APP_TREE_MANIFEST, COMPILED_ARTIFACTS_MANIFEST
+    global EXPECTED_PRIVACY_EVENT_FIELDS
     parser = argparse.ArgumentParser()
+    parser.add_argument("--source-root", type=Path, default=PROJECT_ROOT)
     parser.add_argument("--image", default=DEFAULT_IMAGE)
     parser.add_argument(
         "--platform",
@@ -1465,6 +1473,17 @@ def main() -> int:
         help="emit only a closed summary; retain full JSON in --receipt",
     )
     args = parser.parse_args()
+
+    PROJECT_ROOT = args.source_root.resolve()
+    CHART_REQUESTS = (
+        PROJECT_ROOT / "frontend/tests/fixtures/chart-requests.json"
+    )
+    DOCKERFILE = PROJECT_ROOT / "deploy/Dockerfile"
+    APP_TREE_MANIFEST = PROJECT_ROOT / "deploy/image-app-tree.json"
+    COMPILED_ARTIFACTS_MANIFEST = (
+        PROJECT_ROOT / "deploy/image-app-built-extensions.json"
+    )
+    EXPECTED_PRIVACY_EVENT_FIELDS = _privacy_event_fields()
 
     started = time.monotonic()
     try:

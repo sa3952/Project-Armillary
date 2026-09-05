@@ -63,7 +63,7 @@ DELIVERY_GATE = (
 
 PYTHON_IMAGE = (
     "python:3.14.7-slim-trixie"
-    "@sha256:cae66f2ef0ec51a9891263eeee7f987dacf0a9879e8aa9353d5606e0530619a5"
+    "@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6"
 )
 
 
@@ -924,6 +924,7 @@ def test_a_base_the_daemon_has_not_got_is_fetched_by_digest_not_assumed(monkeypa
 
     assert gate.base_environment("linux/amd64") == {"PYTHON_VERSION": "3.14.7"}
     assert [command[1] for command in calls] == ["image", "pull", "image"]
+    assert "--platform" in calls[0] and "linux/amd64" in calls[0]
     assert "--platform" in calls[1] and "linux/amd64" in calls[1]
 
 
