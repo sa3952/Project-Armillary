@@ -38,6 +38,8 @@ from scripts.verification.verify_docker_context import materialize_context
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_EVIDENCE_PATH = "/usr/local/share/project-armillary/build-evidence"
+BUILD_WITNESS_MOUNT_ID = "build_witness"
+BUILD_WITNESS_RECEIPT = "buildkit-witness-consumed.json"
 CONTEXT_DISCRIMINATION_PATH = Path("build-context-probe-8f38f069.txt")
 CONTEXT_DISCRIMINATION_BYTES = b"governed-context-control-v1\n"
 BUILD_PURPOSES = (
@@ -234,8 +236,8 @@ class _BoundedSourceWatcher:
         self._thread.join(timeout=2)
 
 
-def _extract_build_evidence_and_scan_secret(
-    *, image: str, destination: Path, secret: str
+def _extract_build_evidence_and_scan_witness(
+    *, image: str, destination: Path, witness: str
 ) -> dict[str, object]:
     container = _run(["docker", "create", image]).stdout.strip()
     if not container:
@@ -251,13 +253,15 @@ def _extract_build_evidence_and_scan_secret(
             ]
         )
         _run(["docker", "export", "--output", str(archive), container], timeout=900)
-        secret_bytes = secret.encode("utf-8")
+        witness_bytes = witness.encode("utf-8")
         with archive.open("rb") as handle:
             tail = b""
             while block := handle.read(1024 * 1024):
-                if secret_bytes in tail + block:
-                    raise BuildTransactionFailure("build secret entered runtime filesystem")
-                tail = (tail + block)[-max(len(secret_bytes) - 1, 0):]
+                if witness_bytes in tail + block:
+                    raise BuildTransactionFailure(
+                        "BuildKit witness entered runtime filesystem"
+                    )
+                tail = (tail + block)[-max(len(witness_bytes) - 1, 0):]
     finally:
         _run(["docker", "rm", "--force", container], check=False)
         archive.unlink(missing_ok=True)
@@ -265,7 +269,7 @@ def _extract_build_evidence_and_scan_secret(
         "build-context-received.json",
         "builder-toolchain.json",
         "build-contract.json",
-        "buildkit-probe-consumed.json",
+        BUILD_WITNESS_RECEIPT,
         "native-extensions.json",
         "pyswisseph-linux-source-build.json",
     }
@@ -319,8 +323,11 @@ def build_image(
     before = observe_source_tree(source_root)
     maintained_paths = maintained_source_paths(source_root)
     started = time.time()
-    secret = "armillary-build-probe-" + secrets.token_urlsafe(24)
-    secret_sha256 = hashlib.sha256(secret.encode()).hexdigest()
+    # This random value is a noncredential build witness. BuildKit's secret
+    # mount keeps it out of the context, command line, cache key and image;
+    # its digest binds the embedded consumption receipt to this transaction.
+    witness = "armillary-build-witness-" + secrets.token_urlsafe(24)
+    witness_sha256 = hashlib.sha256(witness.encode()).hexdigest()
     builder_name: str | None = None
     builder_inspection = "default diagnostic builder"
     with tempfile.TemporaryDirectory(prefix="armillary-build-transaction-") as raw:
@@ -337,8 +344,8 @@ def build_image(
             },
         )
         expected_context = context_manifest(context)
-        secret_path = temporary / "build-secret"
-        secret_path.write_text(secret, encoding="utf-8")
+        witness_path = temporary / "build-witness"
+        witness_path.write_text(witness, encoding="utf-8")
         command = [
             "docker",
             "buildx",
@@ -355,8 +362,10 @@ def build_image(
             f"VCS_REF={revision}",
             "--build-arg",
             f"PUBLICATION_STATUS={publication_status}",
+            "--build-arg",
+            f"BUILD_WITNESS_SHA256={witness_sha256}",
             "--secret",
-            f"id=private_alpha_probe,src={secret_path}",
+            f"id={BUILD_WITNESS_MOUNT_ID},src={witness_path}",
         ]
         if purpose == "release-candidate":
             builder_name = "armillary-release-" + secrets.token_hex(8)
@@ -395,8 +404,8 @@ def build_image(
                     raise BuildTransactionFailure(
                         f"cannot remove isolated builder {builder_name}"
                     )
-        if secret in completed.stdout or secret in completed.stderr:
-            raise BuildTransactionFailure("build log disclosed the secret canary")
+        if witness in completed.stdout or witness in completed.stderr:
+            raise BuildTransactionFailure("build log disclosed the BuildKit witness")
         evidence_dir.mkdir(parents=True)
         (evidence_dir / "build.stdout.txt").write_text(
             completed.stdout, encoding="utf-8"
@@ -404,8 +413,8 @@ def build_image(
         (evidence_dir / "build.stderr.txt").write_text(
             completed.stderr, encoding="utf-8"
         )
-        evidence = _extract_build_evidence_and_scan_secret(
-            image=image, destination=evidence_dir, secret=secret
+        evidence = _extract_build_evidence_and_scan_witness(
+            image=image, destination=evidence_dir, witness=witness
         )
         try:
             image_inspection = json.loads(
@@ -431,13 +440,14 @@ def build_image(
         revision=revision,
         platform=platform,
     )
-    probe = evidence["buildkit-probe-consumed.json"]
-    if not isinstance(probe, dict) or probe != {
+    witness_receipt = evidence[BUILD_WITNESS_RECEIPT]
+    if not isinstance(witness_receipt, dict) or witness_receipt != {
         "consumed": True,
         "nonempty": True,
-        "secret_sha256": secret_sha256,
+        "witness_classification": "generated_noncredential_build_witness",
+        "witness_sha256": witness_sha256,
     }:
-        raise BuildTransactionFailure("build secret receipt mismatch")
+        raise BuildTransactionFailure("BuildKit witness receipt mismatch")
     after = observe_source_tree(source_root)
     if before != after:
         raise BuildTransactionFailure(
@@ -458,7 +468,7 @@ def build_image(
             "built image identity or labels are not transaction-bound"
         )
     receipt = {
-        "schema_version": "release-build-transaction-v1",
+        "schema_version": "release-build-transaction-v2",
         "source_revision": revision,
         "image": image,
         "image_id": image_id,
@@ -467,8 +477,8 @@ def build_image(
         "publication_status": publication_status,
         "materialized_context_identity_sha256": expected_context["identity_sha256"],
         "buildkit_context_identity_sha256": observed_context.get("identity_sha256"),
-        "secret_sha256": secret_sha256,
-        "secret_present_in_log_or_runtime": False,
+        "build_witness_sha256": witness_sha256,
+        "build_witness_plaintext_present_in_log_or_runtime": False,
         "source_identity_unchanged": True,
         "builder_isolation": {
             "mode": (
@@ -491,8 +501,9 @@ def build_image(
             "docker", "buildx", "build", "--load", "--progress=plain",
             "--platform", platform, "--file", "deploy/Dockerfile", "--tag", image,
             "--build-arg", f"VCS_REF={revision}", "--build-arg",
-            f"PUBLICATION_STATUS={publication_status}", "--secret",
-            "id=private_alpha_probe,src=<redacted>",
+            f"PUBLICATION_STATUS={publication_status}", "--build-arg",
+            f"BUILD_WITNESS_SHA256={witness_sha256}", "--secret",
+            f"id={BUILD_WITNESS_MOUNT_ID},src=<generated-noncredential-witness>",
             *(
                 ["--builder", "<ephemeral>", "--no-cache"]
                 if purpose != "diagnostic"

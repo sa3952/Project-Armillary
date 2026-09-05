@@ -25,6 +25,7 @@ from scripts.verification.verify_docker_context import (
 )
 from scripts.verification.build_release_image import (
     BUILD_EVIDENCE_PATH,
+    BUILD_WITNESS_RECEIPT,
     CONTEXT_DISCRIMINATION_BYTES,
     CONTEXT_DISCRIMINATION_PATH,
     assert_embedded_contract_consistent,
@@ -48,7 +49,7 @@ from scripts.tools.source_tree_identity import materialize_git_snapshot
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_IMAGE = "classical-astrology-private-alpha:runtime-test"
-CANARY = "PRIVATE_ALPHA_BUILD_SECRET_CANARY_8f38f0696df24f8c"
+CANARY = "PRIVATE_ALPHA_BUILD_WITNESS_CANARY_8f38f0696df24f8c"
 ELF_MACHINE_BY_DOCKER_ARCHITECTURE = {
     "amd64": 62,
     "arm64": 183,
@@ -251,7 +252,7 @@ def _exported_release_evidence(
     _assert_evidence_context_matches_image(image_revision)
     filenames = {
         "source_build": "pyswisseph-linux-source-build.json",
-        "buildkit_probe": "buildkit-probe-consumed.json",
+        "buildkit_witness": BUILD_WITNESS_RECEIPT,
         "buildkit_context": "build-context-received.json",
         "builder_toolchain": "builder-toolchain.json",
         "build_contract": "build-contract.json",
@@ -392,7 +393,7 @@ def _inspect_image(image: str, platform: str | None) -> dict[str, Any]:
     if "container_healthcheck.py" not in " ".join(healthcheck.get("Test") or []):
         raise GateFailure("image healthcheck does not use the bounded readiness probe")
     if CANARY in json.dumps(image_info, sort_keys=True):
-        raise GateFailure("image metadata contains the secret canary")
+        raise GateFailure("image metadata contains the build witness canary")
     if platform:
         expected_os, expected_architecture = _platform_contract(platform)
         if image_info["Os"] != expected_os:
@@ -883,7 +884,7 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
                             )
                         )
             if canary_found:
-                raise GateFailure("image filesystem contains the secret canary")
+                raise GateFailure("image filesystem contains the build witness canary")
             content_identity = hashlib.sha256(
                 "\n".join(sorted(content_identity_rows)).encode("utf-8")
             ).hexdigest()
@@ -977,13 +978,15 @@ def _inventory_image(image: str, platform: str | None) -> dict[str, Any]:
         or source_build.get("wheel", {}).get("extension_format") != "ELF"
         or source_build.get("wheel", {}).get("elf_e_machine")
         != expected_elf_machine
-        or runtime.get("buildkit_probe", {}).get("consumed") is not True
-        or runtime.get("buildkit_probe", {}).get("nonempty") is not True
-        or len(str(runtime.get("buildkit_probe", {}).get("secret_sha256", "")))
+        or runtime.get("buildkit_witness", {}).get("consumed") is not True
+        or runtime.get("buildkit_witness", {}).get("nonempty") is not True
+        or runtime.get("buildkit_witness", {}).get("witness_classification")
+        != "generated_noncredential_build_witness"
+        or len(str(runtime.get("buildkit_witness", {}).get("witness_sha256", "")))
         != 64
     ):
         raise GateFailure(
-            "Linux source-build, architecture, BuildKit probe, or runtime "
+            "Linux source-build, architecture, BuildKit witness, or runtime "
             "version mismatch"
         )
     return {
@@ -1480,7 +1483,7 @@ def main() -> int:
                 {"stage": "single_worker", "candidate_blocker": True, "error": str(exc)}
             )
         receipt = {
-            "schema_version": "private-alpha-artifact-acceptance-v1",
+            "schema_version": "private-alpha-artifact-acceptance-v2",
             "image": image,
             "inventory": inventory,
             "single_worker": single_worker,

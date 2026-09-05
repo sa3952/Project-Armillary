@@ -43,7 +43,7 @@ jobs:
           persist-credentials: false
 
       - name: Publication boundary
-        run: bash scripts/publication/verify_candidate_clean.sh --root .
+        run: python3 -B -m scripts.publication.verify_publication_candidate --root .
 
       - name: Privacy dependency boundary
         run: python3 -m scripts.verification.verify_privacy_dependencies --check
@@ -64,4 +64,4 @@ jobs:
             --quiet
 
       - name: Publication boundary after hosted writers
-        run: bash scripts/publication/verify_candidate_clean.sh --root .
+        run: python3 -B -m scripts.publication.verify_publication_candidate --root .

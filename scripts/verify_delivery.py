@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import json
+import re
 import subprocess
 import sys
 import argparse
@@ -140,11 +141,24 @@ def _validate_build_transaction(*, image: str, evidence_dir: Path) -> dict:
             capture_output=True,
             text=True,
         ).stdout.strip()
+        embedded_witness = json.loads(
+            subprocess.run(
+                [
+                    "docker", "run", "--rm", "--entrypoint", "/bin/cat",
+                    image,
+                    "/usr/local/share/project-armillary/build-evidence/"
+                    "buildkit-witness-consumed.json",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+        )
     except (OSError, ValueError, IndexError, KeyError, subprocess.CalledProcessError) as error:
         raise SystemExit(f"PUBLIC DELIVERY FAILED: invalid build transaction: {error}")
     if (
         not isinstance(receipt, dict)
-        or receipt.get("schema_version") != "release-build-transaction-v1"
+        or receipt.get("schema_version") != "release-build-transaction-v2"
         or receipt.get("purpose") != "release-candidate"
         or receipt.get("publication_status")
         != "published_anonymously_reachable"
@@ -156,7 +170,17 @@ def _validate_build_transaction(*, image: str, evidence_dir: Path) -> dict:
         != "ephemeral_docker_container_builder_no_cache"
         or not receipt["builder_isolation"].get("builder_name")
         or receipt.get("source_identity_unchanged") is not True
-        or receipt.get("secret_present_in_log_or_runtime") is not False
+        or receipt.get("build_witness_plaintext_present_in_log_or_runtime")
+        is not False
+        or re.fullmatch(
+            r"[0-9a-f]{64}", str(receipt.get("build_witness_sha256", ""))
+        ) is None
+        or embedded_witness != {
+            "consumed": True,
+            "nonempty": True,
+            "witness_classification": "generated_noncredential_build_witness",
+            "witness_sha256": receipt.get("build_witness_sha256"),
+        }
         or receipt.get("materialized_context_identity_sha256")
         != receipt.get("buildkit_context_identity_sha256")
     ):

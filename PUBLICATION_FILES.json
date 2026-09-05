@@ -7,13 +7,13 @@
     },
     {
       "path": ".github/workflows/production-amd64.yml",
-      "sha256": "170c2b51d8fe1ce38049e5ae315c95f2dbbdaaecaac63811fbf55aacd44a3b69",
-      "size_bytes": 2145
+      "sha256": "623c0d74f40e800c068c5a44d5fb5f6a7d24cb5b7154c9f28467d70f1fa75a36",
+      "size_bytes": 2169
     },
     {
       "path": ".github/workflows/tests.yml",
-      "sha256": "b5a89ed47b408143977a00ddc8273d62d101e753bdee74cacc632345d9d5ec6b",
-      "size_bytes": 923
+      "sha256": "98c0abf8147562db5fed618079cf2a8da30b183e66f3c9332f65de000cfc97a6",
+      "size_bytes": 986
     },
     {
       "path": ".gitignore",
@@ -22,7 +22,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "d033ecbbd2f559ee4375698a454066cc724d0119981895cbd5bd9c333858224c",
+      "sha256": "adea1ef218909926789543f9e4c14b6e2dd533c24e2eba23d58aa3391d601799",
       "size_bytes": 322
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "4901d4cdfbfb8461b7ba24a5138053e54caf8a722fbf8b0fc16ec14c7b6641e7",
+      "sha256": "46b26cf93663deaa71363f50a51ff61fae634e5e1804a55334cf0f1fef5f0e81",
       "size_bytes": 353
     },
     {
@@ -277,8 +277,8 @@
     },
     {
       "path": "deploy/Dockerfile",
-      "sha256": "a0d5c304b87b6d0935a4f1ef7393ec6243be225fa85c2b3e595134c9046382d6",
-      "size_bytes": 9105
+      "sha256": "04f78cb6bd852b1723f30623535bff1f735efab365082cd1f70c52f08787ef2b",
+      "size_bytes": 9378
     },
     {
       "path": "deploy/build-requirements.in",
@@ -837,8 +837,8 @@
     },
     {
       "path": "scripts/tools/source_tree_identity.py",
-      "sha256": "8ed575a8e3c79a7025293c71c45f2a8b95e84774d1d1a55b694e7db80847269e",
-      "size_bytes": 5711
+      "sha256": "175cf68854e8a284234f7e2a9cb4ca2df23cbc678058cc05ab4145203b42cbb4",
+      "size_bytes": 5817
     },
     {
       "path": "scripts/tools/staging_secure_io.py",
@@ -862,8 +862,8 @@
     },
     {
       "path": "scripts/verification/build_release_image.py",
-      "sha256": "2147e58732f1a1a5ef184e20318dd63c379d8b94228d9d755f0b92aab991aaa2",
-      "size_bytes": 19783
+      "sha256": "fa8b02de6afe4944db1f66c98b904e26666ee1fad8479e31e911b5558f114ebd",
+      "size_bytes": 20486
     },
     {
       "path": "scripts/verification/build_sbom.py",
@@ -882,8 +882,8 @@
     },
     {
       "path": "scripts/verification/verify_container_runtime.py",
-      "sha256": "80a8651a07d0a36e4d6e2a6f7a94bc6dca03cc583f7bc3d2c4414aca604a9f2f",
-      "size_bytes": 59413
+      "sha256": "8e801a20a2f663e67d1f0b8c26335c57bf1c3490a1f94876232eeba7bb9a9dbb",
+      "size_bytes": 59585
     },
     {
       "path": "scripts/verification/verify_docker_context.py",
@@ -907,8 +907,8 @@
     },
     {
       "path": "scripts/verify_delivery.py",
-      "sha256": "34bada2352e8c0fa71643e6cbf20db19f793580cf13fd7ba431c90d7daa3aaa7",
-      "size_bytes": 8472
+      "sha256": "cffc9beb7ca7adbf1305e9048b93f73f6bda10fae48216cb2d3450d2679559bf",
+      "size_bytes": 9327
     },
     {
       "path": "tests/backend/__init__.py",

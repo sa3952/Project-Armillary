@@ -5,6 +5,7 @@ FROM python:3.14.7-slim-trixie@sha256:cae66f2ef0ec51a9891263eeee7f987dacf0a9879e
 ARG VCS_REF
 ARG PUBLICATION_STATUS
 ARG TARGETPLATFORM
+ARG BUILD_WITNESS_SHA256
 
 # Keep compiler-produced archives independent of wall-clock time.
 ENV SOURCE_DATE_EPOCH="0" \
@@ -70,9 +71,9 @@ RUN python -m venv /opt/venv \
         'import platform,sys,swisseph; ok=platform.python_version()=="3.14.7" and swisseph.version=="0.0.0"; sys.exit(0 if ok else 1)' \
     && /opt/venv/bin/python -m pip uninstall --yes pip
 
-RUN --mount=type=secret,id=private_alpha_probe,required=true \
+RUN --mount=type=secret,id=build_witness,required=true \
     python -c \
-    'import hashlib,json,sys; from pathlib import Path; probe=Path("/run/secrets/private_alpha_probe"); data=probe.read_bytes() if probe.is_file() else b""; data or sys.exit("missing or empty BuildKit probe"); Path("/release/buildkit-probe-consumed.json").write_text(json.dumps({"consumed":True,"nonempty":True,"secret_sha256":hashlib.sha256(data).hexdigest()},sort_keys=True)+"\n",encoding="ascii")'
+    'import hashlib,json,os,re,sys; from pathlib import Path; witness=Path("/run/secrets/build_witness"); data=witness.read_bytes() if witness.is_file() else b""; data or sys.exit("missing or empty BuildKit witness"); digest=hashlib.sha256(data).hexdigest(); expected=os.environ.get("BUILD_WITNESS_SHA256",""); re.fullmatch(r"[0-9a-f]{64}",expected) and digest==expected or sys.exit("BuildKit witness identity mismatch"); Path("/release/buildkit-witness-consumed.json").write_text(json.dumps({"consumed":True,"nonempty":True,"witness_classification":"generated_noncredential_build_witness","witness_sha256":digest},sort_keys=True)+"\n",encoding="ascii")'
 
 RUN --mount=type=bind,target=/build-context,readonly \
     python /build/capture_build_evidence.py \

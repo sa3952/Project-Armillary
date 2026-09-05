@@ -90,7 +90,12 @@ def observe_publication_tree(root: Path) -> SourceTreeIdentity:
     actual = {
         path.relative_to(root).as_posix(): path
         for path in root.rglob("*")
-        if path.is_file() and not path.is_symlink() and path != manifest_path
+        if (
+            path.is_file()
+            and not path.is_symlink()
+            and path != manifest_path
+            and path.relative_to(root).parts[0] != ".git"
+        )
     }
     if set(actual) != set(expected):
         raise RuntimeError("publication file set changed")
