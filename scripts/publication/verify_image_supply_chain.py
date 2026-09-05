@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 from typing import Any, cast
@@ -50,7 +51,67 @@ class AuditFailure(RuntimeError):
     pass
 
 
+def _validate_r4_adjudication(
+    receipt: dict, candidate: dict,
+) -> dict[str, str]:
+    """Consume an exact R4 decision without rewriting scanner severity."""
+
+    backend = candidate.get("backend") or candidate
+    observed = receipt.get("candidate")
+    witness = receipt.get("build_witness")
+    supply = receipt.get("supply_chain")
+    artifacts = receipt.get("raw_artifact_sha256")
+    required_artifacts = {
+        "grype.json", "trivy.json", "pip-audit.json", "sbom.syft.json",
+    }
+
+    def digest(value: object) -> bool:
+        return isinstance(value, str) and re.fullmatch(
+            r"[0-9a-f]{64}", value
+        ) is not None
+
+    if (
+        receipt.get("disposition")
+        != "ACCEPTED_IMAGE_LOCAL_WITH_SCOPED_LIMITATIONS"
+        or not isinstance(observed, dict)
+        or observed.get("image_id") != backend.get("image_id")
+        or observed.get("public_source_revision") != backend.get("vcs_revision")
+        or not digest(observed.get("sbom_sha256"))
+        or not isinstance(witness, dict)
+        or not digest(witness.get("external_sha256"))
+        or witness.get("external_sha256") != witness.get("embedded_sha256")
+        or witness.get("plaintext_present_in_build_log_or_flattened_runtime")
+        is not False
+        or witness.get("flattened_rootfs_canary_present") is not False
+        or not isinstance(supply, dict)
+        or not isinstance(supply.get("grype_counts"), dict)
+        or any(
+            type(supply["grype_counts"].get(key)) is not int
+            or supply["grype_counts"][key] < 0
+            for key in ("Critical", "High")
+        )
+        or supply.get("pip_audit", {}).get("exit_code") != 0
+        or supply.get("pip_audit", {}).get("known_vulnerability_count") != 0
+        or supply.get("triage", {}).get("result")
+        != (
+            "no reachable candidate-blocking vulnerability with an "
+            "available Trixie fix"
+        )
+        or not isinstance(artifacts, dict)
+        or not required_artifacts.issubset(artifacts)
+        or any(not digest(artifacts.get(key)) for key in required_artifacts)
+        or artifacts.get("sbom.syft.json") != observed.get("sbom_sha256")
+    ):
+        raise ValueError("R4 supply-chain adjudication is incomplete or mismatched")
+    return {
+        "image_id": str(backend["image_id"]),
+        "revision": str(backend["vcs_revision"]),
+    }
+
+
 def validate_receipt(receipt: dict, candidate: dict) -> dict[str, str]:
+    if receipt.get("schema_version") == "r4-image-local-disposition-v1":
+        return _validate_r4_adjudication(receipt, candidate)
     if receipt.get("schema_version") != "private-alpha-supply-chain-summary-v2":
         raise ValueError("unsupported supply-chain receipt schema")
     backend = candidate.get("backend") or candidate

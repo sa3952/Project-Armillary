@@ -4,15 +4,20 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 
 def main() -> int:
+    expected_host = (
+        os.environ.get("CLASSICAL_ASTROLOGY_EXPECTED_HOST", "127.0.0.1").strip()
+        or "127.0.0.1"
+    )
     request = Request(
         "http://127.0.0.1:8000/api/health",
-        headers={"Accept": "application/json"},
+        headers={"Accept": "application/json", "Host": expected_host},
         method="GET",
     )
     try:

@@ -36,9 +36,95 @@ class Canary(NamedTuple):
 RECEIPT_MAX_AGE_SECONDS = 60 * 60
 
 
+def _validate_r4_predeployment(receipt: dict, candidate: dict) -> dict[str, str]:
+    backend = candidate.get("backend") or candidate
+    observed = receipt.get("candidate")
+    witness = receipt.get("build_witness")
+    single = receipt.get("tree_runtime", {}).get("single_worker", {})
+    statuses = single.get("controls", {}).get("request_boundary_statuses")
+    resilience = receipt.get("resilience")
+    artifacts = receipt.get("raw_artifact_sha256")
+
+    def closed_logs(value: object) -> bool:
+        return (
+            isinstance(value, dict)
+            and type(value.get("privacy_event_count")) is int
+            and value["privacy_event_count"] > 0
+            and value.get("chart_status_only_event_present") is True
+            and value.get("raw_chart_access_log_absent") is True
+        )
+
+    def digest(value: object) -> bool:
+        return isinstance(value, str) and re.fullmatch(
+            r"[0-9a-f]{64}", value
+        ) is not None
+
+    required_raw = {
+        "runtime-receipt.json", "two-worker-resilience.json",
+        "docker-history.jsonl",
+    }
+    workers = (
+        resilience.get("initial_workers", [])
+        if isinstance(resilience, dict) else []
+    )
+    replacements = (
+        resilience.get("post_kill_workers", [])
+        if isinstance(resilience, dict) else []
+    )
+    concurrency = (
+        resilience.get("concurrent_statuses", [])
+        if isinstance(resilience, dict) else []
+    )
+    if (
+        receipt.get("disposition")
+        != "ACCEPTED_IMAGE_LOCAL_WITH_SCOPED_LIMITATIONS"
+        or not isinstance(observed, dict)
+        or observed.get("image_id") != backend.get("image_id")
+        or observed.get("public_source_revision") != backend.get("vcs_revision")
+        or not isinstance(witness, dict)
+        or witness.get("plaintext_present_in_build_log_or_flattened_runtime")
+        is not False
+        or witness.get("flattened_rootfs_canary_present") is not False
+        or statuses != {
+            "malformed": 400,
+            "oversized": 413,
+            "unsupported_media_type": 415,
+        }
+        or not closed_logs(single.get("log_controls"))
+        or not isinstance(resilience, dict)
+        or resilience.get("schema_version") != "r4-two-worker-resilience-v1"
+        or resilience.get("image_id") != backend.get("image_id")
+        or resilience.get("revision") != backend.get("vcs_revision")
+        or len(workers) != 2 or len(set(workers)) != 2
+        or len(replacements) != 2 or len(set(replacements)) != 2
+        or resilience.get("killed_worker") not in workers
+        or resilience.get("killed_worker") in replacements
+        or not concurrency or 200 not in concurrency
+        or any(status not in {200, 503} for status in concurrency)
+        or resilience.get("health_after_replacement") != 200
+        or resilience.get("place_search_status") != 200
+        or type(resilience.get("soak_requests")) is not int
+        or resilience["soak_requests"] < 1
+        or type(resilience.get("fd_growth")) is not int
+        or type(resilience.get("thread_growth")) is not int
+        or resilience["fd_growth"] > 0 or resilience["thread_growth"] > 0
+        or not closed_logs(resilience.get("log_controls"))
+        or not isinstance(artifacts, dict)
+        or not required_raw.issubset(artifacts)
+        or any(not digest(artifacts.get(name)) for name in required_raw)
+    ):
+        raise ValueError("R4 predeployment privacy evidence is incomplete or mismatched")
+    return {
+        "image_id": str(backend["image_id"]),
+        "revision": str(backend["vcs_revision"]),
+    }
+
+
 def validate_receipt(
     receipt: dict, candidate: dict, *, now: int | None = None
 ) -> dict[str, str]:
+    if receipt.get("schema_version") == "r4-image-local-disposition-v1":
+        return _validate_r4_predeployment(receipt, candidate)
     if (
         receipt.get("schema_version") != 2
         or receipt.get("verification_scope")

@@ -75,6 +75,36 @@ def _load_script(name: str, path: Path):
     return module
 
 
+def test_container_healthcheck_uses_the_declared_host(monkeypatch):
+    module = _load_script("container_healthcheck", HEALTHCHECK)
+    observed = {}
+
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+    def open_request(request, *, timeout):
+        observed["host"] = request.get_header("Host")
+        observed["timeout"] = timeout
+        return Response()
+
+    monkeypatch.setenv("CLASSICAL_ASTROLOGY_EXPECTED_HOST", "projectarmillary.com")
+    monkeypatch.setattr(module, "urlopen", open_request)
+    monkeypatch.setattr(module.json, "load", lambda _response: {
+        "status": "ok",
+        "ready": True,
+        "readiness_scope": "process_liveness_only",
+    })
+
+    assert module.main() == 0
+    assert observed == {"host": "projectarmillary.com", "timeout": 2.0}
+
+
 @pytest.mark.parametrize(
     "path",
     (

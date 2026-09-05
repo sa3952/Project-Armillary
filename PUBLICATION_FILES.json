@@ -22,7 +22,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "da911c6538b3435efe5ff52351b44adaf462bffecf4c76215a18541d55bca9d4",
+      "sha256": "a3c3daec65a4668987a0b1cafc23cb4e7bc7776bc1a09e855d63faf7449a6754",
       "size_bytes": 322
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "a557c2471a485d2121e0541437a47b24ee6f76613e15d0de515e7d0393aa6565",
+      "sha256": "eafe57fc8e944ea9d7037549418e9212d1b88680fc19bb1656f71297ccb38821",
       "size_bytes": 353
     },
     {
@@ -302,8 +302,8 @@
     },
     {
       "path": "deploy/container_healthcheck.py",
-      "sha256": "e399fe43493a1ad8bc0f9f745af08f19b8010e8c5560ffa7286ea855f5fb7496",
-      "size_bytes": 842
+      "sha256": "f7b0012b4d192ead10d03303f1e43f0ca672377167f135caa0b4308203d3344e",
+      "size_bytes": 1007
     },
     {
       "path": "deploy/entrypoint.sh",
@@ -662,18 +662,18 @@
     },
     {
       "path": "scripts/deployment/release_transaction.py",
-      "sha256": "eae74c9279d66d35b3e1e2c843252439f7dc986068cf14c4ce32a4c788f07202",
-      "size_bytes": 8698
+      "sha256": "b7a65bbd9d5114a63b2bfb7b74c9e27a42a153b1f9881f183a55d95c492752be",
+      "size_bytes": 8963
     },
     {
       "path": "scripts/deployment/run_staging_privacy_canary.py",
-      "sha256": "40dec8e8e01c2f90ef0d1394718a7cc281801dce4c3c43f208cec41d2ae8b99c",
-      "size_bytes": 15164
+      "sha256": "e27e16b4629d24ff631b021a2206f097fca9ab3db098bd00bf94a91f9f3fd7ec",
+      "size_bytes": 18897
     },
     {
       "path": "scripts/deployment/staging_release.py",
-      "sha256": "6fc6c73b21e6cbeecfa3c944e7a544ee8321b098f5e31225ff9504c3858cb6c8",
-      "size_bytes": 36658
+      "sha256": "53ff158111f9c19ef44bdfbd8926a700db3de5769fc348a1a0f11374dbf19b6a",
+      "size_bytes": 36646
     },
     {
       "path": "scripts/deployment/verify_staging_http.py",
@@ -802,8 +802,8 @@
     },
     {
       "path": "scripts/publication/verify_image_supply_chain.py",
-      "sha256": "e6566c79d6a6593730f95b90af2523d7742a4d319db924a47a74187dd24f5f68",
-      "size_bytes": 17741
+      "sha256": "6ef1e92d5ce5dcee7457896962e3e87f7b3c8dd85bbaa91baa842ee8ca610e0b",
+      "size_bytes": 20265
     },
     {
       "path": "scripts/publication/verify_linux_source_build.py",
@@ -922,8 +922,8 @@
     },
     {
       "path": "tests/deployment/test_production_runtime_contract.py",
-      "sha256": "e916331aa05bb57de09b9203bc9fe9988c8fc6bd7580401636b9f8fb386576c2",
-      "size_bytes": 33557
+      "sha256": "9b767df087e8d477d9442d060b4e2955315b9532454bc4d45ac644a22bf428e9",
+      "size_bytes": 34444
     },
     {
       "path": "tests/deployment/test_release_build_transaction.py",

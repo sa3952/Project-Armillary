@@ -129,8 +129,18 @@ def rollback_readiness(
             "image_present": None,
             "frontend_release_present": None,
         }
-    image = str(previous.get("image_id") or "")
-    release = str(previous.get("frontend_release_dir") or "")
+    backend = previous.get("backend")
+    frontend = previous.get("frontend")
+    image = str(
+        backend.get("image_id")
+        if isinstance(backend, dict)
+        else previous.get("image_id") or ""
+    )
+    release = str(
+        frontend.get("release_directory")
+        if isinstance(frontend, dict)
+        else previous.get("frontend_release_dir") or ""
+    )
     image_ok = image_present(image) if image else False
     release_ok = release_present(release) if release else False
     ready = image_ok and release_ok

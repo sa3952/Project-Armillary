@@ -80,7 +80,7 @@ DEFAULT_FRONTEND_RELEASE_ROOT = Path(
 # Changing either side requires changing the other in the same commit.
 APP_PROBE_HOST = "172.31.240.2"
 APP_PROBE_PORT = 8000
-PREACTIVATION_HOST = "preactivation.invalid"
+PREACTIVATION_HOST = "127.0.0.1"
 PREACTIVATION_CANARY = "preactivation-private-canary-1997-08-17"
 
 _UNEXPOSED_PROBE_PROGRAM = r'''
@@ -367,8 +367,9 @@ def _packet_export(args: argparse.Namespace) -> None:
         _require_path_identity(source_partial, partials[0][1])
         verify_source_archive_revision(source_partial, public_revision)
         subprocess.run(
-            ["docker", "save", "--output", str(transfer_partial), args.image],
+            ["docker", "save", args.image],
             check=True,
+            stdout=partials[1][1],
         )
         _require_path_identity(transfer_partial, partials[1][1])
         receipt = build_release_packet_receipt(
