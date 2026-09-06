@@ -142,12 +142,15 @@ def probe(
     credential: str | None = None,
     timeout: float = 10.0,
     allow_private_http: bool = False,
+    host_header: str | None = None,
 ) -> dict[str, object]:
     origin = validate_base_url(base_url, allow_private_http=allow_private_http)
     headers = {
         "Accept": "application/json",
         "User-Agent": "project-armillary-availability/1",
     }
+    if host_header is not None:
+        headers["Host"] = host_header
     if credential is not None:
         encoded = base64.b64encode(credential.encode("utf-8")).decode("ascii")
         headers["Authorization"] = f"Basic {encoded}"
@@ -420,15 +423,24 @@ def main() -> int:
             raise AvailabilityFailure("supervisor inputs are incomplete")
         notification_url = _owner_url(args.notification_url_file)
         state = _state(args.state_file)
-        def checked(base, secret, private):
+        external_host = urlsplit(args.external_base_url).hostname
+        if external_host is None:
+            raise AvailabilityFailure("external watchdog host is unavailable")
+        def checked(base, secret, private, host_header=None):
             try:
-                probe(base_url=base, source_root=args.source_root, credential=secret, allow_private_http=private)
+                probe(
+                    base_url=base,
+                    source_root=args.source_root,
+                    credential=secret,
+                    allow_private_http=private,
+                    host_header=host_header,
+                )
                 return True
             except AvailabilityFailure:
                 return False
         def local_ready():
             return checked(
-                args.local_base_url, None, True
+                args.local_base_url, None, True, external_host
             ) and worker_population_ok(args.source_root)
         def notify(event, failure, status):
             _send(notification_url, notification_payload(event=event, failure_class=failure, revision=args.revision, restart_status=status))

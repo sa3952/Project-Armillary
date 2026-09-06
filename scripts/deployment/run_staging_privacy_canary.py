@@ -412,7 +412,7 @@ def evaluate_request_cases(cases: dict[str, Any]) -> dict[str, bool]:
     expected = {
         "success": 200,
         "422": 422,
-        "malformed": 422,
+        "malformed": 400,
         "413": 413,
         "415": 415,
         "429": 429,

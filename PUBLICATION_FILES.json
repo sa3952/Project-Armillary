@@ -22,7 +22,7 @@
     },
     {
       "path": ".well-known/security.txt",
-      "sha256": "c040032a2d436eac432b3a94679c9b9042adc36b7066e74c57b0ed1cbdc42c4a",
+      "sha256": "c4499c4b6b6b0cedce9de16730839d7aae2d6d718d02d79e453f73342bb80874",
       "size_bytes": 322
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "SOURCE_EXPORT.json",
-      "sha256": "652f163dbc7929d2f6845ca760d9ae34b2922f12a25af5394ca101f52df94304",
+      "sha256": "6886717b201c0c66a056732b0b5343ccd37ec53205a2baecfecefc88cccc6c34",
       "size_bytes": 353
     },
     {
@@ -352,8 +352,8 @@
     },
     {
       "path": "deploy/staging/host/private-alpha-watchdog.service",
-      "sha256": "1912f390b310ee90cc392cf7468fdeeec05f291a9c57d0476a4f42235cae2e98",
-      "size_bytes": 1399
+      "sha256": "2f49f46802776b360324f7b6870b2ff624add113c97ee486a0f2388702c166c3",
+      "size_bytes": 1529
     },
     {
       "path": "deploy/staging/host/private-alpha-watchdog.timer",
@@ -652,8 +652,8 @@
     },
     {
       "path": "scripts/deployment/private_alpha_watchdog.py",
-      "sha256": "dd1f890510f01c7fc57706b863152c36c2db0a89845f748ddb4d6d9bcc5c7b7d",
-      "size_bytes": 17501
+      "sha256": "cf79f2ea98b8f37811f0040379fa195097db763e8060d25c98194170255c99d5",
+      "size_bytes": 17963
     },
     {
       "path": "scripts/deployment/release_packet.py",
@@ -667,7 +667,7 @@
     },
     {
       "path": "scripts/deployment/run_staging_privacy_canary.py",
-      "sha256": "e27e16b4629d24ff631b021a2206f097fca9ab3db098bd00bf94a91f9f3fd7ec",
+      "sha256": "9fa7e90418a3c458fc77b5c763026d74129852f809df265090e03f00fd87bd3a",
       "size_bytes": 18897
     },
     {
