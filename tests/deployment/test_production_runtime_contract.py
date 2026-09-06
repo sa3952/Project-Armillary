@@ -942,7 +942,11 @@ def test_a_base_the_daemon_has_not_got_is_fetched_by_digest_not_assumed(monkeypa
     """A missing local base is fetched by its exact digest."""
     gate = _runtime_gate()
     calls: list[list[str]] = []
-    config = json.dumps([{"Config": {"Env": ["PYTHON_VERSION=3.14.7"]}}])
+    config = json.dumps([{
+        "Os": "linux",
+        "Architecture": "amd64",
+        "Config": {"Env": ["PYTHON_VERSION=3.14.7"]},
+    }])
 
     def fake_run(command, **_kwargs):
         calls.append(command)
@@ -954,8 +958,25 @@ def test_a_base_the_daemon_has_not_got_is_fetched_by_digest_not_assumed(monkeypa
 
     assert gate.base_environment("linux/amd64") == {"PYTHON_VERSION": "3.14.7"}
     assert [command[1] for command in calls] == ["image", "pull", "image"]
-    assert "--platform" in calls[0] and "linux/amd64" in calls[0]
+    assert "--platform" not in calls[0]
     assert "--platform" in calls[1] and "linux/amd64" in calls[1]
+    assert "--platform" not in calls[2]
+
+
+def test_base_environment_rejects_the_wrong_observed_platform(monkeypatch):
+    gate = _runtime_gate()
+    monkeypatch.setattr(
+        gate,
+        "_run",
+        lambda *_a, **_k: SimpleNamespace(stdout=json.dumps([{
+            "Os": "linux",
+            "Architecture": "arm64",
+            "Config": {"Env": ["PYTHON_VERSION=3.14.7"]},
+        }])),
+    )
+
+    with pytest.raises(gate.GateFailure, match="platform differs"):
+        gate.base_environment("linux/amd64")
 
 
 def test_a_base_that_cannot_be_fetched_is_refused(monkeypatch):
@@ -975,7 +996,9 @@ def test_a_base_that_declares_no_environment_is_refused(monkeypatch):
     monkeypatch.setattr(
         gate,
         "_run",
-        lambda *_a, **_k: SimpleNamespace(stdout=json.dumps([{"Config": {"Env": []}}])),
+        lambda *_a, **_k: SimpleNamespace(stdout=json.dumps([{
+            "Os": "linux", "Architecture": "amd64", "Config": {"Env": []}
+        }])),
     )
 
     with pytest.raises(gate.GateFailure, match="declares no environment"):

@@ -313,10 +313,10 @@ def base_environment(platform: str | None) -> dict[str, str]:
     """Read the pinned base environment; absence or unreadability is refusal."""
 
     reference = pinned_base_reference()
-    inspect = ["docker", "image", "inspect"]
-    if platform:
-        inspect.extend(["--platform", platform])
-    inspect.append(reference)
+    # `docker image inspect --platform` is not portable across maintained
+    # Docker releases.  Platform selection belongs to pull; inspect reports
+    # the actual local object and we verify that observation below.
+    inspect = ["docker", "image", "inspect", reference]
     try:
         raw = _run(inspect).stdout
     except GateFailure:
@@ -327,11 +327,20 @@ def base_environment(platform: str | None) -> dict[str, str]:
         _run([*pull, reference])
         raw = _run(inspect).stdout
     try:
-        entries = json.loads(raw)[0]["Config"]["Env"] or []
+        observed = json.loads(raw)[0]
+        entries = observed["Config"]["Env"] or []
     except (IndexError, KeyError, TypeError, json.JSONDecodeError) as error:
         raise GateFailure(
             f"cannot read the pinned base environment from {reference}"
         ) from error
+    if platform:
+        expected_os, separator, expected_architecture = platform.partition("/")
+        if (
+            not separator
+            or observed.get("Os") != expected_os
+            or observed.get("Architecture") != expected_architecture
+        ):
+            raise GateFailure("pinned base platform differs from the requested platform")
     inherited: dict[str, str] = {}
     for item in entries:
         if not isinstance(item, str) or "=" not in item:
