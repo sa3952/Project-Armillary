@@ -677,8 +677,14 @@ test("serializer boundaries contain control and Markdown structure injection on 
 
 test("chart-data-only export omits receipts and trace while detailed mode retains them", () => {
   const { response } = fixture();
+  response.calculation_dossier.warnings.push({
+    code: "provisional_method_result",
+    message: "internal-method-warning",
+  });
   const document = Exporters.createDocument(response, [
-    { id: "bodies", title: "天體", tables: [], notes: [], blocks: [] },
+    {
+      id: "bodies", title: "天體", tables: [], notes: ["人類可讀說明"], blocks: [],
+    },
     { id: "trace", title: "逐步計算軌跡", tables: [], notes: [], blocks: ["secret-trace"] },
     { id: "receipt", title: "收據", tables: [], notes: [], blocks: ["secret-receipt"] },
   ]);
@@ -688,7 +694,10 @@ test("chart-data-only export omits receipts and trace while detailed mode retain
   assert.ok(!compact.content.includes("secret-trace"));
   assert.ok(!compact.content.includes("secret-receipt"));
   assert.ok(!compact.content.includes("calculation_dossier"));
+  assert.ok(!compact.content.includes("internal-method-warning"));
+  assert.ok(compact.content.includes("人類可讀說明"));
   assert.ok(detailed.content.includes("secret-trace"));
+  assert.ok(detailed.content.includes("internal-method-warning"));
   assert.ok(detailed.content.includes("calculation_dossier"));
 });
 

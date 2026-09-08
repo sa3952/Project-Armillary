@@ -24,6 +24,9 @@
   const submitButton = el("submit-button");
   const cancelButton = el("cancel-button");
   const bootstrapStatus = el("bootstrap-status");
+  const TECHNICAL_SECTION_IDS = new Set([
+    "requested_options", "trace", "contract", "receipt",
+  ]);
 
   // 讀值、範圍檢查與模糊時刻判定都在 RequestInput，理由見該模組開頭。
   // 宣告放在這裡而不是 buildPayload 附近，因為 refreshFoldChoice
@@ -559,7 +562,7 @@
     el("field-ayanamsa").hidden = !sidereal;
     zodiacConsequence.hidden = !sidereal;
     zodiacConsequence.textContent = sidereal
-      ? "恆星黃道下，必然尊貴會被產品明確拒絕而不是算錯，尊貴的判準建立在回歸黃道上，"
+      ? "恆星黃道下，本質尊貴會被產品明確拒絕而不是算錯，尊貴的判準建立在回歸黃道上，"
         + "尚未有授權的恆星黃道版本。結果中會顯示拒絕的原因代碼。"
       : "";
   }
@@ -1007,27 +1010,46 @@
     canonical.sections.forEach((section) => sectionSnapshots.set(section.id, section));
 
     const tree = window.ChartViewModel.buildViewTree(canonical);
-    versionsHost.textContent =
-      `API ${tree.header.api_schema_version} · Dossier ${tree.header.dossier_version}`
-      + ` · Export ${tree.header.export_contract_version}`;
+    versionsHost.textContent = "";
+    versionsHost.hidden = true;
 
     warningsHost.replaceChildren();
     warningsHost.hidden = tree.header.warnings.length === 0;
     tree.header.warnings.forEach((warning) => {
       const item = document.createElement("li");
-      const code = document.createElement("b");
-      code.textContent = warning.code;
-      item.appendChild(code);
-      item.appendChild(document.createTextNode(warning.message));
+      item.textContent = warning.message;
       warningsHost.appendChild(item);
     });
 
     // 結果頁有二十一個區塊、三百多列，沒有索引就只能一路捲。
     // 索引同時顯示每一區的環與收據狀態，讓「哪些被拒絕、哪些沒請求」在捲之前就看得到。
-    buildSectionIndex(tree.sections);
+    const resultSections = tree.sections.filter(
+      (section) => section.status.state !== "not_requested"
+        && !TECHNICAL_SECTION_IDS.has(section.id)
+    );
+    const technicalSections = tree.sections.filter(
+      (section) => TECHNICAL_SECTION_IDS.has(section.id)
+    );
+    buildSectionIndex(resultSections);
 
     sectionsHost.replaceChildren();
-    tree.sections.forEach((section) => sectionsHost.appendChild(materializeSection(section)));
+    resultSections.forEach(
+      (section) => sectionsHost.appendChild(materializeSection(section))
+    );
+    if (technicalSections.length) {
+      const details = document.createElement("details");
+      details.className = "technical-results";
+      const summary = document.createElement("summary");
+      summary.textContent = "技術細節與驗算資料";
+      const note = document.createElement("p");
+      note.className = "note";
+      note.textContent = "版本、來源、選項、計算軌跡與完整收據。一般閱讀不需要展開。";
+      details.append(summary, note);
+      technicalSections.forEach(
+        (section) => details.appendChild(materializeSection(section))
+      );
+      sectionsHost.appendChild(details);
+    }
 
     results.hidden = false;
     setStatus("計算完成。", "info");
@@ -1084,13 +1106,6 @@
     state.dataset.state = section.status.state;
     state.textContent = section.status.label;
     head.appendChild(state);
-
-    if (section.status.reason_code) {
-      const reason = document.createElement("span");
-      reason.className = "reason-code";
-      reason.textContent = `reason_code: ${section.status.reason_code}`;
-      head.appendChild(reason);
-    }
 
     // section copy：讀建立時綁定的 canonical 快照，不在點擊時重掃畫面。
     const copy = document.createElement("button");
@@ -1206,6 +1221,13 @@
   }
 
   // ══ 匯出 ══════════════════════════════════════════════
+  function selectedExportMode() {
+    const selected = document.querySelector(
+      'input[name="export-detail-mode"]:checked'
+    );
+    return selected ? selected.value : "chart_data_only";
+  }
+
   function writeToClipboard(text, okMessage, anchor) {
     const clipboard = navigator.clipboard;
     if (!clipboard || typeof clipboard.writeText !== "function") {
@@ -1246,14 +1268,14 @@
         text = window.ChartExport.renderPlainText(
           window.ChartExport.projectOutputDocument(
             canonical,
-            el("export-detail-mode").value,
+            selectedExportMode(),
           )
         );
       } catch (error) {
         reportAt(button, `複製失敗：${error.message}`, "error");
         return;
       }
-      writeToClipboard(text, "已複製全文。", button);
+      writeToClipboard(text, "已複製所選內容。", button);
     });
   });
 
@@ -1270,7 +1292,7 @@
         canonical,
         button.dataset.download,
         deliverArtifact,
-        el("export-detail-mode").value,
+        selectedExportMode(),
       );
       reportAt(
         button,

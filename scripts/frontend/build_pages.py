@@ -31,12 +31,8 @@ SURFACE_MANIFEST = ROOT / "frontend" / "surfaces.json"
 
 # Bump when a shared asset changes, so browsers do not serve a stale copy
 # alongside freshly generated markup.
-ASSET_VERSION = "0.15.0-final-polish"
+ASSET_VERSION = "0.16.6"
 
-# /validation 的範例卷宗由 scripts/frontend/render_example_dossier.cjs 產生，
-# 因為它必須是 view-model.js 的下游（契約 §10：render 與 export 同為 canonical
-# sections 的兄弟）。在 Python 這邊重寫一遍 section 邏輯會造成第二個出處。
-EXAMPLE_DOSSIER = PAGES / "_example-dossier.html"
 _INDEXNOW_KEY = re.compile(r"^[A-Za-z0-9-]{8,128}$")
 
 _TELEMETRY_FIELD_EXPLANATIONS = {
@@ -199,11 +195,6 @@ def render(item: dict, origin: str) -> str:
         raise ValueError("hand-maintained surface cannot be rendered")
     shell = SHELL.read_text(encoding="utf-8")
     body = (PAGES / f"{name}.html").read_text(encoding="utf-8").rstrip("\n")
-    if "{{example_dossier}}" in body:
-        body = body.replace(
-            "{{example_dossier}}",
-            EXAMPLE_DOSSIER.read_text(encoding="utf-8").rstrip("\n"),
-        )
     if "{{telemetry_contract_rows}}" in body:
         body = body.replace(
             "{{telemetry_contract_rows}}",

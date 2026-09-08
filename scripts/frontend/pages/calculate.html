@@ -69,7 +69,7 @@
                 <input type="search" id="place-query" autocomplete="off" placeholder="例如：臺中、Taipei、Zurich">
                 <button type="button" id="place-search-button">查詢</button>
               </div>
-              <span class="hint">讀取內建的唯讀離線目錄，不發出任何對外請求，也不使用瀏覽器或 IP 定位。</span>
+              <span class="hint">讀取內建的唯讀離線目錄，不發出對外請求。中文行政區請用空格分開，例如「臺中 北區」。</span>
             </div>
           </div>
           <p class="status-line" id="place-status" role="status" aria-live="polite"></p>
@@ -194,18 +194,23 @@
       <ul class="warnings" id="warnings" hidden></ul>
 
       <div class="toolbar">
-        <label for="export-detail-mode">輸出內容</label>
-        <select id="export-detail-mode">
-          <option value="chart_data_only">只要星盤資料</option>
-          <option value="reproducibility_detail" selected>星盤資料＋收據與計算過程</option>
-        </select>
-        <button type="button" class="ghost small" data-copy="all">複製全文</button>
-        <button type="button" class="ghost small" data-download="json">下載 JSON</button>
-        <button type="button" class="ghost small" data-download="csv">下載 CSV</button>
-        <button type="button" class="ghost small" data-download="md">下載 Markdown</button>
-        <button type="button" class="ghost small" data-download="txt">下載 TXT</button>
-        <button type="button" class="ghost small" id="print-button">列印／存成 PDF</button>
-        <p class="note">下載的檔案包含你輸入的出生時間與精確座標。檔名不含這些資料，但檔案內容含有；請自行決定存放位置。</p>
+        <div class="export-mode" role="radiogroup" aria-labelledby="export-mode-title" aria-describedby="export-mode-help">
+          <p class="export-mode-title" id="export-mode-title">複製與下載內容</p>
+          <div class="export-mode-options">
+            <label><input type="radio" name="export-detail-mode" value="chart_data_only" checked><span><b>運算結果</b><small>天體、座標、宮位、相位與所選計算</small></span></label>
+            <label><input type="radio" name="export-detail-mode" value="reproducibility_detail"><span><b>運算結果＋驗算資料</b><small>再加入版本、來源、計算軌跡與完整收據</small></span></label>
+          </div>
+        </div>
+        <p class="note" id="export-mode-help">一般閱讀建議使用PDF、Markdown或純文字；JSON供完整保存與程式處理，CSV供試算表使用。</p>
+        <div class="export-actions">
+          <button type="button" class="ghost small" data-copy="all">複製結果</button>
+          <button type="button" class="ghost small" data-download="md">Markdown</button>
+          <button type="button" class="ghost small" data-download="txt">純文字</button>
+          <button type="button" class="ghost small" data-download="json">JSON</button>
+          <button type="button" class="ghost small" data-download="csv">CSV</button>
+          <button type="button" class="ghost small" id="print-button">列印／存成PDF</button>
+        </div>
+        <p class="note">輸出包含你輸入的出生時間與精確座標。檔名不含這些資料，但內容含有；請自行決定存放位置。</p>
       </div>
 
       <nav class="section-index-wrap" id="section-index-wrap" hidden aria-label="結果區塊索引">

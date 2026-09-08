@@ -110,7 +110,7 @@
       </table>
     </div>
     <p><b>限流用的是你的 IP，這件事值得說清楚。</b>反向代理必須看得到你的位址，否則封包送不回去。它拿那個位址做限流計數，<b>但不寫進日誌，也不轉送給應用程式</b>——應用程式從頭到尾沒有機會知道你的 IP。</p>
-    <p>已經取得計算鎖的請求<b>永遠不會被中斷</b>。中斷一個進行中的星曆計算，正是這個鎖存在要防止的失敗。</p>
+    <p>應用程式不會因<b>等待佇列預算到期</b>而主動取消已取得計算鎖、正在執行的同步星曆計算；worker、容器或主機故障仍可能中斷請求。</p>
   </section>
 
   <!-- ═══ 06 容器與主機 ═══ -->
@@ -171,14 +171,14 @@
   <!-- ═══ 威脅登錄 ═══ -->
   <section class="ds-sec">
     <p class="hdr"><span>10</span>威脅登錄與嚴重度</p>
-    <p>內部威脅模型登錄 <b>14 條具名威脅</b>（T1–T14），每一條都寫出攻擊故事、影響、目前控制與<b>剩餘風險</b>。舉三個實際的：</p>
+    <p>current威脅模型按browser、proxy、container、host／provider與export等trust boundaries記錄威脅、控制與<b>重驗觸發條件</b>。舉三個實際的：</p>
     <div class="spec-scroll">
       <table class="spec threats">
-        <thead><tr><th>ID</th><th>攻擊故事</th><th>目前控制</th><th>剩餘風險</th></tr></thead>
+        <thead><tr><th>主體</th><th>攻擊故事</th><th>目前控制</th><th>剩餘風險</th></tr></thead>
         <tbody>
-          <tr><td class="mono">T2</td><td>開發者對 <span class="mono">request.json()</span>、model repr 或標頭做 debug log</td><td>封閉式事件 schema、送出前二次驗證、原始碼與測試守衛</td><td><b>Python 沒有資訊流型別系統</b>；程式碼審查與紅隊仍然必要</td></tr>
-          <tr><td class="mono">T9</td><td>並行請求污染星曆函式庫的行程全域狀態</td><td>行程鎖、模式矩陣迴歸測試</td><td><b>公開擴展必須多行程，不可移除 per-process 鎖</b></td></tr>
-          <tr><td class="mono">T14</td><td>作業系統 swap、當機傾印、終端機或備份保存資料</td><td>應用程式本身不寫出生資料的日誌或檔案</td><td><b>不宣稱安全記憶體抹除</b>；高敏感使用者應考慮本機優先與磁碟加密</td></tr>
+          <tr><td>應用程式日誌</td><td>開發者對request、model repr或標頭做debug log</td><td>封閉式事件schema、固定錯誤與真實server canary</td><td><b>Python沒有資訊流型別系統</b>；logging或middleware改變時須重驗</td></tr>
+          <tr><td>星曆全域狀態</td><td>並行請求污染Swiss Ephemeris的行程全域狀態</td><td>per-process鎖、模式與並行測試</td><td>native call topology或worker model改變時須重驗</td></tr>
+          <tr><td>瀏覽器／主機／供應商</td><td>swap、當機傾印、瀏覽器還原、備份或provider保存資料</td><td>應用程式不寫出生資料；主機採no-swap／no-backup policy</td><td><b>不宣稱安全記憶體抹除</b>；browser與provider retention仍是剩餘風險</td></tr>
         </tbody>
       </table>
     </div>
@@ -192,7 +192,7 @@
   <!-- ═══ 紅隊問題 ═══ -->
   <section class="ds-sec">
     <p class="hdr"><span>11</span>我們最希望有人打破的地方</p>
-    <p>威脅模型的最後一節列出<b>我們自己開給紅隊的十二個優先問題</b>。它們是我們認為最可能出事的地方，公開在這裡的理由很簡單：<b>一份只列出自己擅長之處的安全頁沒有用。</b></p>
+    <p>下面列出一組<b>可直接拿來挑戰目前設計的代表問題</b>。公開在這裡的理由很簡單：<b>一份只列出自己擅長之處的安全頁沒有用。</b></p>
     <ul class="asks">
       <li>編碼過的路徑、absolute-form URL、無效方法或標頭、chunked body，能否突破路由／方法／大小的縮減器？</li>
       <li><span class="mono">ExceptionGroup</span>、串流回應、背景工作、回應序列化失敗是否會外洩？<span class="mono">CancelledError</span>、<span class="mono">KeyboardInterrupt</span>、<span class="mono">SystemExit</span>、<span class="mono">GeneratorExit</span> 是否仍正確向上傳播？</li>
@@ -202,7 +202,7 @@
       <li>清除之後殘留的 detached DOM handler、Blob URL、遲到回應或 back-forward cache，是否仍能還原資料？</li>
       <li>卷宗裡的證據引用，是否可能因測試改名或未重跑閘門而變成誤導？</li>
     </ul>
-    <p class="limit">完整十二題與 T1–T14 的完整登錄在內部威脅模型文件裡；<b>它與原始碼一起公開</b>。</p>
+    <p class="limit">current threat model與原始碼一起公開；它按實際trust boundaries維護，不以本頁手抄的編號或數量作為currentness依據。</p>
   </section>
 
   <!-- ═══ 08 供應鏈 ═══ -->
@@ -226,7 +226,7 @@
       <li><b>沒有任何單一相依守衛算是完整控制。</b>相依安全由直接輸入、雜湊鎖定的解析、SBOM、安裝集合回讀與執行期出口限制共同承擔；其中任何一項單獨都不足以宣稱安全。</li>
       <li><b>測試是設計期的迴歸證據，不在你每次計算時重跑。</b>卷宗裡的證據欄位是指向測試的指標，不是「這一次執行過並通過」的紀錄。</li>
       <li><b>線上跑的版本不必然等於公開程式庫的最新版。</b>要確認你正在用哪一版，看卷宗裡的版本識別碼——<b>不要從最新提交推定，我們自己也不這樣推定。</b></li>
-      <li><b>隱私聲明狀態為「暫定，待外部審查」。</b>在獨立審查完成之前不會改；即使通過，也不會自動延伸到未涵蓋的層。</li>
+      <li><b>隱私文案已有外部技術審查與live privacy驗證，但尚未取得合格法律專業審閱。</b>技術審查、主機實測與法律意見是不同證據，不互相代替，也不自動延伸到未涵蓋的層。</li>
     </ul>
     <p class="limit"><b>不能從「某個元件不存在」推論出「因此安全」。</b>沒有 CDN 表示沒有 CDN 的攻擊面，也表示沒有 CDN 的防護。</p>
   </section>

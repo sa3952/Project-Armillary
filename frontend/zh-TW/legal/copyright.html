@@ -14,8 +14,8 @@
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@id":"https://projectarmillary.com/#website","@type":"WebSite","inLanguage":"zh-TW","name":"渾儀 Armillary","url":"https://projectarmillary.com/"},{"@id":"https://projectarmillary.com/zh-TW/legal/copyright#webpage","@type":"WebPage","description":"查看渾儀、Swiss Ephemeris、地名資料、第三方依賴及AGPLv3對應原始碼資訊。","inLanguage":"zh-TW","isPartOf":{"@id":"https://projectarmillary.com/#website"},"name":"著作權、授權與對應原始碼｜渾儀 Armillary","url":"https://projectarmillary.com/zh-TW/legal/copyright"}]}</script>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.15.0-final-polish">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.15.0-final-polish">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.16.6">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.16.6">
 </head>
 <body>
 
@@ -51,7 +51,7 @@
   <section class="lg-head">
     <p class="eyebrow">法律 · LEGAL</p>
     <h1>著作權與原始碼</h1>
-    <p class="draft-flag"><b>本版文案已由 Sebastian 認可，但尚未經合格法律查核。</b>本頁的公開版本識別碼、原始碼封存與映像識別，只在該版本實際發布時由發布流程寫入，不沿用先前已上線的版本，也不把文案認可說成法律專業審閱。</p>
+    <p class="draft-flag"><b>本版文案已由 Sebastian 認可，但尚未經合格法律查核。</b>目前live版本已有自己的公開原始碼與發布識別；日後版本仍須由發布流程產生自己的exact identity，不沿用前版，也不把文案認可說成法律專業審閱。</p>
 
     <p class="lg-decl"><b>本服務以 GNU Affero General Public License v3 授權。</b>不是部分、不是雙授權——<b>公開的原始碼樹整棵是它</b>，發布清單裡的授權表述就是一行 <span class="mono">AGPL-3.0-only</span>。</p>
 
@@ -90,18 +90,18 @@
     <p class="lg-note"><b>這個識別碼不是有人手打上去的。</b>它由發布流程注入容器，同時寫進映像標籤與應用程式設定，容器啟動時核對兩者一致。<b>範圍要說清楚：</b>它是發布可追溯性的強化，<b>不單獨證明</b>簽出是乾淨的、原始碼提供是完整的，或已符合 AGPL 的全部義務。</p>
   </section>
 
-  <!-- ═══ 為什麼這頁沒有版本號 ═══ -->
+  <!-- ═══ 為什麼這頁不手填版本號 ═══ -->
   <section class="lg-sec" id="no-revision">
     <p class="lg-n">02</p>
-    <h2>為什麼這一頁不直接寫版本號</h2>
+    <h2>為什麼這一頁不手填版本號</h2>
 
-    <p class="lg-vow">因為現在還沒有一個真的版本可以寫。</p>
+    <p class="lg-vow">因為真正的版本必須來自目前服務回傳的發布識別，不能由文案作者猜寫。</p>
 
-    <p><b>Next-image line會建立自己的public revision、source archive與exact image identity。</b>既有live baseline不能替這個新版本回答「線上跑的是哪一版」；新版本只有在receipt chain完成後才有可發布的答案。</p>
+    <p><b>目前live版本已有自己的public revision、source archive與exact image identity。</b>這條identity chain只回答目前部署的版本；後續版本仍須建立自己的chain，不能沿用目前的答案。</p>
 
     <p>依內部裁決，這一頁的版本識別與封存檔欄位<b>只能由發布收據產生器寫入，禁止手動填寫</b>。收據缺失或前後矛盾時，流程<b>失敗關閉</b>——寧可讓公開文件維持未發布，也不接受手打的身分。</p>
 
-    <p><b>Next-image line的AGPL第13條identity chain仍在建立中。</b>Release producer會先建立可匿名取得的public revision與source archive，再把exact image與runtime自報識別綁回該revision；任何一段缺失或矛盾都會停止release。<b>我們不會拿live baseline的數字預填下一版。</b></p>
+    <p><b>目前live版本的AGPL第13條identity chain已建立完成。</b>Release producer先建立可匿名取得的public revision與source archive，再把exact image與runtime自報識別綁回該revision；任何一段缺失或矛盾都會停止release。<b>目前版本的證據不會預填到下一版。</b></p>
   </section>
 
   <!-- ═══ 隨服務送出什麼 ═══ -->
@@ -139,7 +139,7 @@
           <td>IANA 時區資料庫。所用版本寫進每一份計算卷宗</td>
         </tr>
         <tr>
-          <td><b>Python 相依套件</b><br><span class="sub">exact組成以current CycloneDX SBOM與hash-pinned locks為準；含 FastAPI、Starlette、Pydantic、uvicorn、httpx 等</span></td>
+          <td><b>Python 相依套件</b><br><span class="sub">exact組成以current CycloneDX SBOM與hash-pinned production lock為準，不以本頁手抄套件清單代替</span></td>
           <td class="lic">MIT / BSD / PSF /<br>Apache 等，各自適用</td>
           <td>確切版本與雜湊固定於 <span class="mono">deploy/requirements.lock</span>；組成列於 CycloneDX 1.5 軟體物料清單</td>
         </tr>

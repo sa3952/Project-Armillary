@@ -14,8 +14,8 @@
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@id":"https://projectarmillary.com/#website","@type":"WebSite","inLanguage":"zh-TW","name":"渾儀 Armillary","url":"https://projectarmillary.com/"},{"@id":"https://projectarmillary.com/zh-TW/trust#webpage","@type":"WebPage","description":"了解渾儀如何連結計算結果、版本、來源、隱私控制、驗證證據與尚未完成的限制。","inLanguage":"zh-TW","isPartOf":{"@id":"https://projectarmillary.com/#website"},"name":"計算透明度、隱私與信任邊界｜渾儀 Armillary","url":"https://projectarmillary.com/zh-TW/trust"}]}</script>
 <link rel="icon" href="/zh-TW/favicon.svg">
-<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.15.0-final-polish">
-<link rel="stylesheet" href="/zh-TW/page.css?v=0.15.0-final-polish">
+<link rel="stylesheet" href="/zh-TW/tokens.css?v=0.16.6">
+<link rel="stylesheet" href="/zh-TW/page.css?v=0.16.6">
 </head>
 <body>
 
@@ -144,7 +144,7 @@
           <span class="tier-how">只能在真實主機上驗，且只代表驗的那個時間點</span>
         </div>
         <ul class="claims">
-          <li><b>存取憑證在代理層</b><span>既有live baseline已有具名實測證據：本站回傳 <span class="mono">401</span> 與 <span class="mono">WWW-Authenticate: Basic realm="Private Alpha"</span>。<b>該證據只涵蓋當時部署的那一組版本</b>；下一組尚未部署，須對新版本重新驗證。</span></li>
+          <li><b>存取憑證在代理層</b><span>目前live版本已有具名實測證據：本站回傳 <span class="mono">401</span> 與 <span class="mono">WWW-Authenticate: Basic realm="Private Alpha"</span>。<b>該證據只涵蓋實測時的exact deployed pair</b>，不自動延伸到後續版本。</span></li>
           <li><b>不記錄存取日誌、不轉送原始 IP</b><span>有歷史執行證據。<b>供應商、DNS 與 Internet 轉送環節仍會為了建立連線而處理連線 metadata</b>——我們可以不記錄，不能宣稱它在網路上不存在。</span></li>
           <li><b>系統日誌短保留、停用 swap 與當機傾印</b><span>有歷史執行證據。這一層的每一項都需要重新在主機上驗證才能宣稱現況。</span></li>
         </ul>

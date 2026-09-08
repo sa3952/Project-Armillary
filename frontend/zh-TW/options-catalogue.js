@@ -33,7 +33,7 @@
     { key: "horizon", in_advanced: true,   label_zh: "升降與中天", label_en: "Rise, set and transits" },
     { key: "geometry", in_advanced: true,  label_zh: "幾何推導",   label_en: "Derived geometry" },
     { key: "aspects", in_advanced: true,   label_zh: "相位",       label_en: "Aspects" },
-    { key: "dignities", in_advanced: true, label_zh: "必然尊貴",   label_en: "Essential dignities" },
+    { key: "dignities", in_advanced: true, label_zh: "本質尊貴",   label_en: "Essential dignities" },
   ]);
 
   /**
@@ -200,7 +200,7 @@
       // `gt=0.0, le=30.0`；下界 0 會被拒絕。
       depends_on: "aspect_include_angles", min: 0.1, max: 30, step: 0.1 },
 
-    // ── 必然尊貴 ─────────────────────────────────────────
+    // ── 本質尊貴 ─────────────────────────────────────────
     // 產品與後端預設皆依 Sebastian 2026-08-05 裁決關閉。
     { key: "include_domicile_exaltation", group: "dignities", type: "boolean",
       // 以下拉呈現，與界／面旬／三分性一致：那三個本來就是「不計算 ＋ 具名 profile」。

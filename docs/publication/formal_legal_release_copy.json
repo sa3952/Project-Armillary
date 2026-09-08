@@ -3,8 +3,8 @@
   "status": "current_release_copy",
   "publication_disposition": "publication_input",
   "approved_by": "Sebastian",
-  "approved_on": "2026-08-20",
-  "approval_scope": "exact Traditional Chinese privacy, terms, copyright and contact release copy; excludes machine-owned release identity fields",
+  "approved_on": "2026-09-08",
+  "approval_scope": "exact Traditional Chinese Private Alpha 1.0.0 privacy, terms, copyright and contact release copy effective 2026-09-06; excludes machine-owned release identity fields",
   "qualified_counsel_review": false,
   "operator": "Sebastian",
   "official_contact": "privacy@projectarmillary.com",
@@ -40,19 +40,19 @@
   "release_copy_sources": [
     {
       "path": "scripts/frontend/pages/contact.html",
-      "sha256": "3acec3563b51c3e5a7351ee2e340fa7abdb3af77b6ebded414011aea4fe181d1"
+      "sha256": "1c2aa70f9a75fd95baccc3e923b74237d1b62c5607f2ab9528c4f91f5bda8963"
     },
     {
       "path": "scripts/frontend/pages/legal-privacy.html",
-      "sha256": "cbd9601c543248d90aee07f858f0712d6b6aea44aecb3dfbce5767bcc78766d1"
+      "sha256": "d34989f47422d4b838d3d631213d8b0c1c35dc1ab35b51daa0dca620c663d5d3"
     },
     {
       "path": "scripts/frontend/pages/legal-terms.html",
-      "sha256": "381d116d53074d9f3b27081df81341c7dc44cb5c7627d04b805d25c521cabc84"
+      "sha256": "4f52971dc86ae47c5e65f64ecd73c9217367f33479b59a27f3d3b2ff101ec38a"
     },
     {
       "path": "scripts/frontend/pages/legal-copyright.html",
-      "sha256": "2f990e201f90c1e4c81f2b47ebda554fdd2cbddd9951914dc182d0e3e4c46993"
+      "sha256": "1f3aea09f856e2944e7ed422a0abf5236031e2408760240837949646f4c25054"
     }
   ],
   "machine_owned_release_fields": {

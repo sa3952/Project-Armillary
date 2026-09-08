@@ -141,7 +141,7 @@ button.small{font-size:.82rem; padding:.45rem 1rem}
 .error-panel ul{margin:.6rem 0 0 1.1rem; font-size:.88rem; color:var(--ink-dim)}
 
 /* ── 結果 ───────────────────────────────────────── */
-.result-head{border-top:1px solid var(--ink); padding:var(--s3) 0; display:flex; flex-wrap:wrap; gap:var(--s2) var(--s3); align-items:baseline}
+.result-head{padding:var(--s2) 0; display:flex; flex-wrap:wrap; gap:var(--s2) var(--s3); align-items:baseline}
 .result-head h2{font-family:var(--serif); font-weight:400; font-size:1.6rem}
 .versions{margin-left:auto; font-family:var(--mono); font-size:.7rem; color:var(--ink-faint); letter-spacing:.1em; overflow-wrap:anywhere}
 
@@ -149,8 +149,20 @@ button.small{font-size:.82rem; padding:.45rem 1rem}
 .warnings li{list-style:none; font-size:.88rem; color:var(--ink-dim); overflow-wrap:anywhere}
 .warnings li b{font-family:var(--mono); font-size:.74rem; color:var(--accent); letter-spacing:.08em; margin-right:.5rem}
 
-.toolbar{display:flex; flex-wrap:wrap; gap:var(--s1); align-items:center; padding:var(--s2) 0; border-bottom:1px solid var(--hair-soft)}
-.toolbar .note{font-size:.78rem; color:var(--ink-faint); flex-basis:100%; line-height:1.6}
+.toolbar{display:block; padding:var(--s3) 0; border-bottom:1px solid var(--hair-soft)}
+.toolbar .note{font-size:.82rem; color:var(--ink-faint); line-height:1.6; margin-top:var(--s1)}
+.export-mode{margin:0 0 var(--s2)}
+.export-mode-title{font-family:var(--serif); font-size:1.15rem; margin:0 0 var(--s2)}
+.export-mode-options{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; background:var(--hair)}
+.export-mode-options label{display:flex; gap:.8rem; align-items:flex-start; min-width:0; padding:var(--s2); background:var(--paper-2); cursor:pointer}
+.export-mode-options label:has(input:checked){box-shadow:inset 3px 0 0 var(--accent); background:var(--paper)}
+.export-mode input[type="radio"]{appearance:none; -webkit-appearance:none; width:1rem; height:1rem; min-width:1rem; flex:0 0 1rem; margin:.25rem 0 0; padding:0; border:1px solid var(--ink-faint); border-radius:50%; background:var(--paper); position:relative; cursor:pointer}
+.export-mode input[type="radio"]:checked{border-color:var(--accent)}
+.export-mode input[type="radio"]:checked::after{content:""; position:absolute; inset:.22rem; border-radius:50%; background:var(--accent)}
+.export-mode span{display:block; min-width:0}
+.export-mode b{display:block; color:var(--ink); font-size:.95rem}
+.export-mode small{display:block; color:var(--ink-faint); font-size:.78rem; line-height:1.55; margin-top:.25rem}
+.export-actions{display:flex; flex-wrap:wrap; gap:var(--s1); margin-top:var(--s2)}
 .ring-tag{
   font-family:var(--mono); font-size:.66rem; letter-spacing:.18em; text-transform:uppercase;
   border-left:3px solid var(--ring-v); padding-left:.6rem; color:var(--ink-faint);
@@ -218,7 +230,7 @@ footer span{font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); l
    分層標示不出現在畫面上：L1／L2／L3 是工程端的詞彙，使用者看不懂。
    這兩個區塊只承擔間距與分隔線。 */
 .compose{padding:var(--s4) 0 var(--s5)}
-.results{padding:var(--s4) 0 var(--s5)}
+.results{padding:var(--s3) 0 var(--s5)}
 .compose + .results{border-top:2px solid var(--ink)}
 
 /* 中文術語旁的英文技術詞 */
@@ -444,6 +456,11 @@ section.result-section h3{font-family:var(--serif); font-weight:400; letter-spac
 .long-section[open] > summary::before{content:"−　"}
 .long-section > summary:hover{border-color:var(--ink); color:var(--ink)}
 .long-section[open] > summary{margin-bottom:var(--s2)}
+.technical-results{margin-top:var(--s4); border-top:1px solid var(--ink); border-bottom:1px solid var(--hair)}
+.technical-results > summary{cursor:pointer; padding:var(--s3) 0; font-family:var(--serif); font-size:1.25rem; color:var(--ink)}
+.technical-results > summary::marker{color:var(--accent)}
+.technical-results > .note{margin:-.8rem 0 var(--s2)}
+.technical-results > .result-section{padding-left:var(--s2); border-left:1px solid var(--hair)}
 
 /* ═══ 逐步軌跡：換行而不是往右長 ═══════════════════════
    td 預設 nowrap 是為了讓座標數值不被折斷；軌跡的算式與輸入是長文字，
@@ -511,14 +528,14 @@ table[data-section="fixed_stars"] td:first-child{
 
 /* ═══ 行動版 ═══════════════════════════════════════════ */
 @media (max-width:900px){
+  .export-mode-options{grid-template-columns:1fr}
+  .export-actions button{flex:1 1 46%}
   .section-index{grid-template-columns:1fr}
   .index-link{padding:.45rem 0 .45rem .7rem}
   section.result-section{padding:var(--s3) 0 var(--s2)}
   section.result-section h3{font-size:1.2rem}
   section.result-section > .head{flex-wrap:wrap}
   .section-copy{margin-left:0; margin-top:.4rem}
-  .toolbar{gap:.4rem}
-  .toolbar button{flex:1 1 46%}
   table{font-size:.72rem}
   th,td{padding:.45rem .6rem}
   /* 固定欄在窄螢幕會吃掉太多寬度，關掉 */

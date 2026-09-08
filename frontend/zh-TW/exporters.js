@@ -120,13 +120,18 @@
     if (!Object.prototype.hasOwnProperty.call(OUTPUT_MODES, mode)) {
       throw new Error(`不支援的輸出詳細度: ${mode}`);
     }
+    const detailed = mode === OUTPUT_MODES.reproducibility_detail;
     return {
       ...document,
       output_mode: mode,
-      include_reproducibility: mode === OUTPUT_MODES.reproducibility_detail,
-      sections: mode === OUTPUT_MODES.reproducibility_detail
+      include_reproducibility: detailed,
+      sections: detailed
         ? document.sections
-        : document.sections.filter((section) => !REPRODUCIBILITY_SECTION_IDS.has(section.id)),
+        : document.sections
+          .filter((section) => (
+            !REPRODUCIBILITY_SECTION_IDS.has(section.id)
+            && section.status.state !== "not_requested"
+          )),
     };
   }
 
@@ -170,29 +175,33 @@
     return lines.join("\n").trim();
   }
 
-  function warningLines(dossier) {
-    const warnings = Array.isArray(dossier.warnings) ? dossier.warnings : [];
+  function warningLines(dossier, detailed = true) {
+    const warnings = (Array.isArray(dossier.warnings) ? dossier.warnings : [])
+      .filter((warning) => detailed || warning.code !== "provisional_method_result");
     if (!warnings.length) return ["Warnings: 無"];
     return warnings.map((warning) => {
       const code = warning.code || "UNSPECIFIED_WARNING";
       const message = warning.message || warning.note || JSON.stringify(warning);
-      return `Warning [${code}]: ${message}`;
+      return detailed ? `Warning [${code}]: ${message}` : `注意：${message}`;
     });
   }
 
   function renderPlainText(document) {
     const dossier = document.calculation_dossier;
-    const lines = [
-      "古典西洋占星天文計算資料",
-      "這是計算資料與重現收據，不是占星解讀。",
-      `Export Contract ${document.export_contract_version}`,
-      `API Schema ${document.source_response.schema_version || "—"}`,
-      `Calculation Dossier ${dossier.dossier_version || "—"}`,
-      `Authority: ${dossier.authority || "—"}`,
-    ];
+    const detailed = document.include_reproducibility !== false;
+    const lines = detailed
+      ? [
+        "古典西洋占星天文計算資料＋驗算資料",
+        "這是計算資料與重現收據，不是占星解讀。",
+        `Export Contract ${document.export_contract_version}`,
+        `API Schema ${document.source_response.schema_version || "—"}`,
+        `Calculation Dossier ${dossier.dossier_version || "—"}`,
+        `Authority: ${dossier.authority || "—"}`,
+      ]
+      : ["渾儀運算結果", "這是運算資料，不是占星解讀。"];
     const utc = dossier.time_conversion && dossier.time_conversion.utc_iso_8601;
     if (utc) lines.push(`UTC: ${utc}`);
-    lines.push(...warningLines(dossier));
+    lines.push(...warningLines(dossier, detailed));
     document.sections.forEach((section) => {
       lines.push("", "============================================================", "");
       lines.push(renderSectionText(section));
@@ -270,22 +279,17 @@
       });
     }
     document.sections.forEach((section) => {
-      rows.push([
-        section.id,
-        section.title,
-        "Status",
-        1,
-        "state",
-        section.status.state,
-      ]);
-      rows.push([
-        section.id,
-        section.title,
-        "Status",
-        2,
-        "reason_code",
-        section.status.reason_code || "—",
-      ]);
+      if (document.include_reproducibility !== false || section.status.state !== "present") {
+        rows.push([
+          section.id, section.title, "Status", 1, "state", section.status.state,
+        ]);
+      }
+      if (document.include_reproducibility !== false && section.status.reason_code) {
+        rows.push([
+          section.id, section.title, "Status", 2,
+          "reason_code", section.status.reason_code,
+        ]);
+      }
       section.notes.forEach((note, index) => {
         rows.push([section.id, section.title, "Notes", index + 1, "note", note]);
       });
@@ -395,22 +399,25 @@
 
   function renderMarkdown(document) {
     const dossier = document.calculation_dossier;
-    const lines = [
-      "# 古典西洋占星天文計算資料",
-      "",
-      "> 這是計算資料與重現收據，不是占星解讀。數值應連同單位、時間尺度、座標系統與 Calculation Dossier 一起使用。",
-      "",
-      "## 輸出契約",
-      "",
-      `- Export contract: \`${document.export_contract_version}\``,
-      `- API schema: \`${document.source_response.schema_version || "—"}\``,
-      `- Calculation Dossier: \`${dossier.dossier_version || "—"}\``,
-      `- Authority: ${escapeMarkdownText(dossier.authority || "—")}`,
-    ];
+    const detailed = document.include_reproducibility !== false;
+    const lines = detailed
+      ? [
+        "# 古典西洋占星天文計算資料＋驗算資料",
+        "",
+        "> 這是計算資料與重現收據，不是占星解讀。數值應連同單位、時間尺度、座標系統與Calculation Dossier一起使用。",
+        "",
+        "## 輸出契約",
+        "",
+        `- Export contract: \`${document.export_contract_version}\``,
+        `- API schema: \`${document.source_response.schema_version || "—"}\``,
+        `- Calculation Dossier: \`${dossier.dossier_version || "—"}\``,
+        `- Authority: ${escapeMarkdownText(dossier.authority || "—")}`,
+      ]
+      : ["# 渾儀運算結果", "", "> 這是運算資料，不是占星解讀。"];
     const utc = dossier.time_conversion && dossier.time_conversion.utc_iso_8601;
     if (utc) lines.push(`- UTC: ${markdownInlineCode(utc)}`);
-    lines.push("", "### Warnings", "");
-    const warnings = warningLines(dossier);
+    lines.push("", detailed ? "### Warnings" : "## 注意事項", "");
+    const warnings = warningLines(dossier, detailed);
     warnings.forEach((warning) => lines.push(`- ${escapeMarkdownText(warning)}`));
 
     // 每一個把自由文字插進 Markdown 的位置都要經過 escape，不只是表格儲存格：
